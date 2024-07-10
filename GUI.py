@@ -19,7 +19,7 @@ class App:
         self.publicos_objetivos = pd.DataFrame()
         self.conn = PublicosObjetivo(name)
 
-        self.set_icon("Data Science - Públicos Objetivos\images\icono_cogno_resized.png")
+        self.set_icon(".\images\icono_cogno_resized.png")
         self.create_main_layout()
         self.create_menu()
 
@@ -50,7 +50,7 @@ class App:
         self.image_label = tk.Label(self.content_frame)
         self.image_label.pack(expand=True)
         
-        self.display_image("Data Science - Públicos Objetivos\images\logo_cogno.png")
+        self.display_image(".\images\logo_cogno.png")
 
     def end_program(self):
         self.root.quit()
@@ -76,7 +76,7 @@ class App:
         self.clear_content_frame()
         self.menu_frame.pack(side=tk.LEFT, fill=tk.Y, padx=20, pady=20)
         self.image_label.pack(expand=True)  # Ensure the image label is packed again
-        self.display_image("Data Science - Públicos Objetivos\images\logo_cogno.png")  # Display the placeholder image again
+        self.display_image(".\images\logo_cogno.png")  # Display the placeholder image again
 
     def clear_content_frame(self):
         for widget in self.content_frame.winfo_children():
