@@ -100,10 +100,10 @@ class App:
         # Función para agregar productos
         def submit_productos():
             if validate_entries():
-                skus = entry_skus.get().replace(', ', '')
-                marcas = PublicosObjetivo.add_quotes(entry_marcas.get().replace(', ', ''))
-                proveedores = PublicosObjetivo.add_quotes(entry_proveedores.get().replace(', ', ''))
-
+                skus = entry_skus.get().replace(', ', ',')
+                marcas = PublicosObjetivo.add_quotes(entry_marcas.get().replace(', ', ','))
+                proveedores = PublicosObjetivo.add_quotes(entry_proveedores.get().replace(', ', ','))
+                print(skus, marcas, proveedores)
                 # Setear variables
                 self.conn.initialize_variables_products()
                 self.conn.skus = skus
@@ -119,7 +119,7 @@ class App:
                 self.show_dataframe(self.conn.df_productos)
         
         # Crear los campos para ingresar productos
-        tk.Label(self.content_frame, text="Ingresar Productos").pack(pady=10)
+        tk.Label(self.content_frame, text="Ingresar Productos separados por coma", font=('Arial', 10, 'bold')).pack(pady=5)
         tk.Label(self.content_frame, text="SKUs:").pack()
         entry_skus = tk.Entry(self.content_frame)
         entry_skus.pack()
