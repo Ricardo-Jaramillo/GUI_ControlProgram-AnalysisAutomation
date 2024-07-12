@@ -6,22 +6,30 @@ from PIL import ImageTk
 # Import Libraries
 from publicos_objetivo import *
 import warnings
+from connection import Conn
+from monetizacion import Monetizacion
 
 # Ignore SQLAlchemy warnings
 warnings.filterwarnings('ignore')
 
 
 class App:
-    def __init__(self, root, name='App'):
+    def __init__(self, root):
+        self.mon = Monetizacion()
         self.root = root
         self.root.title("Cognodata Monetización - Data Science")
-        self.productos = pd.DataFrame()
-        self.publicos_objetivos = pd.DataFrame()
-        self.conn = PublicosObjetivo(name)
-
         self.set_icon(".\images\icono_cogno_resized.png")
         self.create_main_layout()
         self.create_menu()
+
+    # Query para obtener los datos entre comillas simples y separados por coma
+    @staticmethod
+    def add_quotes(text):
+        lis = []
+        for item in text.split(','):
+            item = f"'{item}'"
+            lis.append(item)
+        return (',').join(lis) if text else ''
 
     def set_icon(self, icon_path):
         # Cargar imagen
@@ -53,8 +61,9 @@ class App:
         self.display_image(".\images\logo_cogno.png")
 
     def end_program(self):
+        # super().close()
+        self.mon.close()
         self.root.quit()
-        self.conn.close()
 
     def create_menu(self):
 
@@ -82,41 +91,38 @@ class App:
         for widget in self.content_frame.winfo_children():
             widget.pack_forget()
 
+    def validate_entries_productos(self, *args):
+        lis = []
+
+        if len(args) == 1 and isinstance(args[0], list):
+            entries = args[0]
+        else:
+            entries = args
+
+        for entry in entries:
+            lis.append(entry.get().strip())
+
+        if sum(bool(x) for x in lis) > 1:
+            messagebox.showwarning("Advertencia", "Por favor ingrese solo un campo.")
+            return False
+        return True
+
+    # Función para agregar productos
+    def submit_productos(self, entry_skus, entry_marcas, entry_proveedores):
+        if self.validate_entries_productos(entry_marcas, entry_proveedores, entry_skus):
+            skus = entry_skus.get().strip().replace(', ', ',')
+            marcas = self.add_quotes(entry_marcas.get().strip().replace(', ', ','))
+            proveedores = self.add_quotes(entry_proveedores.get().strip().replace(', ', ','))
+            
+            # Crear tabla temporal Productos y mostrar
+            self.mon.set_products(skus=skus, marcas=marcas, proveedores=proveedores)    
+            self.mon.create_tabla_productos(self.mon)
+            self.show_dataframe(self.mon.df_productos)
+
     def ingresar_productos(self):
         self.menu_frame.pack_forget()
         self.clear_content_frame()
         self.content_frame.pack(padx=100)
-
-        def validate_entries():
-            skus = entry_skus.get().strip()
-            marcas = entry_marcas.get().strip()
-            proveedores = entry_proveedores.get().strip()
-            
-            if sum(bool(x) for x in [skus, marcas, proveedores]) > 1:
-                messagebox.showwarning("Advertencia", "Por favor ingrese solo un campo.")
-                return False
-            return True
-        
-        # Función para agregar productos
-        def submit_productos():
-            if validate_entries():
-                skus = entry_skus.get().replace(', ', ',')
-                marcas = PublicosObjetivo.add_quotes(entry_marcas.get().replace(', ', ','))
-                proveedores = PublicosObjetivo.add_quotes(entry_proveedores.get().replace(', ', ','))
-                print(skus, marcas, proveedores)
-                # Setear variables
-                self.conn.initialize_variables_products()
-                self.conn.skus = skus
-                self.conn.marcas = marcas
-                self.conn.proveedores = proveedores
-                
-                # Create temporal table Productos, marca y competencia
-                # print(self.conn.get_query_create_productos_temporal())
-                if not self.conn.validate_table_exists('#PRODUCTOS'):
-                    self.conn.create_table_productos_temporal()
-                    self.conn.df_productos = self.conn.select(query=self.conn.get_query_select_productos_temporal())
-                
-                self.show_dataframe(self.conn.df_productos)
         
         # Crear los campos para ingresar productos
         tk.Label(self.content_frame, text="Ingresar Productos separados por coma", font=('Arial', 10, 'bold')).pack(pady=5)
@@ -134,7 +140,7 @@ class App:
         
         # tk.Label(self.content_frame, text="¿Desea filtrar por categorías?").pack(pady=10)
 
-        tk.Button(self.content_frame, text="Agregar", command=submit_productos).pack(pady=10)
+        tk.Button(self.content_frame, text="Agregar", command=lambda: self.submit_productos(entry_skus,entry_marcas, entry_proveedores)).pack(pady=10)
         tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()
 
     def generar_publicos_objetivos(self):
@@ -142,49 +148,58 @@ class App:
         self.clear_content_frame()
 
         # Función para validar los campos. VALIDAR
-        def validate_entries():
-            tiendas = entry_tiendas.get().strip()
-            is_online = entry_is_online.get().strip()
-            condicion = entry_condicion.get().strip()
-            inicio = entry_inicio.get().strip()
-            termino = entry_termino.get().strip()
+        def validate_entries_po(entry_tiendas='', entry_is_online=False, entry_condicion=0, entry_inicio='', entry_termino=''):
+            print(entry_tiendas.get().strip(), entry_is_online.get().strip(), entry_condicion.get().strip(), entry_inicio.get().strip(), entry_termino.get().strip())
+            # validar que is_online es Si o No, y convertir a booleano
+            if entry_is_online.get().strip().lower() not in ['si', 'no']:
+                messagebox.showwarning("Advertencia", "Por favor ingrese Si o No para Venta Online.")
+                return False
             
-            # Validar que solo se haya ingresado un campo
-            # if type(is_online) == bool and type(condicion) == int:
-            #     return True
-            # else:
-            #     messagebox.showwarning("Advertencia", "Por favor ingrese solo un campo.")
-            #     return False
+            # validar que condicion es tipo numerico
+            if not entry_condicion.get().strip().isdigit():
+                messagebox.showwarning("Advertencia", "Por favor ingrese un valor numérico para Condición de Compra.")
+                return False
+            
+            # Validar que inicio es fecha en formato YYYY-MM-DD
+            try:
+                if entry_inicio:
+                    inicio = pd.to_datetime(entry_inicio.get().strip())
+            except:
+                messagebox.showwarning("Advertencia", "Por favor ingrese fechas en formato YYYY-MM-DD.")
+                return False
+            
+            # Validar que termino es fecha en formato YYYY-MM-DD
+            try:
+                if entry_termino:
+                    termino = pd.to_datetime(entry_termino.get().strip())
+            except:
+                messagebox.showwarning("Advertencia", "Por favor ingrese fechas en formato YYYY-MM-DD.")
+                return False
+
+            # Validar que las tiendas sean de 4 digitos separadas por coma
+            if not all(len(x) == 4 for x in entry_tiendas.get().strip().split(',')):
+                messagebox.showwarning("Advertencia", "Por favor ingrese tiendas de 4 dígitos separadas por coma.")
+                return False
+            
             return True
         
         # Función para agregar productos
         def submit_publicos():
-            if validate_entries():
-                tiendas = PublicosObjetivo.add_quotes(entry_tiendas.get().replace(', ', ''))
-                is_online = entry_is_online.get()
+            if validate_entries_po(entry_tiendas=entry_tiendas, entry_is_online=entry_is_online, entry_condicion=entry_condicion, entry_inicio=entry_inicio, entry_termino=entry_termino):
+                tiendas = self.add_quotes(entry_tiendas.get().replace(', ', ','))
+                is_online = True if entry_is_online.get().strip().lower() == 'si' else False
                 condicion = entry_condicion.get()
                 inicio = entry_inicio.get()
                 termino = entry_termino.get()
 
                 # Setear variables
-                self.conn.initialize_variables_pos()
-                self.conn.tiendas = tiendas
-                self.conn.is_online = is_online
-                self.conn.condicion = condicion
-                self.conn.inicio = inicio
-                self.conn.termino = termino
-                
-                # Crear tabla temporal POs
-                if not self.conn.validate_table_exists('#PO_AGG'):
-                    # print(self.conn.get_query_create_pos_temporal())
-                    self.conn.create_table_pos_temporal()
-                    self.conn.df_pos_agg = self.conn.select(query=self.conn.get_query_select_pos_agg_temporal())
-                
-                self.show_dataframe(self.conn.df_pos_agg)
+                self.mon.po.set_pos_variables(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino)
+                self.mon.po.create_table_pos_temporal(self.mon)
+                self.show_dataframe(self.mon.po.df_pos_agg)
 
         tk.Label(self.content_frame, text="Públicos Objetivos", font=("Arial", 14, "bold")).pack(pady=10)
         # Periodo de la campaña
-        tk.Label(self.content_frame, text="Periodo de la campaña", font=("Arial", 12, "bold")).pack(pady=10)
+        tk.Label(self.content_frame, text="Periodo de la campaña (YYYY-MM-DD)", font=("Arial", 12, "bold")).pack(pady=10)
         tk.Label(self.content_frame, text="Inicio:").pack()
         entry_inicio = tk.Entry(self.content_frame)
         entry_inicio.pack()
@@ -195,15 +210,15 @@ class App:
 
         # Datos de la campaña
         tk.Label(self.content_frame, text="Filtros de la campaña", font=("Arial", 12, "bold")).pack(pady=10)
-        tk.Label(self.content_frame, text="Tiendas (store_code):").pack()
+        tk.Label(self.content_frame, text="Tiendas (store_code, separados por coma):").pack()
         entry_tiendas = tk.Entry(self.content_frame)
         entry_tiendas.pack()
         
-        tk.Label(self.content_frame, text="Venta Online:").pack()
+        tk.Label(self.content_frame, text="Venta Online? (Si/No):").pack()
         entry_is_online = tk.Entry(self.content_frame)
         entry_is_online.pack()
         
-        tk.Label(self.content_frame, text="Condición de Compra:").pack()
+        tk.Label(self.content_frame, text="Condición de Compra (Monto):").pack()
         entry_condicion = tk.Entry(self.content_frame)
         entry_condicion.pack()
         
@@ -218,8 +233,8 @@ class App:
         
         tk.Label(self.content_frame, text="Productos Ingresados").pack(pady=10)
         
-        if not self.conn.df_productos.empty:
-            self.show_dataframe(self.conn.df_productos)
+        if not self.mon.df_productos.empty:
+            self.show_dataframe(self.mon.df_productos)
         
         tk.Button(self.content_frame, text="Guardar archivo csv", command=self.save_productos).pack(pady=5)
         tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()
@@ -262,19 +277,19 @@ class App:
             pt.insert("", "end", values=row)
         
     def save_productos(self):
-        if not self.conn.df_productos.empty:
+        if not self.mon.df_productos.empty:
             file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
             if file_path:
-                self.conn.df_productos.to_csv(file_path, index=False)
+                self.mon.df_productos.to_csv(file_path, index=False)
                 messagebox.showinfo("Información", "Productos guardados exitosamente.")
         else:
             messagebox.showwarning("Advertencia", "No hay productos para guardar.")
 
     def save_publicos(self):
-        if not self.conn.df_pos_agg.empty:
+        if not self.mon.po.df_pos_agg.empty:
             file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
             if file_path:
-                self.conn.df_pos_agg.to_csv(file_path, index=False)
+                self.mon.po.df_pos_agg.to_csv(file_path, index=False)
                 messagebox.showinfo("Información", "Públicos objetivos guardados exitosamente.")
         else:
             messagebox.showwarning("Advertencia", "No hay públicos objetivos para guardar.")
