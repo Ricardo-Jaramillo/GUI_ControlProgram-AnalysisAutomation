@@ -7,7 +7,6 @@ from PIL import ImageTk
 # Import Libraries
 from publicos_objetivo import *
 import warnings
-from connection import Conn
 from monetizacion import Monetizacion
 
 # Ignore SQLAlchemy warnings

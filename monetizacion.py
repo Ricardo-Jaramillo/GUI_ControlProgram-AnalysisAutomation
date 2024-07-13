@@ -1,9 +1,3 @@
-from datetime import datetime
-from pandas.tseries.offsets import MonthEnd
-from credentials import dic_credentials
-import pandas as pd
-import psycopg2
-from psycopg2.extras import execute_values
 from connection import Conn
 from productos import Productos
 from publicos_objetivo import PublicosObjetivo

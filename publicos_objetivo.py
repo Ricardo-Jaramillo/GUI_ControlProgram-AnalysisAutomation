@@ -1,9 +1,4 @@
-from credentials import dic_credentials
 import pandas as pd
-import psycopg2
-from psycopg2.extras import execute_values
-from connection import Conn
-from productos import Productos
 
 # Create a Class to handle the Monetizacion data that inherits from the Conn class
 class PublicosObjetivo():
