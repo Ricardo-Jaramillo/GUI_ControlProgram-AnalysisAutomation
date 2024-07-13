@@ -35,18 +35,46 @@ class PublicosObjetivo():
 
         campana_ini, campana_fin, campana_ini_1, campana_ini_2, campana_ini_3, campana_ini_4, campana_ini_6, campana_ini_7, campana_ini_12
 
-        query_pos_temporal = f'''
+        if self.condicion:
+            query_tx_elegibles = f'''
+                DROP TABLE IF EXISTS #TX_ELEGIBLES;
+                CREATE TABLE #TX_ELEGIBLES AS (
+                SELECT
+                    CUSTOMER_CODE_TY
+                    ,MAX(CASE WHEN VENTA >= '{self.condicion}' THEN 1 ELSE 0 END) IND_ELEGIBLE
+                FROM (
+                    SELECT
+                    CUSTOMER_CODE_TY
+                    ,INVOICE_NO
+                    ,SUM(SALE_NET_VAL) VENTA
+                    FROM FCT_SALE_LINE
+                    INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
+                    WHERE IND_MARCA = 1
+                    AND LEFT(INVOICE_DATE, 7) BETWEEN '{campana_ini_12}' AND '{campana_fin}'
+                    AND BUSINESS_TYPE = 'R'
+                    AND SALE_NET_VAL > 0
+                    GROUP BY 1,2
+                )
+                GROUP BY 1
+                HAVING IND_ELEGIBLE = 1
+                );
+            '''
+        else:
+            query_tx_elegibles = ''
+
+        query_pos_temporal = query_tx_elegibles + \
+        f'''
         DROP TABLE IF EXISTS {table_name};
         CREATE TABLE {table_name} AS (
             WITH
             __PROD_MARCA AS (
-                SELECT
+                SELECT DISTINCT
                 PRODUCT_CODE
                 FROM #PRODUCTOS
                 WHERE IND_MARCA = 1
             )
             ,__PROD_COM AS (
-                SELECT
+                SELECT DISTINCT
                 PRODUCT_CODE
                 FROM #PRODUCTOS
                 WHERE IND_MARCA = 0
@@ -87,18 +115,17 @@ class PublicosObjetivo():
 
                 FROM FCT_SALE_LINE A
                 INNER JOIN CHEDRAUI.MON_ACT D USING(CUSTOMER_CODE_TY)
+                {f"INNER JOIN (SELECT DISTINCT INVOICE_NO FROM FCT_SALE_HEADER WHERE CHANNEL_TYPE IN ('WEB','APP','CC HY') AND LEFT(INVOICE_DATE, 7) BETWEEN '{campana_ini_12}' AND '{campana_fin}') USING(INVOICE_NO)" if self.is_online else ''}
+                {f'INNER JOIN CHEDRAUI.V_STORE C ON A.STORE_KEY = C.STORE_KEY AND A.STORE_CODE = C.STORE_CODE AND C.STORE_CODE IN ({self.tiendas})' if self.tiendas else ''}
+                {f'INNER JOIN #TX_ELEGIBLES F ON A.CUSTOMER_CODE_TY = F.CUSTOMER_CODE_TY' if self.condicion else ''}
                 LEFT JOIN CHEDRAUI.V_CUSTOMER_CONTACT B ON A.CUSTOMER_CODE_TY = B.CUSTOMER_CODE
-            --     INNER JOIN CHEDRAUI.V_STORE E ON B.STORE_KEY = E.STORE_KEY AND B.STORE_CODE = E.STORE_CODE --PARA TRAER TIENDA FAV DEL CLIENTE
-            --     INNER JOIN CHEDRAUI.V_STORE C ON A.STORE_KEY = C.STORE_KEY AND A.STORE_CODE = C.STORE_CODE --PARA TRAER TIENDA DONDE SE REALIZÓ LA COMPRA
-            --     INNER JOIN #TX_ELEGIBLES F ON A.CUSTOMER_CODE_TY = F.CUSTOMER_CODE_TY AND F.IND_ELEGIBLE = 1 --DESCOMENTAR PARA ELEGIR CLIENTES QUE CUMPLEN LA CONDICIÓN DE COMPRA AL MENOS UNA VEZ
                 WHERE LEFT(A.INVOICE_DATE, 7) BETWEEN '{campana_ini_12}' AND '{campana_fin}'
                 AND B.CONTACT_INFO IS NOT NULL
-            --  AND C.STORE_FORMAT2 NOT IN ('08 SUPERCITO CD' ,'09 SUPERCITO SELECTO','07 SUPER CHE CD')
                 AND (A.PRODUCT_CODE IN (SELECT PRODUCT_CODE FROM __PROD_MARCA)
                 OR A.PRODUCT_CODE IN (SELECT PRODUCT_CODE FROM __PROD_COM))
                 AND BUSINESS_TYPE = 'R'
                 AND SALE_NET_VAL > 0
-            --     AND C.STORE_CODE IN ('0010','0097','0061','0252','0135','0093','0043','0066','0016','0027','0602','0676','0240','0237','0111','0239','0100','0233','0117','0234')
+                --  AND C.STORE_FORMAT2 NOT IN ('08 SUPERCITO CD' ,'09 SUPERCITO SELECTO','07 SUPER CHE CD')
                 GROUP BY 1,2,3,4--,5
             )
             
@@ -196,7 +223,7 @@ class PublicosObjetivo():
             SELECT
                 *
             FROM __IND_PO_CLIENTE
-        )
+        );
         '''
         return query_pos_temporal
     
