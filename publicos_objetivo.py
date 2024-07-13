@@ -621,13 +621,20 @@ class PublicosObjetivo():
         return query_pos_agg_temporal
 
     def create_table_pos_temporal(self, conn):
-        table_name_po = '#PO'
-        if not conn.validate_if_table_exists(table_name_po):
-            print(self.get_query_create_pos_temporal(table_name_po))
-            conn.execute(query=self.get_query_create_pos_temporal(table_name_po))
-        
-        table_name_agg = '#PO_AGG'
-        if not conn.validate_if_table_exists(table_name_agg):
-            conn.execute(query=self.get_query_create_pos_agg_temporal(table_name=table_name_agg, from_table=table_name_po))
-            print(self.get_query_create_pos_agg_temporal(table_name=table_name_agg, from_table=table_name_po))
-            self.df_pos_agg = conn.select(query=f'SELECT * FROM {table_name_agg} ORDER BY 1,2,3,4')
+        # Validar si exite la tabla #PRODUCTOS
+        if not conn.validate_if_table_exists('#PRODUCTOS'):
+            print('No existe la tabla #PRODUCTOS')
+            return False
+        else:
+            table_name_po = '#PO'
+            if not conn.validate_if_table_exists(table_name_po):
+                print(self.get_query_create_pos_temporal(table_name_po))
+                conn.execute(query=self.get_query_create_pos_temporal(table_name_po))
+            
+            table_name_agg = '#PO_AGG'
+            if not conn.validate_if_table_exists(table_name_agg):
+                conn.execute(query=self.get_query_create_pos_agg_temporal(table_name=table_name_agg, from_table=table_name_po))
+                print(self.get_query_create_pos_agg_temporal(table_name=table_name_agg, from_table=table_name_po))
+                self.df_pos_agg = conn.select(query=f'SELECT * FROM {table_name_agg} ORDER BY 1,2,3,4')
+            return True
+            

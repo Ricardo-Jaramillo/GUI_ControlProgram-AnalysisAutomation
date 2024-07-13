@@ -116,8 +116,7 @@ class App:
             proveedores = self.add_quotes(entry_proveedores.get().strip().replace(', ', ','))
             
             # Crear tabla temporal Productos y mostrar
-            self.mon.set_products(skus=skus, marcas=marcas, proveedores=proveedores)    
-            self.mon.create_tabla_productos(self.mon)
+            self.mon.generar_productos(skus, marcas, proveedores)
             self.show_dataframe(self.mon.df_productos)
 
     def ingresar_productos(self):
@@ -187,9 +186,8 @@ class App:
                 inicio = entry_inicio.get()
                 termino = entry_termino.get()
 
-                # Setear variables
-                self.mon.po.set_pos_variables(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino)
-                self.mon.po.create_table_pos_temporal(self.mon)
+                # Generar Públicos Objetivos
+                self.mon.generar_po(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino)
                 self.show_dataframe(self.mon.po.df_pos_agg)
 
         tk.Label(self.content_frame, text="Públicos Objetivos", font=("Arial", 14, "bold")).pack(pady=10)
@@ -240,8 +238,8 @@ class App:
         
         tk.Label(self.content_frame, text="Públicos Objetivos").pack(pady=10)
         
-        if not self.conn.df_pos_agg.empty:
-            self.show_dataframe(self.conn.df_pos_agg)
+        if not self.mon.po.df_pos_agg.empty:
+            self.show_dataframe(self.mon.po.df_pos_agg)
         
         tk.Button(self.content_frame, text="Guardar archivo csv", command=self.save_publicos).pack(pady=5)
         tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()

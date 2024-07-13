@@ -18,11 +18,25 @@ class Monetizacion(Conn, Productos):
         # self.rad = Radiografia()
         # self.ds = DataScience()
 
-    def extraer_po(self):
-        self.po.extraer_po()
+    def generar_productos(self, skus, marcas, proveedores, clases='', subclases='', prod_type_desc=''):
+        # Set variables
+        self.set_products(skus=skus, marcas=marcas, proveedores=proveedores, clases=clases, subclases=subclases, prod_type_desc=prod_type_desc)
+        # Create Productos table
+        self.create_tabla_productos(self)
+
+    def generar_po(self, tiendas, is_online, condicion, inicio, termino):
+        # Set variables
+        self.po.set_pos_variables(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino)
+        # Create PO table
+        self.po.create_table_pos_temporal(self)
     
     def generar_rad(self):
-        self.rad.generar_rad()
+        # Set variables
+        # self.rad.set_rad_variables()
+        # Create RAD table
+        # self.rad.create_table_rad_temporal(self)
+        pass
     
     def ejecutar_ds(self):
-        self.ds.generar_analisis_ds()
+        # self.ds.create_analisis_ds()
+        pass
