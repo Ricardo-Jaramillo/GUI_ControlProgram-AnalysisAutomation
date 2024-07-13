@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+from tkcalendar import DateEntry
 import pandas as pd
 from PIL import Image
 from PIL import ImageTk
@@ -148,46 +149,40 @@ class App:
         self.clear_content_frame()
 
         # Función para validar los campos. VALIDAR
-        def validate_entries_po(entry_tiendas='', entry_is_online=False, entry_condicion=0, entry_inicio='', entry_termino=''):
-            print(entry_tiendas.get().strip(), entry_is_online.get().strip(), entry_condicion.get().strip(), entry_inicio.get().strip(), entry_termino.get().strip())
-            # validar que is_online es Si o No, y convertir a booleano
-            if entry_is_online.get().strip().lower() not in ['si', 'no']:
-                messagebox.showwarning("Advertencia", "Por favor ingrese Si o No para Venta Online.")
-                return False
-            
-            # validar que condicion es tipo numerico
-            if not entry_condicion.get().strip().isdigit():
-                messagebox.showwarning("Advertencia", "Por favor ingrese un valor numérico para Condición de Compra.")
-                return False
-            
+        def validate_entries_po(entry_tiendas='', entry_is_online=0, entry_condicion=0, entry_inicio='', entry_termino=''):
+
             # Validar que inicio es fecha en formato YYYY-MM-DD
             try:
-                if entry_inicio:
                     inicio = pd.to_datetime(entry_inicio.get().strip())
-            except:
-                messagebox.showwarning("Advertencia", "Por favor ingrese fechas en formato YYYY-MM-DD.")
-                return False
-            
-            # Validar que termino es fecha en formato YYYY-MM-DD
-            try:
-                if entry_termino:
                     termino = pd.to_datetime(entry_termino.get().strip())
             except:
                 messagebox.showwarning("Advertencia", "Por favor ingrese fechas en formato YYYY-MM-DD.")
                 return False
+            
+            # validar que is_online es Si o No, y convertir a booleano
+            if entry_is_online.get() not in [0, 1]:
+                messagebox.showwarning("Advertencia", "Por favor ingrese solo 'Si' para Venta Online, dejar en blanco para total.")
+                return False
+            
+            # validar condicion es tipo numerico
+            if entry_condicion.get().strip():
+                if not entry_condicion.get().strip().isdigit():
+                    messagebox.showwarning("Advertencia", "Por favor ingrese un valor numérico para Condición de Compra.")
+                    return False
 
             # Validar que las tiendas sean de 4 digitos separadas por coma
-            if not all(len(x) == 4 for x in entry_tiendas.get().strip().split(',')):
-                messagebox.showwarning("Advertencia", "Por favor ingrese tiendas de 4 dígitos separadas por coma.")
-                return False
+            if entry_tiendas.get().strip():
+                if not all(len(x) == 4 for x in entry_tiendas.get().strip().split(',')):
+                    messagebox.showwarning("Advertencia", "Por favor ingrese tiendas de 4 dígitos separadas por coma.")
+                    return False
             
             return True
         
         # Función para agregar productos
         def submit_publicos():
-            if validate_entries_po(entry_tiendas=entry_tiendas, entry_is_online=entry_is_online, entry_condicion=entry_condicion, entry_inicio=entry_inicio, entry_termino=entry_termino):
+            if validate_entries_po(entry_tiendas=entry_tiendas, entry_is_online=var, entry_condicion=entry_condicion, entry_inicio=entry_inicio, entry_termino=entry_termino):
                 tiendas = self.add_quotes(entry_tiendas.get().replace(', ', ','))
-                is_online = True if entry_is_online.get().strip().lower() == 'si' else False
+                is_online = var.get()
                 condicion = entry_condicion.get()
                 inicio = entry_inicio.get()
                 termino = entry_termino.get()
@@ -199,23 +194,23 @@ class App:
 
         tk.Label(self.content_frame, text="Públicos Objetivos", font=("Arial", 14, "bold")).pack(pady=10)
         # Periodo de la campaña
-        tk.Label(self.content_frame, text="Periodo de la campaña (YYYY-MM-DD)", font=("Arial", 12, "bold")).pack(pady=10)
+        tk.Label(self.content_frame, text="Periodo del PO", font=("Arial", 10, "bold")).pack(pady=10)
         tk.Label(self.content_frame, text="Inicio:").pack()
-        entry_inicio = tk.Entry(self.content_frame)
+        entry_inicio = DateEntry(self.content_frame, date_pattern='yyyy-mm-dd')
         entry_inicio.pack()
         
         tk.Label(self.content_frame, text="Termino:").pack()
-        entry_termino = tk.Entry(self.content_frame)
+        entry_termino = DateEntry(self.content_frame, date_pattern='yyyy-mm-dd')
         entry_termino.pack()
 
         # Datos de la campaña
-        tk.Label(self.content_frame, text="Filtros de la campaña", font=("Arial", 12, "bold")).pack(pady=10)
+        tk.Label(self.content_frame, text="Filtros de la campaña (opcional)", font=("Arial", 10, "bold")).pack(pady=10)
         tk.Label(self.content_frame, text="Tiendas (store_code, separados por coma):").pack()
         entry_tiendas = tk.Entry(self.content_frame)
         entry_tiendas.pack()
         
-        tk.Label(self.content_frame, text="Venta Online? (Si/No):").pack()
-        entry_is_online = tk.Entry(self.content_frame)
+        var = tk.IntVar()
+        entry_is_online = tk.Checkbutton(self.content_frame, text="Venta Online?", variable=var)
         entry_is_online.pack()
         
         tk.Label(self.content_frame, text="Condición de Compra (Monto):").pack()

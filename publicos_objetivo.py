@@ -12,7 +12,7 @@ class PublicosObjetivo():
         self.df_pos_agg = pd.DataFrame()
         self.set_pos_variables()
     
-    def set_pos_variables(self, tiendas='', is_online=False, condicion=0, inicio='', termino=''):
+    def set_pos_variables(self, tiendas='', is_online=0, condicion=0, inicio='', termino=''):
         self.tiendas = tiendas
         self.is_online = is_online
         self.condicion = condicion
