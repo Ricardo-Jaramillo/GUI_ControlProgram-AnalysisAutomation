@@ -1,3 +1,4 @@
+# Importar librerías necesarias
 from tkinter import ttk, filedialog, messagebox
 import tkinter as tk
 from tkcalendar import DateEntry
@@ -75,8 +76,9 @@ class App:
             ("1. Ingresar Productos", self.ingresar_productos),
             ("2. Generar Públicos Objetivos", self.generar_publicos_objetivos),
             ("3. Generar BusinessCase", self.generar_bc),
-            ("4. Ver/Guardar Productos ingresados", self.ver_guardar_productos),
-            ("5. Ver/Guardar Públicos Objetivos", self.ver_guardar_publicos),
+            # ("4. Generar Listas de envío", self.generar_listas_envio),
+            # ("5. Generar Radiografía", self.generar_rad),
+            ("6. Ver/Guardar Datos", self.ver_guardar_datos),
             ("Salir", self.end_program)
         ]
 
@@ -134,8 +136,7 @@ class App:
                 override = None
                 
             self.mon.generar_productos(skus=skus, marcas=marcas, proveedores=proveedores, clases=clases, subclases=subclases, prod_type_desc=prod_types, override=override)
-            # self.show_dataframe(self.mon.get_productos())
-            self.show_dataframe(self.mon.get_productos_agg())
+            self.show_dataframe(self.mon.get_productos_agg(), "Productos")
 
     def productos_layout(self, clases, subclases, prod_types):
         self.menu_frame.pack_forget()
@@ -202,7 +203,7 @@ class App:
         if not self.mon.df_productos.empty:
             # Buton para ver productos agrupados
             tk.Label(right_frame, text="Productos Ingresados", font=("Arial", 10, "bold")).pack(pady=5)
-            tk.Button(right_frame, text="Ver Productos Ingresados", command=lambda: self.show_dataframe(self.mon.get_productos_agg())).pack(pady=5)
+            tk.Button(right_frame, text="Ver Productos Ingresados", command=lambda: self.show_dataframe(self.mon.get_productos_agg(), 'Productos')).pack(pady=5)
 
         # Botón para ingresar productos
         tk.Button(left_frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus, entry_marcas, entry_proveedores, selected_options_clases, selected_options_subclases, selected_options_prod_types)).pack(pady=10)
@@ -217,8 +218,6 @@ class App:
             prod_types = self.mon.df_productos['prod_type_desc'].unique()
             # Mostrar advertencia y botón para ver productos
             messagebox.showinfo("Información", "Ya hay productos ingresados.")
-            # self.show_dataframe(self.mon.get_productos())
-            # self.show_dataframe(self.mon.get_productos_agg())
         else:
             clases, subclases, prod_types = '', '', ''
 
@@ -282,7 +281,7 @@ class App:
                 override = None
             
             self.mon.generar_po(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino, override=override)
-            self.show_dataframe(self.mon.po.df_pos_agg)
+            self.show_dataframe(self.mon.po.df_pos_agg, "Públicos Objetivos")
 
     def generar_publicos_objetivos(self):
         self.menu_frame.pack_forget()
@@ -316,70 +315,79 @@ class App:
         tk.Button(self.content_frame, text="Calcular Públicos Objetivo", command=lambda: self.submit_publicos(entry_tiendas, var, entry_condicion, entry_inicio, entry_termino)).pack(pady=10)
         tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()
 
-    def ver_guardar_productos(self):
+    def ver_guardar_datos(self):
         self.menu_frame.pack_forget()
         self.clear_content_frame()
-        
-        tk.Label(self.content_frame, text="Productos Ingresados").pack(pady=10)
-        
-        def show_productos():
-            if not self.mon.df_productos.empty:
-                self.show_dataframe(self.mon.get_productos())
-                self.show_dataframe(self.mon.get_productos_agg())
-            else:
-                messagebox.showwarning("Advertencia", "No hay productos ingresados.")
-        
-        tk.Button(self.content_frame, text="Ver lista de Productos", command=show_productos).pack(pady=5)
-        tk.Button(self.content_frame, text="Guardar archivo csv", command=self.save_productos).pack(pady=5)
-        tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()
 
-    def ver_guardar_publicos(self):
-        self.menu_frame.pack_forget()
-        self.clear_content_frame()
-        
-        tk.Label(self.content_frame, text="Públicos Objetivos").pack(pady=10)
-        
-        def show_publicos():
-            if not self.mon.po.df_pos_agg.empty:
-                self.show_dataframe(self.mon.po.df_pos_agg)
-            else:
-                messagebox.showwarning("Advertencia", "No hay públicos objetivos aún.")
-        
-        tk.Button(self.content_frame, text="Ver Públicos Objetivo", command=show_publicos).pack(pady=5)
-        tk.Button(self.content_frame, text="Guardar archivo csv", command=self.save_publicos).pack(pady=5)
-        tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()
+        # Crear un frame izquierdo y derecho para los botones
+        tk.Label(self.content_frame, text="Datos Ingresados", font=("Arial", 12, "bold")).pack(pady=10)
 
-    def show_dataframe(self, dataframe, title="DataFrame"):
-        top = tk.Toplevel(self.root)
-        top.title(title)
+        left_frame = tk.Frame(self.content_frame)
+        right_frame = tk.Frame(self.content_frame)
+        left_frame.pack(side=tk.LEFT, padx=10, pady=10)
+        right_frame.pack(side=tk.RIGHT, padx=10, pady=10)
         
-        # Definir el tamaño de la ventana a 800x600
-        top.geometry("800x600")
+        options = ['Productos', 'Públicos Objetivos', 'BusinessCase']
+        for option in options:
+            tk.Button(left_frame, width=30, text=f"Ver {option}", command=lambda opt=option: self.map_title_to_dataframe(opt, type='show')).pack(pady=5)
+            tk.Button(right_frame, width=30, text=f"Guardar {option}", command=lambda opt=option: self.map_title_to_dataframe(opt, type='save')).pack(pady=5)
+        tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack(pady=5, side=tk.BOTTOM)
 
-        frame = tk.Frame(top)
-        frame.pack(fill='both', expand=True)
+    def map_title_to_dataframe(self, title, type=None):
+        # Dictionary to map the title to the dataframe
+        dic = {
+            'Productos': (self.mon.df_productos, 'Productos'),
+            'Públicos Objetivos': (self.mon.po.df_pos_agg, 'Públicos Objetivos'),
+            'BusinessCase': ([self.mon.po.df_bc_tx, self.mon.po.df_bc_unidades, self.mon.po.df_bc_tx_medio],
+                             ['BusinessCase - Número de Tickets', 'BusinessCase - Número de Unidades', 'BusinessCase - Ticket Medio'])
+        }
+        if type == 'save':
+            self.save_dataframe(dic[title][0], dic[title][1])
+        elif type == 'show':
+            self.show_dataframe(dic[title][0], dic[title][1])
+
+    def show_dataframe(self, lis_dataframe: list, lis_title: list):
         
-        table = Table(frame, dataframe=dataframe, showtoolbar=True, showstatusbar=True)
-        table.show()
+        if not isinstance(lis_dataframe, list):
+            lis_dataframe = [lis_dataframe]
+            lis_title = [lis_title]
 
+        for dataframe, title in zip(lis_dataframe, lis_title):
+            if dataframe.empty:
+                messagebox.showwarning("Advertencia", f"No hay {title} ingresados. Por favor genere los datos en la sección correspondiente.")
+                return
+        
+            top = tk.Toplevel(self.root)
+            top.title(title)
+            
+            # Definir el tamaño de la ventana a 800x600
+            top.geometry("800x600")
 
-    def save_productos(self):
-        if not self.mon.df_productos.empty:
+            frame = tk.Frame(top)
+            frame.pack(fill='both', expand=True)
+
+            table = Table(frame, dataframe=dataframe, showtoolbar=False, showstatusbar=False)
+            table.show()
+
+    def save_dataframe(self, lis_dataframe: list, lis_title: list):
+
+        if not isinstance(lis_dataframe, list):
+            lis_dataframe = [lis_dataframe]
+            lis_title = [lis_title]
+
+        for dataframe, title in zip(lis_dataframe, lis_title):
+            if dataframe.empty:
+                messagebox.showwarning("Advertencia", f"No hay {title} ingresados. Por favor genere los datos en la sección correspondiente.")
+                return
+    
+            if dataframe.empty:
+                messagebox.showwarning("Advertencia", f"No hay {title} para guardar.")
+                return
+
             file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
             if file_path:
                 self.mon.df_productos.to_csv(file_path, index=False)
-                messagebox.showinfo("Información", "Productos guardados exitosamente.")
-        else:
-            messagebox.showwarning("Advertencia", "No hay productos para guardar.")
-
-    def save_publicos(self):
-        if not self.mon.po.df_pos_agg.empty:
-            file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
-            if file_path:
-                self.mon.po.df_pos_agg.to_csv(file_path, index=False)
-                messagebox.showinfo("Información", "Públicos objetivos guardados exitosamente.")
-        else:
-            messagebox.showwarning("Advertencia", "No hay públicos objetivos para guardar.")
+                messagebox.showinfo("Información", title + " guardado exitosamente.")
 
     def generar_bc(self):
         # Crear layout para el BusinessCase
@@ -388,9 +396,9 @@ class App:
 
         # Extraer datos para el BusinessCase
         self.mon.generar_datos_bc()
-        self.show_dataframe(self.mon.po.df_bc_tx)
-        self.show_dataframe(self.mon.po.df_bc_unidades)
-        self.show_dataframe(self.mon.po.df_bc_tx_medio)
+        self.show_dataframe(self.mon.po.df_bc_tx, "BusinessCase - Número de Tickets")
+        self.show_dataframe(self.mon.po.df_bc_unidades, "BusinessCase - Número de Unidades")
+        self.show_dataframe(self.mon.po.df_bc_tx_medio, "BusinessCase - Ticket Medio")
 
 # root = tk.Tk()
 # app = App(root)

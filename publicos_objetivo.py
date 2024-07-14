@@ -793,8 +793,8 @@ class PublicosObjetivo():
             CREATE TABLE #TX_MEDIO AS (
                 WITH __VENTA_MC AS (
                     SELECT
-                        'MC' TIPO,
                         IND_MARCA,
+                        'MC' TIPO,
                         COUNT(DISTINCT A.CUSTOMER_CODE_TY) CLIENTES,
                         SUM(SALE_NET_VAL) VENTA,
                         COUNT(DISTINCT INVOICE_NO) TX,
@@ -811,8 +811,8 @@ class PublicosObjetivo():
                     )
                 ,__VENTA_NMC AS (
                     SELECT
-                        'NMC' TIPO,
                         IND_MARCA,
+                        'NMC' TIPO,
                         NULL CLIENTES,
                         SUM(SALE_NET_VAL) VENTA,
                         COUNT(DISTINCT INVOICE_NO) TX,
@@ -830,7 +830,7 @@ class PublicosObjetivo():
                 SELECT * FROM __VENTA_MC
                 UNION
                 SELECT * FROM __VENTA_NMC
-                ORDER BY 2,1
+                ORDER BY 1,2
                 );
             '''
         return query_bc_tx, query_bc_unidades, query_bc_tx_medio
@@ -856,16 +856,30 @@ class PublicosObjetivo():
         
         self.df_pos_agg = conn.select(query=f'SELECT * FROM {table_name_agg} ORDER BY 1,2,3,4')
         
-    def create_tables_bc(self, conn):
+    def create_tables_bc(self, conn, override=False):
         from_table = '#PO'
         query_bc_tx, query_bc_unidades, query_bc_tx_medio = self.get_query_create_bc_tables(from_table=from_table)
+        table_name_tx = '#NUM_TX'
+        table_name_unidades = '#NUM_UNIDADES'
+        table_name_tx_medio = '#TX_MEDIO'
         
-        # Crear tablas BC
-        conn.execute(query=query_bc_tx)
-        conn.execute(query=query_bc_unidades)
-        conn.execute(query=query_bc_tx_medio)
+        # Si override no se especifica, la tabla no existe, se crea
+        if override is None:
+            # Crear tablas BC
+            conn.execute(query=query_bc_tx)
+            conn.execute(query=query_bc_unidades)
+            conn.execute(query=query_bc_tx_medio)
 
-        self.df_bc_tx = conn.select(query='SELECT * FROM #NUM_TX ORDER BY 1,2')
-        self.df_bc_unidades = conn.select(query='SELECT * FROM #NUM_UNIDADES ORDER BY 1,2')
-        self.df_bc_tx_medio = conn.select(query='SELECT * FROM #TX_MEDIO ORDER BY 2,1')
+        # Si override es True, se sobreescribe la tabla
+        elif override:
+            conn.override_table(table_name_tx, query_bc_tx)
+            conn.override_table(table_name_unidades, query_bc_unidades)
+            conn.override_table(table_name_tx_medio, query_bc_tx_medio)
+        # Si override es False, se espera que la tabla exista, no se hace nada. Salir de la función
+        else:
+            return
+
+        self.df_bc_tx = conn.select(query=f'SELECT * FROM {table_name_tx} ORDER BY 1,2')
+        self.df_bc_unidades = conn.select(query=f'SELECT * FROM {table_name_unidades} ORDER BY 1,2')
+        self.df_bc_tx_medio = conn.select(query=f'SELECT * FROM {table_name_tx_medio} ORDER BY 1,2')
         

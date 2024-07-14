@@ -25,9 +25,9 @@ class Monetizacion(Conn, Productos):
         self.po.create_table_pos_temporal(self, override)
 
     # Función para extraer datos para el BusinessCase
-    def generar_datos_bc(self):
+    def generar_datos_bc(self, override):
         # Create BusinessCase tables
-        self.po.create_tables_bc(self)
+        self.po.create_tables_bc(self, override)
     
     def generar_rad(self):
         # Set variables
