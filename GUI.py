@@ -73,8 +73,9 @@ class App:
         buttons = [
             ("1. Ingresar Productos", self.ingresar_productos),
             ("2. Generar Públicos Objetivos", self.generar_publicos_objetivos),
-            ("3. Ver/Guardar Productos ingresados", self.ver_guardar_productos),
-            ("4. Ver/Guardar Públicos Objetivos", self.ver_guardar_publicos),
+            ("3. Generar BusinessCase", self.generar_bc),
+            ("4. Ver/Guardar Productos ingresados", self.ver_guardar_productos),
+            ("5. Ver/Guardar Públicos Objetivos", self.ver_guardar_publicos),
             ("Salir", self.end_program)
         ]
 
@@ -119,7 +120,7 @@ class App:
         
         return skus, marcas, proveedores, clases, subclases, prod_types
 
-    # Función para agregar productos
+    # Función para agregar productos a DB
     def submit_productos(self, entry_skus, entry_marcas, entry_proveedores, entry_clases, entry_subclases, entry_prod_types):
         if self.validate_entries_productos(entry_marcas, entry_proveedores, entry_skus):
             # Limpiar los campos de productos
@@ -206,8 +207,6 @@ class App:
         tk.Button(left_frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus, entry_marcas, entry_proveedores, selected_options_clases, selected_options_subclases, selected_options_prod_types)).pack(pady=10)
         tk.Button(left_frame, text="Regresar al Menú", command=self.show_menu).pack()
 
-        return (left_frame, right_frame), (clases, subclases, prod_types)
-
     def ingresar_productos(self):
         # Verificar si hay productos ingresados, si es así, mostrar advertencia
         if not self.mon.df_productos.empty:
@@ -224,69 +223,69 @@ class App:
 
         self.productos_layout(clases, subclases, prod_types)
 
+    # Función para validar los campos de PO
+    def validate_entries_po(self, entry_tiendas='', entry_is_online=0, entry_condicion=0, entry_inicio='', entry_termino=''):
+
+        # Validar que inicio es fecha en formato YYYY-MM-DD
+        try:
+                inicio = pd.to_datetime(entry_inicio.get().strip())
+                termino = pd.to_datetime(entry_termino.get().strip())
+        except:
+            messagebox.showwarning("Advertencia", "Por favor ingrese fechas en formato YYYY-MM-DD.")
+            return False
+        
+        # validar que is_online es Si o No, y convertir a booleano
+        if entry_is_online.get() not in [0, 1]:
+            messagebox.showwarning("Advertencia", "Por favor ingrese solo 'Si' para Venta Online, dejar en blanco para total.")
+            return False
+        
+        # validar condicion es tipo numerico
+        if entry_condicion.get().strip():
+            if not entry_condicion.get().strip().isdigit():
+                messagebox.showwarning("Advertencia", "Por favor ingrese un valor numérico para Condición de Compra.")
+                return False
+
+        # Validar que las tiendas sean de 4 digitos separadas por coma
+        if entry_tiendas.get().strip():
+            if not all(len(x) == 4 for x in entry_tiendas.get().strip().split(',')):
+                messagebox.showwarning("Advertencia", "Por favor ingrese tiendas de 4 dígitos separadas por coma.")
+                return False
+        
+        return True
+    
+    # Funcion para limpiar los campos de PO
+    def clear_entries_po(self, entry_tiendas, entry_is_online, entry_condicion, entry_inicio, entry_termino):
+        tiendas = self.add_quotes(entry_tiendas.get().replace(', ', ','))
+        is_online = entry_is_online.get()
+        condicion = entry_condicion.get()
+        inicio = entry_inicio.get()
+        termino = entry_termino.get()
+        
+        return tiendas, is_online, condicion, inicio, termino
+
+    # Función para agregar POs a DB
+    def submit_publicos(self, entry_tiendas, var, entry_condicion, entry_inicio, entry_termino):
+        if self.validate_entries_po(entry_tiendas=entry_tiendas, entry_is_online=var, entry_condicion=entry_condicion, entry_inicio=entry_inicio, entry_termino=entry_termino):
+            # Limpiar los campos de PO
+            tiendas, is_online, condicion, inicio, termino = self.clear_entries_po(entry_tiendas, var, entry_condicion, entry_inicio, entry_termino)
+
+            # Preguntar si ya existe la tabla PRODUCTOS
+            if not self.mon.validate_if_table_exists('#PRODUCTOS'):
+                messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar Públicos Objetivos.")
+                return
+            
+            # Preguntar si la tabla PO ya existe
+            if self.mon.validate_if_table_exists('#PO'):
+                override = messagebox.askyesno("Advertencia", "Ya hay Públicos Objetivos generados, ¿Desea sobreescribirlos?")
+            else:
+                override = None
+            
+            self.mon.generar_po(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino, override=override)
+            self.show_dataframe(self.mon.po.df_pos_agg)
+
     def generar_publicos_objetivos(self):
         self.menu_frame.pack_forget()
         self.clear_content_frame()
-
-        # Función para validar los campos. VALIDAR
-        def validate_entries_po(entry_tiendas='', entry_is_online=0, entry_condicion=0, entry_inicio='', entry_termino=''):
-
-            # Validar que inicio es fecha en formato YYYY-MM-DD
-            try:
-                    inicio = pd.to_datetime(entry_inicio.get().strip())
-                    termino = pd.to_datetime(entry_termino.get().strip())
-            except:
-                messagebox.showwarning("Advertencia", "Por favor ingrese fechas en formato YYYY-MM-DD.")
-                return False
-            
-            # validar que is_online es Si o No, y convertir a booleano
-            if entry_is_online.get() not in [0, 1]:
-                messagebox.showwarning("Advertencia", "Por favor ingrese solo 'Si' para Venta Online, dejar en blanco para total.")
-                return False
-            
-            # validar condicion es tipo numerico
-            if entry_condicion.get().strip():
-                if not entry_condicion.get().strip().isdigit():
-                    messagebox.showwarning("Advertencia", "Por favor ingrese un valor numérico para Condición de Compra.")
-                    return False
-
-            # Validar que las tiendas sean de 4 digitos separadas por coma
-            if entry_tiendas.get().strip():
-                if not all(len(x) == 4 for x in entry_tiendas.get().strip().split(',')):
-                    messagebox.showwarning("Advertencia", "Por favor ingrese tiendas de 4 dígitos separadas por coma.")
-                    return False
-            
-            return True
-        
-        # Funcion para limpiar los campos de PO
-        def clear_entries_po(entry_tiendas, entry_is_online, entry_condicion, entry_inicio, entry_termino):
-            tiendas = self.add_quotes(entry_tiendas.get().replace(', ', ','))
-            is_online = entry_is_online.get()
-            condicion = entry_condicion.get()
-            inicio = entry_inicio.get()
-            termino = entry_termino.get()
-            
-            return tiendas, is_online, condicion, inicio, termino
-
-        # Función para agregar POs
-        def submit_publicos():
-            if validate_entries_po(entry_tiendas=entry_tiendas, entry_is_online=var, entry_condicion=entry_condicion, entry_inicio=entry_inicio, entry_termino=entry_termino):
-                # Limpiar los campos de PO
-                tiendas, is_online, condicion, inicio, termino = clear_entries_po(entry_tiendas, var, entry_condicion, entry_inicio, entry_termino)
-
-                # Preguntar si ya existe la tabla PRODUCTOS
-                if not self.mon.validate_if_table_exists('#PRODUCTOS'):
-                    messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar Públicos Objetivos.")
-                    return
-                
-                # Preguntar si la tabla PO ya existe
-                if self.mon.validate_if_table_exists('#PO'):
-                    override = messagebox.askyesno("Advertencia", "Ya hay Públicos Objetivos generados, ¿Desea sobreescribirlos?")
-                else:
-                    override = None
-                
-                self.mon.generar_po(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino, override=override)
-                self.show_dataframe(self.mon.po.df_pos_agg)
 
         tk.Label(self.content_frame, text="Públicos Objetivos", font=("Arial", 14, "bold")).pack(pady=10)
         # Periodo de la campaña
@@ -313,10 +312,8 @@ class App:
         entry_condicion = tk.Entry(self.content_frame)
         entry_condicion.pack()
         
-        tk.Button(self.content_frame, text="Calcular Públicos Objetivo", command=submit_publicos).pack(pady=10)
+        tk.Button(self.content_frame, text="Calcular Públicos Objetivo", command=lambda: self.submit_publicos(entry_tiendas, var, entry_condicion, entry_inicio, entry_termino)).pack(pady=10)
         tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()
-
-
 
     def ver_guardar_productos(self):
         self.menu_frame.pack_forget()
@@ -401,6 +398,16 @@ class App:
         else:
             messagebox.showwarning("Advertencia", "No hay públicos objetivos para guardar.")
 
+    def generar_bc(self):
+        # Crear layout para el BusinessCase
+
+        # Verificar si hay productos y POs generados
+
+        # Extraer datos para el BusinessCase
+        self.mon.generar_datos_bc()
+        self.show_dataframe(self.mon.po.df_bc_tx)
+        self.show_dataframe(self.mon.po.df_bc_unidades)
+        self.show_dataframe(self.mon.po.df_bc_tx_medio)
 
 # root = tk.Tk()
 # app = App(root)

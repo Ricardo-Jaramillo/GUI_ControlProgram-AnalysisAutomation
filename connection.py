@@ -68,7 +68,7 @@ class Conn:
             table_names = args
 
         if table_names[0] == 'All':
-            table_names = ['#PRODUCTOS', '#PO', '#PO_AGG']
+            table_names = ['#PRODUCTOS', '#PO', '#PO_AGG', '#NUM_TX', '#NUM_UNIDADES', '#TX_MEDIO']
             
         for table_name in table_names:
             print(f'Dropping temporal table: {table_name}...')

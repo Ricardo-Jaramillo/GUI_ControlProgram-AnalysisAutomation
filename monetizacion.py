@@ -23,6 +23,11 @@ class Monetizacion(Conn, Productos):
         self.po.set_pos_variables(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino)
         # Create PO table
         self.po.create_table_pos_temporal(self, override)
+
+    # Función para extraer datos para el BusinessCase
+    def generar_datos_bc(self):
+        # Create BusinessCase tables
+        self.po.create_tables_bc(self)
     
     def generar_rad(self):
         # Set variables
