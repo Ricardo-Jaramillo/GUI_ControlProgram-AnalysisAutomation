@@ -8,6 +8,7 @@ from PIL import ImageTk
 from publicos_objetivo import *
 import warnings
 from monetizacion import Monetizacion
+from pandasgui import show
 
 # Ignore SQLAlchemy warnings
 warnings.filterwarnings('ignore')
@@ -355,6 +356,9 @@ class App:
         top = tk.Toplevel(self.root)
         top.title("DataFrame")
         
+        # Definir el tamaño de la ventana a 800x600
+        top.geometry("800x600")
+
         frame = tk.Frame(top)
         frame.pack(fill='both', expand=True)
         
@@ -364,7 +368,11 @@ class App:
         vsb = ttk.Scrollbar(frame, orient="vertical", command=pt.yview)
         vsb.pack(side='right', fill='y')
         pt.configure(yscrollcommand=vsb.set)
-        
+
+        hsb = ttk.Scrollbar(frame, orient="horizontal", command=pt.xview)
+        hsb.pack(side='bottom', fill='x')
+        pt.configure(xscrollcommand=hsb.set)
+
         pt["column"] = list(dataframe.columns)
         pt["show"] = "headings"
         
