@@ -41,7 +41,8 @@ class Productos():
 
     def get_productos_agg(self):
         columns = ['proveedor', 'marca', 'ind_marca', 'class_desc', 'subclass_desc', 'prod_type_desc']
-        return self.df_productos.groupby(columns).agg({'product_code': 'count'}).reset_index().sort_values(columns.append('product_code'), ascending=False)
+
+        return self.df_productos.groupby(columns).agg({'product_code': 'count'}).reset_index().sort_values(by=['ind_marca', 'product_code'], ascending=[False, False])
 
     # Construir el query de productos con los filtros ingresados. Cada parametro contiene las variabels separadas por coma.
     # En caso de que los parametros estén vacíos, se toman los valores de la clase
