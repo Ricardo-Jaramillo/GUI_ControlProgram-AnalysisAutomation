@@ -135,72 +135,60 @@ class App:
             # self.show_dataframe(self.mon.get_productos())
             self.show_dataframe(self.mon.get_productos_agg())
 
-    def ingresar_productos(self):
+    def productos_layout(self, clases, subclases, prod_types):
         self.menu_frame.pack_forget()
         self.clear_content_frame()
         self.content_frame.pack(padx=100)
-        
-        # Dejar vacios los campos de productos
-        clases = ''
-        subclases = ''
-        prod_types = ''
 
-        # Verificar si hay productos ingresados, si es así, mostrar advertencia y botón para ver productos
-        if not self.mon.df_productos.empty:
-            # Extraer las categorías de productos
-            clases = self.mon.df_productos['class_desc'].unique()
-            subclases = self.mon.df_productos['subclass_desc'].unique()
-            prod_types = self.mon.df_productos['prod_type_desc'].unique()
+        # Crear frames para las dos columnas
+        left_frame = tk.Frame(self.content_frame)
+        right_frame = tk.Frame(self.content_frame)
+        left_frame.pack(side=tk.LEFT, padx=10, pady=10)
+        right_frame.pack(side=tk.RIGHT, padx=10, pady=10)
 
-            # Mostrar advertencia y botón para ver productos
-            messagebox.showinfo("Información", "Ya hay productos ingresados.")
-            # self.show_dataframe(self.mon.get_productos())
-            self.show_dataframe(self.mon.get_productos_agg())
-        
         # Crear los campos para ingresar productos
-        tk.Label(self.content_frame, text="Ingresar Productos separados por coma", font=('Arial', 10, 'bold')).pack(pady=5)
-        # Ingresar productos
-        tk.Label(self.content_frame, text="SKUs:").pack()
-        entry_skus = tk.Entry(self.content_frame)
+        tk.Label(left_frame, text="Ingresar Productos separados por coma", font=('Arial', 10, 'bold')).pack(pady=5)
+
+        # Ingresar productos en la columna izquierda
+        tk.Label(left_frame, text="SKUs:").pack()
+        entry_skus = tk.Entry(left_frame)
         entry_skus.pack()
         
-        tk.Label(self.content_frame, text="Marcas:").pack()
-        entry_marcas = tk.Entry(self.content_frame)
+        tk.Label(left_frame, text="Marcas:").pack()
+        entry_marcas = tk.Entry(left_frame)
         entry_marcas.pack()
         
-        tk.Label(self.content_frame, text="Proveedor(es):").pack()
-        entry_proveedores = tk.Entry(self.content_frame)
+        tk.Label(left_frame, text="Proveedor(es):").pack()
+        entry_proveedores = tk.Entry(left_frame)
         entry_proveedores.pack()
-        
-        # Filtrar por categorías de productos
-        tk.Label(self.content_frame, text="Filtrar por Clase, Sub-Clase y Tipo (opcional).", font=('Arial', 10, 'bold')).pack(pady=5)
 
+        # Filtrar por categorías de productos en la columna derecha
+        tk.Label(right_frame, text="Filtrar por Clase, Sub-Clase y Tipo (opcional).", font=('Arial', 10, 'bold')).pack(pady=5)
         # Diccionario de opciones seleccionadas
         selected_options_clases = {}
         selected_options_subclases = {}
         selected_options_prod_types = {}
-
-        # Menubuttons for multiple selections
-        tk.Label(self.content_frame, text="Clase:").pack()
-        entry_clases = tk.Menubutton(self.content_frame, text="Select Clase", relief=tk.RAISED)
+        
+        tk.Label(right_frame, text="Clase:").pack()
+        entry_clases = tk.Menubutton(right_frame, text="Select Clase", relief=tk.RAISED, bg="light gray", activebackground="gray")
         entry_clases.menu = tk.Menu(entry_clases, tearoff=0)
         entry_clases["menu"] = entry_clases.menu
         for clase in clases:
             selected_options_clases[clase] = tk.BooleanVar()
             entry_clases.menu.add_checkbutton(label=clase, variable=selected_options_clases[clase])
         entry_clases.pack()
-        
-        tk.Label(self.content_frame, text="Sub-clase:").pack()
-        entry_subclases = tk.Menubutton(self.content_frame, text="Select Sub-clase", relief=tk.RAISED)
+
+        tk.Label(right_frame, text="Sub-clase:").pack()
+        entry_subclases = tk.Menubutton(right_frame, text="Select Sub-clase", relief=tk.RAISED, bg="light gray", activebackground="gray")
         entry_subclases.menu = tk.Menu(entry_subclases, tearoff=0)
         entry_subclases["menu"] = entry_subclases.menu
         for subclase in subclases:
             selected_options_subclases[subclase] = tk.BooleanVar()
             entry_subclases.menu.add_checkbutton(label=subclase, variable=selected_options_subclases[subclase])
         entry_subclases.pack()
-        
-        tk.Label(self.content_frame, text="Tipo de producto:").pack()
-        entry_prod_types = tk.Menubutton(self.content_frame, text="Select Tipo de producto", relief=tk.RAISED)
+
+        tk.Label(right_frame, text="Tipo de producto:").pack()
+        entry_prod_types = tk.Menubutton(right_frame, text="Select Tipo de producto", relief=tk.RAISED, bg="light gray", activebackground="gray")
         entry_prod_types.menu = tk.Menu(entry_prod_types, tearoff=0)
         entry_prod_types["menu"] = entry_prod_types.menu
         for prod_type in prod_types:
@@ -208,30 +196,33 @@ class App:
             entry_prod_types.menu.add_checkbutton(label=prod_type, variable=selected_options_prod_types[prod_type])
         entry_prod_types.pack()
 
-        # # Mostrar las opciones seleccionadas en los Menubutton
-        # def show_selected_options():
-        #     # Extraer las opciones seleccionadas
-        #     selected_clases = [option for option, var in selected_options_clases.items() if var.get()]
-        #     selected_subclases = [option for option, var in selected_options_subclases.items() if var.get()]
-        #     selected_prod_types = [option for option, var in selected_options_prod_types.items() if var.get()]
-        #     skus = entry_skus.get().strip().replace(', ', ',')
-        #     marcas = self.add_quotes(entry_marcas.get().strip().replace(', ', ','))
-        #     proveedores = self.add_quotes(entry_proveedores.get().strip().replace(', ', ','))
+        # Verificar si hay productos ingresados, si es así, botón para ver productos
+        if not self.mon.df_productos.empty:
+            # Buton para ver productos agrupados
+            tk.Label(right_frame, text="Productos Ingresados", font=("Arial", 10, "bold")).pack(pady=5)
+            tk.Button(right_frame, text="Ver Productos Ingresados", command=lambda: self.show_dataframe(self.mon.get_productos_agg())).pack(pady=5)
 
-        #     # Mostrar las opciones seleccionadas en un messagebox si la variable no está vacía
-        #     mensaje = f"Clases: {', '.join(selected_clases)}\n" if selected_clases else ''
-        #     mensaje += f"Sub-clases: {', '.join(selected_subclases)}\n" if selected_subclases else ''
-        #     mensaje += f"Tipos de producto: {', '.join(selected_prod_types)}\n" if selected_prod_types else ''
-        #     mensaje += f"SKUs: {skus}\n" if skus else ''
-        #     mensaje += f"Marcas: {marcas}\n" if marcas else ''
-        #     mensaje += f"Proveedores: {proveedores}\n" if proveedores else ''
-        #     messagebox.showinfo("Opciones seleccionadas\n", mensaje)
+        # Botón para ingresar productos
+        tk.Button(left_frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus, entry_marcas, entry_proveedores, selected_options_clases, selected_options_subclases, selected_options_prod_types)).pack(pady=10)
+        tk.Button(left_frame, text="Regresar al Menú", command=self.show_menu).pack()
 
-        # # Botón para mostrar las opciones seleccionadas
-        # tk.Button(self.content_frame, text="Mostrar opciones seleccionadas", command=show_selected_options).pack(pady=5)
+        return (left_frame, right_frame), (clases, subclases, prod_types)
 
-        tk.Button(self.content_frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus,entry_marcas, entry_proveedores, selected_options_clases, selected_options_subclases, selected_options_prod_types)).pack(pady=10)
-        tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()
+    def ingresar_productos(self):
+        # Verificar si hay productos ingresados, si es así, mostrar advertencia
+        if not self.mon.df_productos.empty:
+            # Extraer las categorías de productos
+            clases = self.mon.df_productos['class_desc'].unique()
+            subclases = self.mon.df_productos['subclass_desc'].unique()
+            prod_types = self.mon.df_productos['prod_type_desc'].unique()
+            # Mostrar advertencia y botón para ver productos
+            messagebox.showinfo("Información", "Ya hay productos ingresados.")
+            # self.show_dataframe(self.mon.get_productos())
+            # self.show_dataframe(self.mon.get_productos_agg())
+        else:
+            clases, subclases, prod_types = '', '', ''
+
+        self.productos_layout(clases, subclases, prod_types)
 
     def generar_publicos_objetivos(self):
         self.menu_frame.pack_forget()
@@ -333,10 +324,14 @@ class App:
         
         tk.Label(self.content_frame, text="Productos Ingresados").pack(pady=10)
         
-        if not self.mon.df_productos.empty:
-            self.show_dataframe(self.mon.get_productos())
-            self.show_dataframe(self.mon.get_productos_agg())
+        def show_productos():
+            if not self.mon.df_productos.empty:
+                self.show_dataframe(self.mon.get_productos())
+                self.show_dataframe(self.mon.get_productos_agg())
+            else:
+                messagebox.showwarning("Advertencia", "No hay productos ingresados.")
         
+        tk.Button(self.content_frame, text="Ver lista de Productos", command=show_productos).pack(pady=5)
         tk.Button(self.content_frame, text="Guardar archivo csv", command=self.save_productos).pack(pady=5)
         tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()
 
@@ -346,9 +341,13 @@ class App:
         
         tk.Label(self.content_frame, text="Públicos Objetivos").pack(pady=10)
         
-        if not self.mon.po.df_pos_agg.empty:
-            self.show_dataframe(self.mon.po.df_pos_agg)
+        def show_publicos():
+            if not self.mon.po.df_pos_agg.empty:
+                self.show_dataframe(self.mon.po.df_pos_agg)
+            else:
+                messagebox.showwarning("Advertencia", "No hay públicos objetivos aún.")
         
+        tk.Button(self.content_frame, text="Ver Públicos Objetivo", command=show_publicos).pack(pady=5)
         tk.Button(self.content_frame, text="Guardar archivo csv", command=self.save_publicos).pack(pady=5)
         tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()
 
