@@ -389,16 +389,96 @@ class App:
                 self.mon.df_productos.to_csv(file_path, index=False)
                 messagebox.showinfo("Información", title + " guardado exitosamente.")
 
+    # Validar los campos para el BusinessCase
+    def validate_entries_bc(self, presupuesto='', sms=0, mail=0, cupon=0, wa=0, wa_ratio=0):
+        if not presupuesto or not presupuesto.isdigit():
+            messagebox.showwarning("Advertencia", "Por favor ingrese un presupuesto válido.")
+            return False
+        if not any([sms, mail, cupon, wa]):
+            messagebox.showwarning("Advertencia", "Por favor seleccione al menos un canal.")
+            return False
+        if wa and not (wa_ratio or wa_ratio.isdigit()):
+            messagebox.showwarning("Advertencia", "Por favor ingrese un porcentaje para WA.")
+            return False
+        
+        return True
+    
+    # Función para limpiar los campos de BC
+    def clear_entries_bc(self, entry_presupuesto, var_sms, var_mail, var_cupon, var_wa, var_wa_ratio):
+        presupuesto = entry_presupuesto.get().strip()
+        sms = var_sms.get()
+        mail = var_mail.get()
+        cupon = var_cupon.get()
+        wa = var_wa.get()
+        wa_ratio = var_wa_ratio.get().strip()
+        
+        return presupuesto, sms, mail, cupon, wa, wa_ratio
+
+    def submit_businesscase(self, entry_presupuesto, var_sms, var_mail, var_cupon, var_wa, var_wa_ratio):
+        # Limpia los campos de BC
+        presupuesto, sms, mail, cupon, wa, wa_ratio = self.clear_entries_bc(entry_presupuesto, var_sms, var_mail, var_cupon, var_wa, var_wa_ratio)
+
+        if self.validate_entries_bc(presupuesto, var_sms, var_mail, var_cupon, var_wa, var_wa_ratio):
+            # Preguntar si ya existe la tabla PRODUCTOS
+            if not self.mon.validate_if_table_exists('#PRODUCTOS'):
+                messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar BusinessCase.")
+                return
+            
+            # Preguntar si ya existe la tabla PO
+            if not self.mon.validate_if_table_exists('#PO'):
+                messagebox.showwarning("Advertencia", "Por favor Genere los Públicos Objetivos antes de generar BusinessCase.")
+                return
+
+            # Verificar si se generó TX_MEDIO
+            if self.mon.validate_if_table_exists('#TX_MEDIO'):
+                override = messagebox.askyesno("Advertencia", "Ya hay datos para BC, ¿Desea sobreescribirlos?")
+            else:
+                override = None
+
+            # Print para verificar que los datos se están pasando correctamente
+            # print(presupuesto, sms, mail, cupon, wa, wa_ratio)
+
+            # Extraer datos para el BusinessCase
+            self.mon.generar_datos_bc(override=override)
+            self.map_title_to_dataframe('BusinessCase', type='show')
+
     def generar_bc(self):
         # Crear layout para el BusinessCase
+        self.menu_frame.pack_forget()
+        self.clear_content_frame()
 
-        # Verificar si hay productos y POs generados
+        # Crear un frame izquierdo y derecho para los botones
+        tk.Label(self.content_frame, text="BusinessCase", font=("Arial", 14, "bold")).pack(pady=10)
 
-        # Extraer datos para el BusinessCase
-        self.mon.generar_datos_bc()
-        self.show_dataframe(self.mon.po.df_bc_tx, "BusinessCase - Número de Tickets")
-        self.show_dataframe(self.mon.po.df_bc_unidades, "BusinessCase - Número de Unidades")
-        self.show_dataframe(self.mon.po.df_bc_tx_medio, "BusinessCase - Ticket Medio")
+        left_frame = tk.Frame(self.content_frame)
+        right_frame = tk.Frame(self.content_frame)
+        left_frame.pack(side=tk.LEFT, padx=10, pady=10)
+        right_frame.pack(side=tk.RIGHT, padx=10, pady=10)
+
+        # Label para Presupuesto, valor numérico
+        tk.Label(left_frame, text="Presupuesto", font=("Arial", 10, "bold")).pack(pady=5)
+        entry_presupuesto = tk.Entry(left_frame)
+        entry_presupuesto.pack()
+
+        # Entrada para para el porcentaje de WA
+        tk.Label(left_frame, text="Porcentaje para WA", font=("Arial", 10, "bold")).pack(pady=5)
+        var_wa_ratio = tk.Entry(left_frame)
+        var_wa_ratio.pack()
+
+        # Label para Canal
+        tk.Label(left_frame, text="Canal", font=("Arial", 10, "bold")).pack(pady=5)
+        # Casilla de verificación para canal SMS, Mail, Cupón y WA
+        var_sms = tk.IntVar()
+        var_mail = tk.IntVar()
+        var_cupon = tk.IntVar()
+        var_wa = tk.IntVar()
+        tk.Checkbutton(left_frame, text="SMS", variable=var_sms).pack(side=tk.LEFT, padx=5)
+        tk.Checkbutton(left_frame, text="Mail", variable=var_mail).pack(side=tk.LEFT, padx=5)
+        tk.Checkbutton(left_frame, text="Cupón", variable=var_cupon).pack(side=tk.LEFT, padx=5)
+        tk.Checkbutton(left_frame, text="WA", variable=var_wa).pack(side=tk.LEFT, padx=5)
+
+        tk.Button(right_frame, text="Calcular Datos para BC", command=lambda: self.submit_businesscase(entry_presupuesto, var_sms, var_mail, var_cupon, var_wa, var_wa_ratio)).pack(pady=10)
+        tk.Button(right_frame, text="Regresar al Menú", command=self.show_menu).pack(pady=5, side=tk.BOTTOM)
 
 # root = tk.Tk()
 # app = App(root)
