@@ -107,24 +107,58 @@ class App:
             return False
         return True
 
+    # Función para limpiar los campos de productos
+    def clear_entries_productos(self, entry_skus, entry_marcas, entry_proveedores, entry_clases, entry_subclases, entry_prod_types):
+        skus = entry_skus.get().strip().replace(', ', ',')
+        marcas = self.add_quotes(entry_marcas.get().strip().replace(', ', ','))
+        proveedores = self.add_quotes(entry_proveedores.get().strip().replace(', ', ','))
+        clases = self.add_quotes((',').join([option for option, var in entry_clases.items() if var.get()]))
+        subclases = self.add_quotes((',').join([option for option, var in entry_subclases.items() if var.get()]))
+        prod_types = self.add_quotes((',').join([option for option, var in entry_prod_types.items() if var.get()]))
+        
+        return skus, marcas, proveedores, clases, subclases, prod_types
+
     # Función para agregar productos
-    def submit_productos(self, entry_skus, entry_marcas, entry_proveedores):
+    def submit_productos(self, entry_skus, entry_marcas, entry_proveedores, entry_clases, entry_subclases, entry_prod_types):
         if self.validate_entries_productos(entry_marcas, entry_proveedores, entry_skus):
-            skus = entry_skus.get().strip().replace(', ', ',')
-            marcas = self.add_quotes(entry_marcas.get().strip().replace(', ', ','))
-            proveedores = self.add_quotes(entry_proveedores.get().strip().replace(', ', ','))
-            
-            # Crear tabla temporal Productos y mostrar
-            self.mon.generar_productos(skus, marcas, proveedores)
-            self.show_dataframe(self.mon.df_productos)
+            # Limpiar los campos de productos
+            skus, marcas, proveedores, clases, subclases, prod_types = self.clear_entries_productos(entry_skus, entry_marcas, entry_proveedores, entry_clases, entry_subclases, entry_prod_types)
+
+            # Preguntar si la tabla ya existe
+            if self.mon.validate_if_table_exists('#PRODUCTOS'):
+                override = messagebox.askyesno("Advertencia", "Ya hay productos ingresados, ¿Desea sobreescribirlos?")
+            else:
+                override = None
+                
+            self.mon.generar_productos(skus=skus, marcas=marcas, proveedores=proveedores, clases=clases, subclases=subclases, prod_type_desc=prod_types, override=override)
+            # self.show_dataframe(self.mon.get_productos())
+            self.show_dataframe(self.mon.get_productos_agg())
 
     def ingresar_productos(self):
         self.menu_frame.pack_forget()
         self.clear_content_frame()
         self.content_frame.pack(padx=100)
         
+        # Dejar vacios los campos de productos
+        clases = ''
+        subclases = ''
+        prod_types = ''
+
+        # Verificar si hay productos ingresados, si es así, mostrar advertencia y botón para ver productos
+        if not self.mon.df_productos.empty:
+            # Extraer las categorías de productos
+            clases = self.mon.df_productos['class_desc'].unique()
+            subclases = self.mon.df_productos['subclass_desc'].unique()
+            prod_types = self.mon.df_productos['prod_type_desc'].unique()
+
+            # Mostrar advertencia y botón para ver productos
+            messagebox.showinfo("Información", "Ya hay productos ingresados.")
+            # self.show_dataframe(self.mon.get_productos())
+            self.show_dataframe(self.mon.get_productos_agg())
+        
         # Crear los campos para ingresar productos
         tk.Label(self.content_frame, text="Ingresar Productos separados por coma", font=('Arial', 10, 'bold')).pack(pady=5)
+        # Ingresar productos
         tk.Label(self.content_frame, text="SKUs:").pack()
         entry_skus = tk.Entry(self.content_frame)
         entry_skus.pack()
@@ -137,9 +171,65 @@ class App:
         entry_proveedores = tk.Entry(self.content_frame)
         entry_proveedores.pack()
         
-        # tk.Label(self.content_frame, text="¿Desea filtrar por categorías?").pack(pady=10)
+        # Filtrar por categorías de productos
+        tk.Label(self.content_frame, text="Filtrar por Clase, Sub-Clase y Tipo (opcional).", font=('Arial', 10, 'bold')).pack(pady=5)
 
-        tk.Button(self.content_frame, text="Agregar", command=lambda: self.submit_productos(entry_skus,entry_marcas, entry_proveedores)).pack(pady=10)
+        # Diccionario de opciones seleccionadas
+        selected_options_clases = {}
+        selected_options_subclases = {}
+        selected_options_prod_types = {}
+
+        # Menubuttons for multiple selections
+        tk.Label(self.content_frame, text="Clase:").pack()
+        entry_clases = tk.Menubutton(self.content_frame, text="Select Clase", relief=tk.RAISED)
+        entry_clases.menu = tk.Menu(entry_clases, tearoff=0)
+        entry_clases["menu"] = entry_clases.menu
+        for clase in clases:
+            selected_options_clases[clase] = tk.BooleanVar()
+            entry_clases.menu.add_checkbutton(label=clase, variable=selected_options_clases[clase])
+        entry_clases.pack()
+        
+        tk.Label(self.content_frame, text="Sub-clase:").pack()
+        entry_subclases = tk.Menubutton(self.content_frame, text="Select Sub-clase", relief=tk.RAISED)
+        entry_subclases.menu = tk.Menu(entry_subclases, tearoff=0)
+        entry_subclases["menu"] = entry_subclases.menu
+        for subclase in subclases:
+            selected_options_subclases[subclase] = tk.BooleanVar()
+            entry_subclases.menu.add_checkbutton(label=subclase, variable=selected_options_subclases[subclase])
+        entry_subclases.pack()
+        
+        tk.Label(self.content_frame, text="Tipo de producto:").pack()
+        entry_prod_types = tk.Menubutton(self.content_frame, text="Select Tipo de producto", relief=tk.RAISED)
+        entry_prod_types.menu = tk.Menu(entry_prod_types, tearoff=0)
+        entry_prod_types["menu"] = entry_prod_types.menu
+        for prod_type in prod_types:
+            selected_options_prod_types[prod_type] = tk.BooleanVar()
+            entry_prod_types.menu.add_checkbutton(label=prod_type, variable=selected_options_prod_types[prod_type])
+        entry_prod_types.pack()
+
+        # # Mostrar las opciones seleccionadas en los Menubutton
+        # def show_selected_options():
+        #     # Extraer las opciones seleccionadas
+        #     selected_clases = [option for option, var in selected_options_clases.items() if var.get()]
+        #     selected_subclases = [option for option, var in selected_options_subclases.items() if var.get()]
+        #     selected_prod_types = [option for option, var in selected_options_prod_types.items() if var.get()]
+        #     skus = entry_skus.get().strip().replace(', ', ',')
+        #     marcas = self.add_quotes(entry_marcas.get().strip().replace(', ', ','))
+        #     proveedores = self.add_quotes(entry_proveedores.get().strip().replace(', ', ','))
+
+        #     # Mostrar las opciones seleccionadas en un messagebox si la variable no está vacía
+        #     mensaje = f"Clases: {', '.join(selected_clases)}\n" if selected_clases else ''
+        #     mensaje += f"Sub-clases: {', '.join(selected_subclases)}\n" if selected_subclases else ''
+        #     mensaje += f"Tipos de producto: {', '.join(selected_prod_types)}\n" if selected_prod_types else ''
+        #     mensaje += f"SKUs: {skus}\n" if skus else ''
+        #     mensaje += f"Marcas: {marcas}\n" if marcas else ''
+        #     mensaje += f"Proveedores: {proveedores}\n" if proveedores else ''
+        #     messagebox.showinfo("Opciones seleccionadas\n", mensaje)
+
+        # # Botón para mostrar las opciones seleccionadas
+        # tk.Button(self.content_frame, text="Mostrar opciones seleccionadas", command=show_selected_options).pack(pady=5)
+
+        tk.Button(self.content_frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus,entry_marcas, entry_proveedores, selected_options_clases, selected_options_subclases, selected_options_prod_types)).pack(pady=10)
         tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()
 
     def generar_publicos_objetivos(self):
@@ -176,17 +266,34 @@ class App:
             
             return True
         
-        # Función para agregar productos
+        # Funcion para limpiar los campos de PO
+        def clear_entries_po(entry_tiendas, entry_is_online, entry_condicion, entry_inicio, entry_termino):
+            tiendas = self.add_quotes(entry_tiendas.get().replace(', ', ','))
+            is_online = entry_is_online.get()
+            condicion = entry_condicion.get()
+            inicio = entry_inicio.get()
+            termino = entry_termino.get()
+            
+            return tiendas, is_online, condicion, inicio, termino
+
+        # Función para agregar POs
         def submit_publicos():
             if validate_entries_po(entry_tiendas=entry_tiendas, entry_is_online=var, entry_condicion=entry_condicion, entry_inicio=entry_inicio, entry_termino=entry_termino):
-                tiendas = self.add_quotes(entry_tiendas.get().replace(', ', ','))
-                is_online = var.get()
-                condicion = entry_condicion.get()
-                inicio = entry_inicio.get()
-                termino = entry_termino.get()
+                # Limpiar los campos de PO
+                tiendas, is_online, condicion, inicio, termino = clear_entries_po(entry_tiendas, var, entry_condicion, entry_inicio, entry_termino)
 
-                # Generar Públicos Objetivos
-                self.mon.generar_po(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino)
+                # Preguntar si ya existe la tabla PRODUCTOS
+                if not self.mon.validate_if_table_exists('#PRODUCTOS'):
+                    messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar Públicos Objetivos.")
+                    return
+                
+                # Preguntar si la tabla PO ya existe
+                if self.mon.validate_if_table_exists('#PO'):
+                    override = messagebox.askyesno("Advertencia", "Ya hay Públicos Objetivos generados, ¿Desea sobreescribirlos?")
+                else:
+                    override = None
+                
+                self.mon.generar_po(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino, override=override)
                 self.show_dataframe(self.mon.po.df_pos_agg)
 
         tk.Label(self.content_frame, text="Públicos Objetivos", font=("Arial", 14, "bold")).pack(pady=10)
@@ -226,7 +333,8 @@ class App:
         tk.Label(self.content_frame, text="Productos Ingresados").pack(pady=10)
         
         if not self.mon.df_productos.empty:
-            self.show_dataframe(self.mon.df_productos)
+            self.show_dataframe(self.mon.get_productos())
+            self.show_dataframe(self.mon.get_productos_agg())
         
         tk.Button(self.content_frame, text="Guardar archivo csv", command=self.save_productos).pack(pady=5)
         tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()

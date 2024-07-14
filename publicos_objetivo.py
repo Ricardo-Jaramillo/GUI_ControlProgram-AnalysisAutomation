@@ -642,21 +642,24 @@ class PublicosObjetivo():
             '''
         return query_pos_agg_temporal
 
-    def create_table_pos_temporal(self, conn):
-        # Validar si exite la tabla #PRODUCTOS
-        if not conn.validate_if_table_exists('#PRODUCTOS'):
-            print('No existe la tabla #PRODUCTOS')
-            return False
+    def create_table_pos_temporal(self, conn, override=False):
+        table_name_po = '#PO'
+        table_name_agg = '#PO_AGG'
+        query_po = self.get_query_create_pos_temporal(table_name_po)
+        query_po_agg = self.get_query_create_pos_agg_temporal(table_name_agg, from_table=table_name_po)
+        
+        # Si override no se especifica, la tabla no existe, se crea
+        if override is None:
+            conn.execute(query=query_po)
+            conn.execute(query=query_po_agg)
+
+        # Si override es True, se sobreescribe la tabla
+        elif override:
+            conn.override_table(table_name_po, query_po)
+            conn.override_table(table_name_agg, query_po_agg)
+        # Si override es False, se espera que la tabla exista, no se hace nada. Salir de la función
         else:
-            table_name_po = '#PO'
-            if not conn.validate_if_table_exists(table_name_po):
-                print(self.get_query_create_pos_temporal(table_name_po))
-                conn.execute(query=self.get_query_create_pos_temporal(table_name_po))
-            
-            table_name_agg = '#PO_AGG'
-            if not conn.validate_if_table_exists(table_name_agg):
-                conn.execute(query=self.get_query_create_pos_agg_temporal(table_name=table_name_agg, from_table=table_name_po))
-                print(self.get_query_create_pos_agg_temporal(table_name=table_name_agg, from_table=table_name_po))
-                self.df_pos_agg = conn.select(query=f'SELECT * FROM {table_name_agg} ORDER BY 1,2,3,4')
-            return True
-            
+            return
+        
+        self.df_pos_agg = conn.select(query=f'SELECT * FROM {table_name_agg} ORDER BY 1,2,3,4')
+        

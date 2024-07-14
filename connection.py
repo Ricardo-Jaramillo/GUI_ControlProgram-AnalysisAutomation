@@ -76,6 +76,12 @@ class Conn:
             print('Table dropped')
         return
     
+    def override_table(self, table_name, query):
+        print('Overriding table...')
+        self.drop_temporal_tables(table_name)
+        self.execute(query)
+        return
+
     def validate_if_table_exists(self, table_name):
         # Validate if table exists, if not, catch exception
         try:

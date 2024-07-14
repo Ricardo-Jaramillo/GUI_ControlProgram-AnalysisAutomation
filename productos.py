@@ -7,9 +7,9 @@ class Productos():
     
     def __init__(self):
         self.df_productos = pd.DataFrame()
-        self.set_products()
+        self.set_products(skus='', marcas='', proveedores='', clases='', subclases='', prod_type_desc='')
 
-    def set_products(self, skus='', marcas='', proveedores='', clases='', subclases='', prod_type_desc=''):
+    def set_products(self, skus, marcas, proveedores, clases, subclases, prod_type_desc):
         self.skus = skus
         self.marcas = marcas
         self.proveedores = proveedores
@@ -17,17 +17,31 @@ class Productos():
         self.subclases = subclases
         self.prod_type_desc = prod_type_desc
 
-    def create_tabla_productos(self, conn):
+    def create_tabla_productos(self, conn, override=None):
+        
         #Tabla temporal para productos
         table_name = '#PRODUCTOS'
+        query = self.get_query_create_productos_temporal(table_name)
 
-        # Verificar si la tabla existe, si no, se crea
-        if not conn.validate_if_table_exists(table_name):
-            conn.execute(query=self.get_query_create_productos_temporal(table_name))
-            self.df_productos = conn.select(query=f'SELECT * FROM {table_name}')
+        # Si override no se especifica, la tabla no existe, se crea
+        if override is None:
+            conn.execute(query=query) 
+        
+        # Si override es Si, se sobreescribe la tabla
+        elif override:
+            conn.override_table(table_name, query)
+        # Si override es No, se espera que la tabla exista, no se hace nada. Salir de la función
+        else:
+            return
+        
+        self.df_productos = conn.select(query=f'SELECT * FROM {table_name}')
 
     def get_productos(self):
         return self.df_productos
+
+    def get_productos_agg(self):
+        columns = ['proveedor', 'marca', 'ind_marca', 'class_desc', 'subclass_desc', 'prod_type_desc']
+        return self.df_productos.groupby(columns).agg({'product_code': 'count'}).reset_index().sort_values(columns.append('product_code'), ascending=False)
 
     # Construir el query de productos con los filtros ingresados. Cada parametro contiene las variabels separadas por coma.
     # En caso de que los parametros estén vacíos, se toman los valores de la clase

@@ -12,17 +12,17 @@ class Monetizacion(Conn, Productos):
         # self.rad = Radiografia()
         # self.ds = DataScience()
 
-    def generar_productos(self, skus, marcas, proveedores, clases='', subclases='', prod_type_desc=''):
+    def generar_productos(self, skus, marcas, proveedores, clases, subclases, prod_type_desc, override):
         # Set variables
         self.set_products(skus=skus, marcas=marcas, proveedores=proveedores, clases=clases, subclases=subclases, prod_type_desc=prod_type_desc)
         # Create Productos table
-        self.create_tabla_productos(self)
+        self.create_tabla_productos(self, override)
 
-    def generar_po(self, tiendas, is_online, condicion, inicio, termino):
+    def generar_po(self, tiendas, is_online, condicion, inicio, termino, override):
         # Set variables
         self.po.set_pos_variables(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino)
         # Create PO table
-        self.po.create_table_pos_temporal(self)
+        self.po.create_table_pos_temporal(self, override)
     
     def generar_rad(self):
         # Set variables
