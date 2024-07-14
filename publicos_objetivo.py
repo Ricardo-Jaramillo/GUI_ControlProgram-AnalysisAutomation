@@ -867,5 +867,5 @@ class PublicosObjetivo():
 
         self.df_bc_tx = conn.select(query='SELECT * FROM #NUM_TX ORDER BY 1,2')
         self.df_bc_unidades = conn.select(query='SELECT * FROM #NUM_UNIDADES ORDER BY 1,2')
-        self.df_bc_tx_medio = conn.select(query='SELECT * FROM #TX_MEDIO ORDER BY 1,2')
+        self.df_bc_tx_medio = conn.select(query='SELECT * FROM #TX_MEDIO ORDER BY 2,1')
         

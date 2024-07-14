@@ -1,5 +1,5 @@
-import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+import tkinter as tk
 from tkcalendar import DateEntry
 import pandas as pd
 from PIL import Image
@@ -9,6 +9,7 @@ from publicos_objetivo import *
 import warnings
 from monetizacion import Monetizacion
 from pandasgui import show
+from pandastable import Table, TableModel
 
 # Ignore SQLAlchemy warnings
 warnings.filterwarnings('ignore')
@@ -348,9 +349,9 @@ class App:
         tk.Button(self.content_frame, text="Guardar archivo csv", command=self.save_publicos).pack(pady=5)
         tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()
 
-    def show_dataframe(self, dataframe):
+    def show_dataframe(self, dataframe, title="DataFrame"):
         top = tk.Toplevel(self.root)
-        top.title("DataFrame")
+        top.title(title)
         
         # Definir el tamaño de la ventana a 800x600
         top.geometry("800x600")
@@ -358,28 +359,10 @@ class App:
         frame = tk.Frame(top)
         frame.pack(fill='both', expand=True)
         
-        pt = ttk.Treeview(frame, show='headings')
-        pt.pack(side='left', fill='both', expand=True)
-        
-        vsb = ttk.Scrollbar(frame, orient="vertical", command=pt.yview)
-        vsb.pack(side='right', fill='y')
-        pt.configure(yscrollcommand=vsb.set)
+        table = Table(frame, dataframe=dataframe, showtoolbar=True, showstatusbar=True)
+        table.show()
 
-        hsb = ttk.Scrollbar(frame, orient="horizontal", command=pt.xview)
-        hsb.pack(side='bottom', fill='x')
-        pt.configure(xscrollcommand=hsb.set)
 
-        pt["column"] = list(dataframe.columns)
-        pt["show"] = "headings"
-        
-        for column in pt["columns"]:
-            pt.heading(column, text=column)
-            pt.column(column, width=100)
-        
-        rows = dataframe.to_numpy().tolist()
-        for row in rows:
-            pt.insert("", "end", values=row)
-        
     def save_productos(self):
         if not self.mon.df_productos.empty:
             file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
