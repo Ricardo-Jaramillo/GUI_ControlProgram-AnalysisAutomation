@@ -28,6 +28,18 @@ class Monetizacion(Conn, Productos):
     def generar_datos_bc(self, override):
         # Create BusinessCase tables
         self.po.create_tables_bc(self, override)
+
+    def generar_po_envios(self, condicion, excluir, venta_antes, venta_camp, cond_antes, cond_camp, grupo_control, sms, mail, wa, override):
+        # Set variables
+        self.po.set_listas_envio_variables(condicion=condicion, excluir=excluir, venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp, grupo_control=grupo_control, sms=sms, mail=mail, wa=wa)
+        # Crear Público Objetivo de Envíos
+        self.po.create_table_po_envios(self, override)
+
+    def consultar_po_envios(self, venta_antes, venta_camp, cond_antes, cond_camp):
+        # Set variables
+        self.po.set_listas_envio_variables(condicion=self.po.condicion, excluir=self.po.excluir, venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp, grupo_control=self.po.grupo_control, sms=self.po.sms, mail=self.po.mail, wa=self.po.wa)
+        # Seleccionar max conteo de envíos por canal
+        return self.po.select_po_envios_conteo(self)
     
     def generar_rad(self):
         # Set variables

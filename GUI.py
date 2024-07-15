@@ -76,7 +76,7 @@ class App:
             ("1. Ingresar Productos", self.ingresar_productos),
             ("2. Generar Públicos Objetivos", self.generar_publicos_objetivos),
             ("3. Generar BusinessCase", self.generar_bc),
-            # ("4. Generar Listas de envío", self.generar_listas_envio),
+            ("4. Generar Listas de envío", self.generar_listas),
             # ("5. Generar Radiografía", self.generar_rad),
             ("6. Ver/Guardar Datos", self.ver_guardar_datos),
             ("Salir", self.end_program)
@@ -339,7 +339,8 @@ class App:
             'Productos': (self.mon.df_productos, 'Productos'),
             'Públicos Objetivos': (self.mon.po.df_pos_agg, 'Públicos Objetivos'),
             'BusinessCase': ([self.mon.po.df_bc_tx, self.mon.po.df_bc_unidades, self.mon.po.df_bc_tx_medio],
-                             ['BusinessCase - Número de Tickets', 'BusinessCase - Número de Unidades', 'BusinessCase - Ticket Medio'])
+                             ['BusinessCase - Número de Tickets', 'BusinessCase - Número de Unidades', 'BusinessCase - Ticket Medio']),
+            'Listas de Envío': ([self.mon.po.df_listas_envio], ['Listas de Envío']),
         }
         if type == 'save':
             self.save_dataframe(dic[title][0], dic[title][1])
@@ -479,6 +480,140 @@ class App:
 
         tk.Button(right_frame, text="Calcular Datos para BC", command=lambda: self.submit_businesscase(entry_presupuesto, var_sms, var_mail, var_cupon, var_wa, var_wa_ratio)).pack(pady=10)
         tk.Button(right_frame, text="Regresar al Menú", command=self.show_menu).pack(pady=5, side=tk.BOTTOM)
+
+    # Función para validar entradas de listas
+    def validate_entries_listas(self, entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa):
+        # validar condicion es tipo numerico
+        if entry_condicion.get().strip():
+            if not entry_condicion.get().strip().isdigit():
+                messagebox.showwarning("Advertencia", "Por favor ingrese un valor numérico para Condición de Compra.")
+                return False
+        # validar que excluir numerico separadas por coma
+        if entry_excluir.get().strip():
+            if not all(x.isdigit() for x in entry_excluir.get().strip().split(',')):
+                messagebox.showwarning("Advertencia", "Por favor ingrese listas numéricas separadas por coma.")
+                return False
+        # validar que al menos un canal esté seleccionado
+        # if not any([var_sms.get(), var_mail.get(), var_wa.get()]):
+        #     messagebox.showwarning("Advertencia", "Por favor seleccione al menos un canal.")
+        #     return False
+        
+        return True
+
+    # Función para limpiar los campos de listas
+    def limpiar_campos_listas(self, entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa):
+        condicion = entry_condicion.get().strip()
+        excluir = self.add_quotes(entry_excluir.get().replace(', ', ','))
+        venta_antes = var_venta_antes.get()
+        venta_camp = var_venta_camp.get()
+        cond_antes = var_cond_antes.get()
+        cond_camp = var_cond_camp.get()
+        grupo_control = var_grupo_control.get()
+        sms = var_sms.get()
+        mail = var_mail.get()
+        wa = var_wa.get()
+        
+        return condicion, excluir, venta_antes, venta_camp, cond_antes, cond_camp, grupo_control, sms, mail, wa
+
+    def submit_po_envios(self, entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa):
+        # Validar las entradas
+        if self.validate_entries_listas(entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa):
+            # Limpiar los campos de listas
+            condicion, excluir, venta_antes, venta_camp, cond_antes, cond_camp, grupo_control, sms, mail, wa = self.limpiar_campos_listas(entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa)
+
+            # Preguntar si ya existe la tabla PRODUCTOS
+            if not self.mon.validate_if_table_exists('#PRODUCTOS'):
+                messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar Listas de Envío.")
+                return
+            
+            # Preguntar si ya existe la tabla PO
+            if not self.mon.validate_if_table_exists('#PO'):
+                messagebox.showwarning("Advertencia", "Por favor Genere los Públicos Objetivos antes de generar Listas de Envío.")
+                return
+
+            # Preguntar si ya existe la tabla PO envíos
+            if self.mon.validate_if_table_exists('#PO_ENVIOS'):
+                override = messagebox.askyesno("Advertencia", "Ya hay Listas de Envío generadas, ¿Desea sobreescribirlas?")
+            else:
+                override = None
+
+            self.mon.generar_po_envios(condicion=condicion, excluir=excluir, venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp, grupo_control=grupo_control, sms=sms, mail=mail, wa=wa, override=override)
+            self.show_dataframe(self.mon.consultar_po_envios(var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp), 'Conteo del PO de Envíos')
+
+    def submit_lista_envio(self, entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa):
+        pass
+
+    def generar_listas(self):
+        # Crear layout para el BusinessCase
+        self.menu_frame.pack_forget()
+        self.clear_content_frame()
+
+        left_frame = tk.Frame(self.content_frame)
+        right_frame = tk.Frame(self.content_frame)
+        left_frame.pack(side=tk.LEFT, padx=10, pady=10)
+        right_frame.pack(side=tk.RIGHT, padx=10, pady=10)
+
+        # Crear un frame izquierdo y derecho para los botones
+        tk.Label(self.content_frame, text="Listas de Envío", font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Entrada para Definir las condición de compra
+        tk.Label(left_frame, text="Condición de compra", font=("Arial", 10, "bold")).pack(pady=5)
+        entry_condicion = tk.Entry(left_frame)
+        entry_condicion.pack()
+
+        # Entrada para excluir listas de envío
+        tk.Label(left_frame, text="Excluir listas de envío", font=("Arial", 10, "bold")).pack(pady=5)
+        entry_excluir = tk.Entry(left_frame)
+        entry_excluir.pack()
+
+        # Botón para generar listas de envío con monto de condición de compra y listas a excluir
+        tk.Button(left_frame, text="Generar Público Objetivo de Envíos", command=lambda: self.submit_po_envios(entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa)).pack(pady=10)
+
+        # Entrada para seleccionar los filtros de las listas: venta antes de campaña, venta en campaña, cumple condición antes de campaña, cumple condición en campaña
+        tk.Label(left_frame, text="Filtros de la campaña", font=("Arial", 12, "bold")).pack(pady=10)
+        
+        var_venta_antes = tk.StringVar()
+        var_venta_camp = tk.StringVar()
+        var_cond_antes = tk.StringVar()
+        var_cond_camp = tk.StringVar()
+        
+        options = ["", "Sí", "No"]
+        
+        tk.Label(left_frame, text="Venta antes de campaña", font=("Arial", 10)).pack(padx=5, anchor='center')
+        ttk.Combobox(left_frame, textvariable=var_venta_antes, values=options, state='readonly').pack(padx=5, anchor='center')
+        
+        tk.Label(left_frame, text="Venta en campaña", font=("Arial", 10)).pack(padx=5, anchor='center')
+        ttk.Combobox(left_frame, textvariable=var_venta_camp, values=options, state='readonly').pack(padx=5, anchor='center')
+        
+        tk.Label(left_frame, text="Cumple condición antes de campaña", font=("Arial", 10)).pack(padx=5, anchor='center')
+        ttk.Combobox(left_frame, textvariable=var_cond_antes, values=options, state='readonly').pack(padx=5, anchor='center')
+        
+        tk.Label(left_frame, text="Cumple condición en campaña", font=("Arial", 10)).pack(padx=5, anchor='center')
+        ttk.Combobox(left_frame, textvariable=var_cond_camp, values=options, state='readonly').pack(padx=5, anchor='center')
+
+        # Boton para ver conteo máximo de envíos con los filtros seleccionados
+        tk.Button(left_frame, text="Ver conteo máximo de Envíos", command=lambda: self.show_dataframe(self.mon.consultar_po_envios(var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp), 'Conteo del PO de Envíos')).pack(pady=10)
+
+        # Label para Extraer Lista de envío
+        tk.Label(right_frame, text="Generar Lista de Envío", font=("Arial", 12, "bold")).pack(pady=5)
+        
+        # Entrada para seleccionar si se quiere Grupo Control
+        var_grupo_control = tk.IntVar()
+        tk.Checkbutton(right_frame, text="Incluir Grupo Control?", variable=var_grupo_control).pack(padx=5, anchor='center')
+
+        # Entrada para seleccionar envíos por canal SMS, Mail y WA
+        tk.Label(right_frame, text="Canal", font=("Arial", 10, "bold")).pack(pady=5)
+        var_sms = tk.IntVar()
+        var_mail = tk.IntVar()
+        var_wa = tk.IntVar()
+        tk.Checkbutton(right_frame, text="SMS", variable=var_sms).pack(anchor='w', padx=5)
+        tk.Checkbutton(right_frame, text="Mail", variable=var_mail).pack(anchor='w', padx=5)
+        tk.Checkbutton(right_frame, text="WA", variable=var_wa).pack(anchor='w', padx=5)
+
+        # Botón para generar listas de envío con canales seleccionados
+        tk.Button(right_frame, text="Generar Lista de Envío", command=lambda: self.submit_lista_envio(entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa)).pack(pady=10)
+
+        tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack(pady=5, side=tk.BOTTOM)
 
 # root = tk.Tk()
 # app = App(root)
