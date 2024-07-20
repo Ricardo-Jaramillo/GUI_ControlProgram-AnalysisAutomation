@@ -24,6 +24,7 @@ class App:
         self.set_icon(".\images\icono_cogno_resized.png")
         self.create_main_layout()
         self.create_menu()
+        self.root.resizable(0, 0)
 
     # Query para obtener los datos entre comillas simples y separados por coma
     @staticmethod
@@ -77,7 +78,7 @@ class App:
             ("2. Generar Públicos Objetivos", self.generar_publicos_objetivos),
             ("3. Generar BusinessCase", self.generar_bc),
             ("4. Generar Listas de envío", self.generar_listas),
-            # ("5. Generar Radiografía", self.generar_rad),
+            ("5. Generar Radiografía", self.generar_rad),
             ("6. Ver/Guardar Datos", self.ver_guardar_datos),
             ("Salir", self.end_program)
         ]
@@ -515,7 +516,7 @@ class App:
         
         return condicion, excluir, venta_antes, venta_camp, cond_antes, cond_camp, grupo_control, sms, mail, wa
 
-    def submit_po_envios(self, entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa):
+    def submit_po_envios(self, entry_condicion, entry_excluir):#, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa):
         # Validar las entradas
         if self.validate_entries_listas(entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa):
             # Limpiar los campos de listas
@@ -548,72 +549,108 @@ class App:
         self.menu_frame.pack_forget()
         self.clear_content_frame()
 
-        left_frame = tk.Frame(self.content_frame)
-        right_frame = tk.Frame(self.content_frame)
-        left_frame.pack(side=tk.LEFT, padx=10, pady=10)
-        right_frame.pack(side=tk.RIGHT, padx=10, pady=10)
+        # Crear un Frame para los botones
+        frame = tk.Frame(self.content_frame)
+        frame.pack()
 
-        # Crear un frame izquierdo y derecho para los botones
-        tk.Label(self.content_frame, text="Listas de Envío", font=("Arial", 14, "bold")).pack(pady=10)
+        # Titulo de la sección
+        tk.Label(frame, text="Listas de Envío", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=10, pady=10)
 
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=0, columnspan=3, pady=5, sticky="we")
+
+        # Generar el úblico objetivo de envíos
+        tk.Label(frame, text="1. Generar Público Objetivo de Envíos", font=("Arial", 12, "bold"), wraplength=150).grid(row=2, column=0, rowspan=3, pady=5, padx=10, sticky='w')
         # Entrada para Definir las condición de compra
-        tk.Label(left_frame, text="Condición de compra", font=("Arial", 10, "bold")).pack(pady=5)
-        entry_condicion = tk.Entry(left_frame)
-        entry_condicion.pack()
-
+        tk.Label(frame, text="Condición de compra", font=("Arial", 10, "bold"), anchor='w').grid(row=2, column=1, pady=5, padx=5, sticky='w')
+        entry_condicion = tk.Entry(frame).grid(row=2, column=2, pady=5, padx=5, sticky='w')
         # Entrada para excluir listas de envío
-        tk.Label(left_frame, text="Excluir listas de envío", font=("Arial", 10, "bold")).pack(pady=5)
-        entry_excluir = tk.Entry(left_frame)
-        entry_excluir.pack()
+        tk.Label(frame, text="Excluir listas de envío", font=("Arial", 10, "bold"), anchor='w').grid(row=3, column=1, pady=5, padx=5, sticky='w')
+        entry_excluir = tk.Entry(frame).grid(row=3, column=2, pady=5, padx=5, sticky='w')
 
         # Botón para generar listas de envío con monto de condición de compra y listas a excluir
-        tk.Button(left_frame, text="Generar Público Objetivo de Envíos", command=lambda: self.submit_po_envios(entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa)).pack(pady=10)
+        tk.Button(frame, text="Actualizar", command=lambda: self.submit_po_envios(entry_condicion, entry_excluir)).grid(row=4, column=2, pady=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=5, column=0, columnspan=3, pady=5, sticky="we")
 
         # Entrada para seleccionar los filtros de las listas: venta antes de campaña, venta en campaña, cumple condición antes de campaña, cumple condición en campaña
-        tk.Label(left_frame, text="Filtros de la campaña", font=("Arial", 12, "bold")).pack(pady=10)
+        tk.Label(frame, text="2. Filtros de la campaña", font=("Arial", 12, "bold"), wraplength=150).grid(row=6, column=0, rowspan=7, pady=5, padx=10)
         
         var_venta_antes = tk.StringVar()
-        var_venta_camp = tk.StringVar()
+        var_venta_actual = tk.StringVar()
         var_cond_antes = tk.StringVar()
-        var_cond_camp = tk.StringVar()
+        var_cond_actual = tk.StringVar()
         
         options = ["", "Sí", "No"]
         
-        tk.Label(left_frame, text="Venta antes de campaña", font=("Arial", 10)).pack(padx=5, anchor='center')
-        ttk.Combobox(left_frame, textvariable=var_venta_antes, values=options, state='readonly').pack(padx=5, anchor='center')
+        # Label para Venta
+        tk.Label(frame, text='Venta', font=("Arial", 10, "bold")).grid(row=6, column=1, columnspan=2, pady=5, padx=5)
+        # Entrada para seleccionar si compra antes de campaña
+        tk.Label(frame, text="Antes de campaña:", font=("Arial", 10), anchor='w').grid(row=7, column=1, pady=5, padx=5, sticky='w')
+        ttk.Combobox(frame, textvariable=var_venta_antes, values=options, state='readonly').grid(row=7, column=2, pady=5, padx=5, sticky='w')
+        # Entrada para seleccionar si compra en campaña
+        tk.Label(frame, text="En campaña:", font=("Arial", 10), anchor='w').grid(row=8, column=1, pady=5, padx=5, sticky='w')
+        ttk.Combobox(frame, textvariable=var_venta_actual, values=options, state='readonly').grid(row=8, column=2, pady=5, padx=5, sticky='w')
         
-        tk.Label(left_frame, text="Venta en campaña", font=("Arial", 10)).pack(padx=5, anchor='center')
-        ttk.Combobox(left_frame, textvariable=var_venta_camp, values=options, state='readonly').pack(padx=5, anchor='center')
-        
-        tk.Label(left_frame, text="Cumple condición antes de campaña", font=("Arial", 10)).pack(padx=5, anchor='center')
-        ttk.Combobox(left_frame, textvariable=var_cond_antes, values=options, state='readonly').pack(padx=5, anchor='center')
-        
-        tk.Label(left_frame, text="Cumple condición en campaña", font=("Arial", 10)).pack(padx=5, anchor='center')
-        ttk.Combobox(left_frame, textvariable=var_cond_camp, values=options, state='readonly').pack(padx=5, anchor='center')
+        # Label para Condición
+        tk.Label(frame, text="Cumple condición", font=("Arial", 10, "bold")).grid(row=9, column=1, columnspan=2, pady=5, padx=5)
+        # Entrada para seleccionar si cumple condición antes de campaña
+        tk.Label(frame, text="Antes de campaña", font=("Arial", 10), anchor='w').grid(row=10, column=1, pady=5, padx=5, sticky='w')
+        ttk.Combobox(frame, textvariable=var_cond_antes, values=options, state='readonly').grid(row=10, column=2, pady=5, padx=5, sticky='w')
+        # Entrada para seleccionar si cumple condición en campaña
+        tk.Label(frame, text="En campaña", font=("Arial", 10), anchor='w').grid(row=11, column=1, pady=5, padx=5, sticky='w')
+        ttk.Combobox(frame, textvariable=var_cond_actual, values=options, state='readonly').grid(row=11, column=2, pady=5, padx=5, sticky='w')
 
         # Boton para ver conteo máximo de envíos con los filtros seleccionados
-        tk.Button(left_frame, text="Ver conteo máximo de Envíos", command=lambda: self.show_dataframe(self.mon.consultar_po_envios(var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp), 'Conteo del PO de Envíos')).pack(pady=10)
+        tk.Button(frame, text="Ver Conteo", command=lambda: self.submit_po_envios(entry_condicion, entry_excluir)).grid(row=12, column=2, pady=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=13, column=0, columnspan=3, pady=5, sticky="we")
+
+        # Segundo frame para los botones
+        frame_2 = tk.Frame(self.content_frame)
+        frame_2.pack()
 
         # Label para Extraer Lista de envío
-        tk.Label(right_frame, text="Generar Lista de Envío", font=("Arial", 12, "bold")).pack(pady=5)
+        tk.Label(frame_2, text="3. Generar Lista de Envío", font=("Arial", 12, "bold"), wraplength=150).grid(row=0, column=0, rowspan=10, pady=5, padx=10)
         
+        # Diccionario para almacenar las entradas
+        entries_canal = {}
+
+        # Etiquetas de encabezado
+        headers = ["Canal", "Fid", "Rec", "Cap"]
+        for col, header in enumerate(headers, start=1):
+            label = tk.Label(frame_2, text=header, font=("Arial", 10, "bold"), width=10)
+            label.grid(row=1, column=col, padx=10, pady=10)
+
+        # Filas de datos
+        canales = ["SMS", "WA", "Mail", "Cupon"]
+        for row, canal in enumerate(canales, start=2):
+            label = tk.Label(frame_2, text=canal, borderwidth=1, width=5)
+            label.grid(row=row, column=1, padx=5, pady=5)
+            for col, header in enumerate(headers[1:], start=2):
+                entry_name = f"entry_{header.lower()}_{canal.lower()}"
+                entry = tk.Entry(frame_2, width=15)
+                entry.grid(row=row, column=col, padx=4, pady=5)
+                entries_canal[entry_name] = entry
+        
+        # entries_canal
+
         # Entrada para seleccionar si se quiere Grupo Control
         var_grupo_control = tk.IntVar()
-        tk.Checkbutton(right_frame, text="Incluir Grupo Control?", variable=var_grupo_control).pack(padx=5, anchor='center')
-
-        # Entrada para seleccionar envíos por canal SMS, Mail y WA
-        tk.Label(right_frame, text="Canal", font=("Arial", 10, "bold")).pack(pady=5)
-        var_sms = tk.IntVar()
-        var_mail = tk.IntVar()
-        var_wa = tk.IntVar()
-        tk.Checkbutton(right_frame, text="SMS", variable=var_sms).pack(anchor='w', padx=5)
-        tk.Checkbutton(right_frame, text="Mail", variable=var_mail).pack(anchor='w', padx=5)
-        tk.Checkbutton(right_frame, text="WA", variable=var_wa).pack(anchor='w', padx=5)
+        tk.Checkbutton(frame_2, text="Grupo Control?", variable=var_grupo_control).grid(row=6, column=1, padx=10, pady=5)
 
         # Botón para generar listas de envío con canales seleccionados
-        tk.Button(right_frame, text="Generar Lista de Envío", command=lambda: self.submit_lista_envio(entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa)).pack(pady=10)
+        tk.Button(frame_2, text="Generar Listas", command=lambda: self.submit_lista_envio(entry_condicion, entry_excluir)).grid(row=90, column=4, pady=10)
 
-        tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack(pady=5, side=tk.BOTTOM)
+        tk.Button(frame_2, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=2, pady=10)
+
+    def generar_rad(self):
+        pass
 
 # root = tk.Tk()
 # app = App(root)
