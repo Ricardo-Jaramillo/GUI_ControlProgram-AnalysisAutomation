@@ -29,6 +29,12 @@ class PublicosObjetivo():
         self.cond_antes = cond_antes
         self.cond_camp = cond_camp
 
+    def set_listas_envio_variables(self, canales, grupo_control):
+        self.canales = canales
+        self.grupo_control = grupo_control
+        # Configurar el ratio de control
+        self.ratio_grupo_control = 0.1 if self.grupo_control else 0
+
     def __get_fechas_campana(self):
         # Crear diccionario de fechas
         self.dict_fechas = {}
@@ -1162,44 +1168,44 @@ class PublicosObjetivo():
         else:
             return
 
-    def get_query_select_po_envios_conteo(self, from_table='#PO_ENVIOS'):
-        # Funcion para obtener los filtros del query
-        def get_filtros():
-            # Filtro de venta antes
-            if self.venta_antes.lower() == 'si':
-                venta_antes = 'AND VENTA_MARCA > 0'
-            elif self.venta_antes.lower() == 'no':
-                venta_antes = 'AND VENTA_MARCA = 0 OR VENTA_MARCA IS NULL'
-            else:
-                venta_antes = ''
+    # Funcion para obtener los filtros del query de listas
+    def get_filtros_listas(self):
+        # Filtro de venta antes
+        if self.venta_antes.lower() == 'si':
+            venta_antes = 'AND VENTA_MARCA > 0'
+        elif self.venta_antes.lower() == 'no':
+            venta_antes = 'AND VENTA_MARCA = 0 OR VENTA_MARCA IS NULL'
+        else:
+            venta_antes = ''
 
-            # Filtro de venta campaña
-            if self.venta_camp.lower() == 'si':
-                venta_camp = 'AND VENTA_MARCA_NATURAL > 0'
-            elif self.venta_camp.lower() == 'no':
-                venta_camp = 'AND VENTA_MARCA_NATURAL = 0 OR VENTA_MARCA_NATURAL IS NULL'
-            else:
-                venta_camp = ''
+        # Filtro de venta campaña
+        if self.venta_camp.lower() == 'si':
+            venta_camp = 'AND VENTA_MARCA_NATURAL > 0'
+        elif self.venta_camp.lower() == 'no':
+            venta_camp = 'AND VENTA_MARCA_NATURAL = 0 OR VENTA_MARCA_NATURAL IS NULL'
+        else:
+            venta_camp = ''
 
-            # Filtro de condición antes
-            if self.cond_antes.lower() == 'si':
-                cond_antes = 'AND TX_ELEGIBLES_MARCA > 0'
-            elif self.cond_antes.lower() == 'no':
-                cond_antes = 'AND TX_ELEGIBLES_MARCA = 0 OR TX_ELEGIBLES_MARCA IS NULL'
-            else:
-                cond_antes = ''
+        # Filtro de condición antes
+        if self.cond_antes.lower() == 'si':
+            cond_antes = 'AND TX_ELEGIBLES_MARCA > 0'
+        elif self.cond_antes.lower() == 'no':
+            cond_antes = 'AND TX_ELEGIBLES_MARCA = 0 OR TX_ELEGIBLES_MARCA IS NULL'
+        else:
+            cond_antes = ''
 
-            # Filtro de condición campaña
-            if self.cond_camp.lower() == 'si':
-                cond_camp = 'AND TX_ELEGIBLES_NATURAL_MARCA > 0'
-            elif self.cond_camp.lower() == 'no':
-                cond_camp = 'AND TX_ELEGIBLES_NATURAL_MARCA = 0 OR TX_ELEGIBLES_NATURAL_MARCA IS NULL'
-            else:
-                cond_camp = ''
-            
-            return venta_antes, venta_camp, cond_antes, cond_camp
+        # Filtro de condición campaña
+        if self.cond_camp.lower() == 'si':
+            cond_camp = 'AND TX_ELEGIBLES_NATURAL_MARCA > 0'
+        elif self.cond_camp.lower() == 'no':
+            cond_camp = 'AND TX_ELEGIBLES_NATURAL_MARCA = 0 OR TX_ELEGIBLES_NATURAL_MARCA IS NULL'
+        else:
+            cond_camp = ''
         
-        venta_antes, venta_camp, cond_antes, cond_camp = get_filtros()
+        return venta_antes, venta_camp, cond_antes, cond_camp
+
+    def get_query_select_po_envios_conteo(self, from_table='#PO_ENVIOS'):
+        venta_antes, venta_camp, cond_antes, cond_camp = self.get_filtros_listas()
 
         query_po_envios = f'''
             SELECT
@@ -1225,8 +1231,87 @@ class PublicosObjetivo():
         '''
         return query_po_envios
         
+    def get_query_create_listas_envio(self, table_name, from_table):
+        venta_antes, venta_camp, cond_antes, cond_camp = self.get_filtros_listas()
+        
+        # Extraer canales y numero de envios
+
+        print('canales:')
+        print(self.canales)
+
+        fid_sms = self.canales['entry_fid_sms']
+        fid_email = self.canales['entry_fid_mail']
+        fid_sms_mail = self.canales['entry_fid_sms&mail']
+        
+        rec_sms = self.canales['entry_rec_sms']
+        rec_email = self.canales['entry_rec_mail']
+        rec_sms_mail = self.canales['entry_rec_sms&mail']
+
+        cap_sms = self.canales['entry_cap_sms']
+        cap_email = self.canales['entry_cap_mail']
+        cap_sms_mail = self.canales['entry_cap_sms&mail']
+        
+        orden_venta = 'VENTA_MARCA' if any([self.venta_antes, self.venta_camp, self.cond_antes, self.cond_camp]) else 'VENTA_CAT'
+        porcentaje_gt = 1 - self.ratio_grupo_control
+
+        query = f'''
+            DROP TABLE IF EXISTS {table_name};
+            CREATE TABLE {table_name} AS (
+                WITH __PO_ENVIOS AS (
+                    SELECT
+                        ROW_NUMBER() OVER(PARTITION BY ORDEN_SEGMENTO, VALID_CONTACT_INFO ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, {orden_venta} DESC, CUSTOMER_CODE) ROW_N
+                        ,*
+                    FROM {from_table}
+                )
+                SELECT * FROM __PO_ENVIOS
+
+                WHERE VALID_CONTACT_INFO IN ('01 SMS', '02 MAIL', '03 MAIL & SMS', '04 INVALID CONTACT') --('01 SMS', '02 MAIL', '03 MAIL & SMS', '04 INVALID CONTACT')
+                AND (IND_FID = 1 OR IND_REC = 1 OR IND_CAP = 1) --(IND_FID = 1 OR IND_REC = 1 OR IND_CAP = 1)
+
+                AND (
+                    --FID
+                    (IND_FID = 1 AND VALID_CONTACT_INFO = '01 SMS'                AND ROW_N <= {fid_sms}/{porcentaje_gt})
+                    OR (IND_FID = 1 AND VALID_CONTACT_INFO = '02 MAIL'            AND ROW_N <= {fid_email}/{porcentaje_gt})
+                    OR (IND_FID = 1 AND VALID_CONTACT_INFO = '03 MAIL & SMS'      AND ROW_N <= {fid_sms_mail}/{porcentaje_gt})
+                    -- OR (IND_FID = 1 AND VALID_CONTACT_INFO = '04 INVALID CONTACT' AND ROW_N <= 0/{porcentaje_gt})
+
+                    --REC
+                    OR (IND_REC = 1 AND VALID_CONTACT_INFO = '01 SMS'             AND ROW_N <= {rec_sms}/{porcentaje_gt})
+                    OR (IND_REC = 1 AND VALID_CONTACT_INFO = '02 MAIL'            AND ROW_N <= {rec_email}/{porcentaje_gt})
+                    OR (IND_REC = 1 AND VALID_CONTACT_INFO = '03 MAIL & SMS'      AND ROW_N <= {rec_sms_mail}/{porcentaje_gt})
+                    -- OR (IND_REC = 1 AND VALID_CONTACT_INFO = '04 INVALID CONTACT' AND ROW_N <= 0/{porcentaje_gt})
+
+                    --CAP
+                    OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '01 SMS'             AND ROW_N <= {cap_sms}/{porcentaje_gt})
+                    OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '02 MAIL'            AND ROW_N <= {cap_email}/{porcentaje_gt})
+                    OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '03 MAIL & SMS'      AND ROW_N <= {cap_sms_mail}/{porcentaje_gt})
+                    -- OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '04 INVALID CONTACT' AND ROW_N <= 0/{porcentaje_gt})
+                )
+                
+                {venta_antes}
+                {venta_camp}
+                {cond_antes}
+                {cond_camp}
+                
+                ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, {orden_venta} DESC, CUSTOMER_CODE
+            );
+        '''
+        return query
+
     def create_table_po_envios_conteo(self, conn):
         from_table = '#PO_ENVIOS'
         query = self.get_query_select_po_envios_conteo(from_table=from_table)
         self.df_po_conteo = conn.select(query=query)
     
+    def create_table_listas_envio(self, conn):
+        table_name = '#LISTAS_ENVIO'
+        from_table = '#PO_ENVIOS'
+        query = self.get_query_create_listas_envio(table_name, from_table=from_table)
+        print(query)
+
+        conn.execute(query=query)
+
+        orden_venta = 'VENTA_MARCA' if any([self.venta_antes, self.venta_camp, self.cond_antes, self.cond_camp]) else 'VENTA_CAT'
+
+        query = f'SELECT * FROM {table_name} ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, {orden_venta} DESC, CUSTOMER_CODE'
+        self.df_listas_envio = conn.select(query=query)

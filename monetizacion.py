@@ -41,11 +41,11 @@ class Monetizacion(Conn, Productos):
         # Ver Conteo de  Público Objetivo con Filtros aplicados
         self.po.create_table_po_envios_conteo(self)
 
-    def consultar_po_envios(self, venta_antes, venta_camp, cond_antes, cond_camp):
+    def generar_listas_envio(self, canales, grupo_control):
         # Set variables
-        self.po.set_listas_envio_variables(condicion=self.po.condicion, excluir=self.po.excluir, venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp, grupo_control=self.po.grupo_control, sms=self.po.sms, mail=self.po.mail, wa=self.po.wa)
-        # Seleccionar max conteo de envíos por canal
-        return self.po.select_po_envios_conteo(self)
+        self.po.set_listas_envio_variables(canales=canales, grupo_control=grupo_control)
+        # Crear Listas de Envío
+        self.po.create_table_listas_envio(self)
     
     def generar_rad(self):
         # Set variables

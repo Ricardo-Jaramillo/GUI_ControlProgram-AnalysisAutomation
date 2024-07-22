@@ -493,6 +493,19 @@ class App:
             messagebox.showwarning("Advertencia", "Por favor ingrese listas numéricas separadas por coma.")
             return False        
         return True
+    
+    def validate_entries_filtros(self, entries_canales:dict):
+        entries = entries_canales.values()
+
+        if not any([var.get() for var in entries]):
+            messagebox.showwarning("Advertencia", "Por favor seleccione al menos un canal.")
+            return False
+
+        for entry in entries:
+            if entry.get().strip() and not entry.get().strip().isdigit():
+                messagebox.showwarning("Advertencia", "Por favor ingrese un valor numérico.")
+                return False
+        return True
 
     def submit_po_envios(self, entry_condicion, entry_excluir):
         # Validar las entradas
@@ -539,8 +552,24 @@ class App:
             self.mon.generar_po_envios_conteo(venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp)
             self.show_dataframe(self.mon.po.df_po_conteo, "Conteo de Clientes")
 
-    def submit_canales(self, entries_canales, var_grupo_control):
-        pass
+    def submit_canales(self, entries_canales:dict, var_grupo_control):
+        # Validar las entradas de canales
+        if self.validate_entries_filtros(entries_canales):
+            # Limpiar los campos de canales
+            canales = {canal: int(entry.get().strip()) if entry.get().strip() else 0 for canal, entry in entries_canales.items()}
+            grupo_control = var_grupo_control.get()
+            
+            # Preguntar si ya existe la tabla PO
+            if not self.mon.validate_if_table_exists('#PO'):
+                messagebox.showwarning("Advertencia", "Por favor Genere los Públicos Objetivos antes de generar Listas de Envío.")
+                return
+
+            # Preguntar si ya existe la tabla PO envíos
+            if not self.mon.validate_if_table_exists('#PO_ENVIOS'):
+                messagebox.showwarning("Advertencia", "No hay Públicos Objetivo de Envíos generados.")
+            else:
+                self.mon.generar_listas_envio(canales=canales, grupo_control=grupo_control)
+                self.show_dataframe(self.mon.po.df_listas_envio, "Listas de Envío")
 
     def generar_listas(self):
         # Crear layout para el BusinessCase
@@ -625,16 +654,16 @@ class App:
         headers = ["Canal", "Fid", "Rec", "Cap"]
         for col, header in enumerate(headers, start=1):
             label = tk.Label(frame_2, text=header, font=("Arial", 10, "bold"), width=10)
-            label.grid(row=1, column=col, padx=10, pady=10)
+            label.grid(row=1, column=col, padx=5, pady=10)
 
         # Filas de datos
-        canales = ["SMS", "WA", "Mail", "Cupon"]
+        canales = ["SMS", "Mail", "SMS&Mail"]
         for row, canal in enumerate(canales, start=2):
-            label = tk.Label(frame_2, text=canal, borderwidth=1, width=5)
+            label = tk.Label(frame_2, text=canal, borderwidth=1, width=10)
             label.grid(row=row, column=1, padx=5, pady=5)
             for col, header in enumerate(headers[1:], start=2):
                 entry_name = f"entry_{header.lower()}_{canal.lower()}"
-                entry = tk.Entry(frame_2, width=15)
+                entry = tk.Entry(frame_2, width=10)
                 entry.grid(row=row, column=col, padx=4, pady=5)
                 entries_canal[entry_name] = entry
         
