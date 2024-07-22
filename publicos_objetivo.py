@@ -19,18 +19,16 @@ class PublicosObjetivo():
         self.termino = termino
         self.__get_fechas_campana()
 
-    def set_listas_envio_variables(self, condicion, excluir, venta_antes, venta_camp, cond_antes, cond_camp, grupo_control, sms, mail, wa):
+    def set_po_envios_variables(self, condicion, excluir):
         self.condicion = condicion
         self.excluir = excluir
+    
+    def set_po_filtros_variables(self, venta_antes, venta_camp, cond_antes, cond_camp):
         self.venta_antes = venta_antes
         self.venta_camp = venta_camp
         self.cond_antes = cond_antes
         self.cond_camp = cond_camp
-        self.grupo_control = grupo_control
-        self.sms = sms
-        self.mail = mail
-        self.wa = wa
-    
+
     def __get_fechas_campana(self):
         # Crear diccionario de fechas
         self.dict_fechas = {}
@@ -881,8 +879,8 @@ class PublicosObjetivo():
                     ,IND_MARCA
                     ,SUM(CASE WHEN LEFT(INVOICE_DATE, 7) BETWEEN '{self.dict_fechas['ini_12']}' AND '{self.dict_fechas['ini_1']}' THEN SALE_NET_VAL END) VENTA
                     ,SUM(CASE WHEN LEFT(INVOICE_DATE, 7) BETWEEN '{self.dict_fechas['ini_12']}' AND '{self.dict_fechas['ini_1']}' THEN SALE_TOT_QTY END) UNIDADES
-                    ,SUM(CASE WHEN LEFT(INVOICE_DATE, 7) BETWEEN '{self.dict_fechas['ini']}' AND '{self.dict_fechas['fin']}' THEN SALE_TOT_QTY END) UNIDADES_NATURAL
                     ,SUM(CASE WHEN LEFT(INVOICE_DATE, 7) BETWEEN '{self.dict_fechas['ini']}' AND '{self.dict_fechas['fin']}' THEN SALE_NET_VAL END) VENTA_NATURAL
+                    ,SUM(CASE WHEN LEFT(INVOICE_DATE, 7) BETWEEN '{self.dict_fechas['ini']}' AND '{self.dict_fechas['fin']}' THEN SALE_TOT_QTY END) UNIDADES_NATURAL
                     ,CASE WHEN VENTA >= {self.condicion if self.condicion else 0} THEN 1 ELSE 0 END IND_ELEGIBLE
                     ,CASE WHEN VENTA_NATURAL >= {self.condicion if self.condicion else 0} THEN 1 ELSE 0 END IND_ELEGIBLE_NATURAL
                 FROM FCT_SALE_LINE A
@@ -1163,7 +1161,7 @@ class PublicosObjetivo():
         # Si override es False, se espera que la tabla exista, no se hace nada. Salir de la función
         else:
             return
-        
+
     def get_query_select_po_envios_conteo(self, from_table='#PO_ENVIOS'):
         # Funcion para obtener los filtros del query
         def get_filtros():
@@ -1227,8 +1225,8 @@ class PublicosObjetivo():
         '''
         return query_po_envios
         
-    def select_po_envios_conteo(self, conn):
+    def create_table_po_envios_conteo(self, conn):
         from_table = '#PO_ENVIOS'
         query = self.get_query_select_po_envios_conteo(from_table=from_table)
-        return conn.select(query=query)
+        self.df_po_conteo = conn.select(query=query)
     

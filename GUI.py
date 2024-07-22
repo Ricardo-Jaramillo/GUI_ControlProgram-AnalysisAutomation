@@ -225,7 +225,7 @@ class App:
         self.productos_layout(clases, subclases, prod_types)
 
     # Función para validar los campos de PO
-    def validate_entries_po(self, entry_tiendas='', entry_is_online=0, entry_condicion=0, entry_inicio='', entry_termino=''):
+    def validate_entries_po(self, entry_tiendas, entry_is_online, entry_condicion, entry_inicio, entry_termino):
 
         # Validar que inicio es fecha en formato YYYY-MM-DD
         try:
@@ -483,44 +483,23 @@ class App:
         tk.Button(right_frame, text="Regresar al Menú", command=self.show_menu).pack(pady=5, side=tk.BOTTOM)
 
     # Función para validar entradas de listas
-    def validate_entries_listas(self, entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa):
+    def validate_entries_po_envios(self, entry_condicion, entry_excluir):
         # validar condicion es tipo numerico
-        if entry_condicion.get().strip():
-            if not entry_condicion.get().strip().isdigit():
-                messagebox.showwarning("Advertencia", "Por favor ingrese un valor numérico para Condición de Compra.")
-                return False
+        if entry_condicion.get().strip() and not entry_condicion.get().strip().isdigit():
+            messagebox.showwarning("Advertencia", "Por favor ingrese un valor numérico para Condición de Compra.")
+            return False
         # validar que excluir numerico separadas por coma
-        if entry_excluir.get().strip():
-            if not all(x.isdigit() for x in entry_excluir.get().strip().split(',')):
-                messagebox.showwarning("Advertencia", "Por favor ingrese listas numéricas separadas por coma.")
-                return False
-        # validar que al menos un canal esté seleccionado
-        # if not any([var_sms.get(), var_mail.get(), var_wa.get()]):
-        #     messagebox.showwarning("Advertencia", "Por favor seleccione al menos un canal.")
-        #     return False
-        
+        if entry_excluir.get().strip() and not all(x.isdigit() for x in entry_excluir.get().strip().split(',')):
+            messagebox.showwarning("Advertencia", "Por favor ingrese listas numéricas separadas por coma.")
+            return False        
         return True
 
-    # Función para limpiar los campos de listas
-    def limpiar_campos_listas(self, entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa):
-        condicion = entry_condicion.get().strip()
-        excluir = self.add_quotes(entry_excluir.get().replace(', ', ','))
-        venta_antes = var_venta_antes.get()
-        venta_camp = var_venta_camp.get()
-        cond_antes = var_cond_antes.get()
-        cond_camp = var_cond_camp.get()
-        grupo_control = var_grupo_control.get()
-        sms = var_sms.get()
-        mail = var_mail.get()
-        wa = var_wa.get()
-        
-        return condicion, excluir, venta_antes, venta_camp, cond_antes, cond_camp, grupo_control, sms, mail, wa
-
-    def submit_po_envios(self, entry_condicion, entry_excluir):#, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa):
+    def submit_po_envios(self, entry_condicion, entry_excluir):
         # Validar las entradas
-        if self.validate_entries_listas(entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa):
+        if self.validate_entries_po_envios(entry_condicion, entry_excluir):
             # Limpiar los campos de listas
-            condicion, excluir, venta_antes, venta_camp, cond_antes, cond_camp, grupo_control, sms, mail, wa = self.limpiar_campos_listas(entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa)
+            condicion = entry_condicion.get().strip()
+            excluir = self.add_quotes(entry_excluir.get().replace(', ', ','))
 
             # Preguntar si ya existe la tabla PRODUCTOS
             if not self.mon.validate_if_table_exists('#PRODUCTOS'):
@@ -534,14 +513,33 @@ class App:
 
             # Preguntar si ya existe la tabla PO envíos
             if self.mon.validate_if_table_exists('#PO_ENVIOS'):
-                override = messagebox.askyesno("Advertencia", "Ya hay Listas de Envío generadas, ¿Desea sobreescribirlas?")
+                override = messagebox.askyesno("Advertencia", "Ya se ha generado un Público Objetivo para Envíos, ¿Desea sobreescribirlo?")
             else:
                 override = None
 
-            self.mon.generar_po_envios(condicion=condicion, excluir=excluir, venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp, grupo_control=grupo_control, sms=sms, mail=mail, wa=wa, override=override)
-            self.show_dataframe(self.mon.consultar_po_envios(var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp), 'Conteo del PO de Envíos')
+            self.mon.generar_po_envios(condicion=condicion, excluir=excluir, override=override)
+            messagebox.showinfo("Información", "Públicos Objetivos de Envíos generados exitosamente.")
 
-    def submit_lista_envio(self, entry_condicion, entry_excluir, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_grupo_control, var_sms, var_mail, var_wa):
+    def submit_po_filtros(self, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp):
+        # Todas las entradas son opcionales
+        venta_antes = var_venta_antes.get()
+        venta_camp = var_venta_camp.get()
+        cond_antes = var_cond_antes.get()
+        cond_camp = var_cond_camp.get()
+
+        # Preguntar si ya existe la tabla PO
+        if not self.mon.validate_if_table_exists('#PO'):
+            messagebox.showwarning("Advertencia", "Por favor Genere los Públicos Objetivos antes de generar Listas de Envío.")
+            return
+        
+        # Preguntar si ya existe la tabla PO envíos, si no, generarla con los filtros cada vez
+        if not self.mon.validate_if_table_exists('#PO_ENVIOS'):
+            messagebox.showwarning("Advertencia", "No hay Públicos Objetivo de Envíos generados.")
+        else:
+            self.mon.generar_po_envios_conteo(venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp)
+            self.show_dataframe(self.mon.po.df_po_conteo, "Conteo de Clientes")
+
+    def submit_canales(self, entries_canales, var_grupo_control):
         pass
 
     def generar_listas(self):
@@ -564,10 +562,12 @@ class App:
         tk.Label(frame, text="1. Generar Público Objetivo de Envíos", font=("Arial", 12, "bold"), wraplength=150).grid(row=2, column=0, rowspan=3, pady=5, padx=10, sticky='w')
         # Entrada para Definir las condición de compra
         tk.Label(frame, text="Condición de compra", font=("Arial", 10, "bold"), anchor='w').grid(row=2, column=1, pady=5, padx=5, sticky='w')
-        entry_condicion = tk.Entry(frame).grid(row=2, column=2, pady=5, padx=5, sticky='w')
+        entry_condicion = tk.Entry(frame)
+        entry_condicion.grid(row=2, column=2, pady=5, padx=5, sticky='w')
         # Entrada para excluir listas de envío
         tk.Label(frame, text="Excluir listas de envío", font=("Arial", 10, "bold"), anchor='w').grid(row=3, column=1, pady=5, padx=5, sticky='w')
-        entry_excluir = tk.Entry(frame).grid(row=3, column=2, pady=5, padx=5, sticky='w')
+        entry_excluir = tk.Entry(frame)
+        entry_excluir.grid(row=3, column=2, pady=5, padx=5, sticky='w')
 
         # Botón para generar listas de envío con monto de condición de compra y listas a excluir
         tk.Button(frame, text="Actualizar", command=lambda: self.submit_po_envios(entry_condicion, entry_excluir)).grid(row=4, column=2, pady=10)
@@ -584,7 +584,7 @@ class App:
         var_cond_antes = tk.StringVar()
         var_cond_actual = tk.StringVar()
         
-        options = ["", "Sí", "No"]
+        options = ["", "Si", "No"]
         
         # Label para Venta
         tk.Label(frame, text='Venta', font=("Arial", 10, "bold")).grid(row=6, column=1, columnspan=2, pady=5, padx=5)
@@ -605,7 +605,7 @@ class App:
         ttk.Combobox(frame, textvariable=var_cond_actual, values=options, state='readonly').grid(row=11, column=2, pady=5, padx=5, sticky='w')
 
         # Boton para ver conteo máximo de envíos con los filtros seleccionados
-        tk.Button(frame, text="Ver Conteo", command=lambda: self.submit_po_envios(entry_condicion, entry_excluir)).grid(row=12, column=2, pady=10)
+        tk.Button(frame, text="Ver Conteo", command=lambda: self.submit_po_filtros(var_venta_antes, var_venta_actual, var_cond_antes, var_cond_actual)).grid(row=12, column=2, pady=10)
 
         # Línea horizontal
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
@@ -645,7 +645,7 @@ class App:
         tk.Checkbutton(frame_2, text="Grupo Control?", variable=var_grupo_control).grid(row=6, column=1, padx=10, pady=5)
 
         # Botón para generar listas de envío con canales seleccionados
-        tk.Button(frame_2, text="Generar Listas", command=lambda: self.submit_lista_envio(entry_condicion, entry_excluir)).grid(row=90, column=4, pady=10)
+        tk.Button(frame_2, text="Generar Listas", command=lambda: self.submit_canales(entries_canal, var_grupo_control)).grid(row=6, column=4, pady=5, padx=10)
 
         tk.Button(frame_2, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=2, pady=10)
 

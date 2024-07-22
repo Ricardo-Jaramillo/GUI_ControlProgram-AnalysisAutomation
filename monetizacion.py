@@ -29,11 +29,17 @@ class Monetizacion(Conn, Productos):
         # Create BusinessCase tables
         self.po.create_tables_bc(self, override)
 
-    def generar_po_envios(self, condicion, excluir, venta_antes, venta_camp, cond_antes, cond_camp, grupo_control, sms, mail, wa, override):
+    def generar_po_envios(self, condicion, excluir, override):
         # Set variables
-        self.po.set_listas_envio_variables(condicion=condicion, excluir=excluir, venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp, grupo_control=grupo_control, sms=sms, mail=mail, wa=wa)
+        self.po.set_po_envios_variables(condicion=condicion, excluir=excluir)
         # Crear Público Objetivo de Envíos
         self.po.create_table_po_envios(self, override)
+
+    def generar_po_envios_conteo(self, venta_antes, venta_camp, cond_antes, cond_camp):
+        # Set variables
+        self.po.set_po_filtros_variables(venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp)
+        # Ver Conteo de  Público Objetivo con Filtros aplicados
+        self.po.create_table_po_envios_conteo(self)
 
     def consultar_po_envios(self, venta_antes, venta_camp, cond_antes, cond_camp):
         # Set variables
