@@ -572,7 +572,7 @@ class App:
                 self.show_dataframe(self.mon.po.df_listas_envio, "Listas de Envío")
 
     def generar_listas(self):
-        # Crear layout para el BusinessCase
+        # Crear layout para listas de envío
         self.menu_frame.pack_forget()
         self.clear_content_frame()
 
@@ -678,8 +678,64 @@ class App:
 
         tk.Button(frame_2, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=2, pady=10)
 
+    def submit_fechas_rad(self, entry_inicio, entry_termino):
+        # Validar que las fechas de inicio y término sean correctas
+        try:
+            pd.to_datetime(entry_inicio.get().strip())
+            pd.to_datetime(entry_termino.get().strip())
+        except:
+            messagebox.showwarning("Advertencia", "Por favor ingrese fechas en formato YYYY-MM-DD.")
+            return
+
+        # Preguntar si ya existe la tabla PRODUCTOS
+        if not self.mon.validate_if_table_exists('#PRODUCTOS'):
+            messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar Radiografía.")
+            return
+
+        # Preguntar si las tablas de radiografia ya existen
+        if self.mon.validate_if_table_exists('#RAD'):
+            override = messagebox.askyesno("Advertencia", "Ya hay Radiografía generada, ¿Desea sobreescribirla?")
+        else:
+            override = None
+
+        self.mon.generar_datos_rad(inicio=entry_inicio.get(), termino=entry_termino.get(), override=override)
+        # Mostrar el mensaje de éxito
+        messagebox.showinfo("Información", "Radiografía generada exitosamente.")
+        # self.show_dataframe(self.mon.rad.df_rad, "Radiografía")
+
     def generar_rad(self):
-        pass
+        # Crear layout para listas de envío
+        self.menu_frame.pack_forget()
+        self.clear_content_frame()
+
+        # Crear un Frame para los botones
+        frame = tk.Frame(self.content_frame)
+        frame.pack()
+
+        # Titulo de la sección
+        tk.Label(frame, text="Radiografía", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="we")
+
+        # Seleccionar fechas para la radiografía
+        tk.Label(frame, text="Periodo de la radiografía", font=("Arial", 12, "bold")).grid(row=2, column=0, columnspan=2, pady=5, padx=10)
+
+        # Entrada para Definir las fechas de inicio y término
+        # Periodo de la campaña
+        tk.Label(frame, text="Inicio:").grid(row=3, column=0, pady=5, padx=5, sticky='e')
+        entry_inicio = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_inicio.grid(row=3, column=1, pady=5, padx=5, sticky='w')
+        
+        tk.Label(frame, text="Termino:").grid(row=4, column=0, pady=5, padx=5, sticky='e')
+        entry_termino = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_termino.grid(row=4, column=1, pady=5, padx=5, sticky='w')
+
+        # Botón para generar listas de envío con canales seleccionados
+        tk.Button(frame, text="Generar Radiografía", command=lambda: self.submit_fechas_rad(entry_inicio, entry_termino)).grid(row=5, column=0, columnspan=2, pady=5, padx=10)
+
+        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=0, columnspan=2, pady=10)
 
 # root = tk.Tk()
 # app = App(root)

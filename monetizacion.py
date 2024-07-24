@@ -1,6 +1,7 @@
 from connection import Conn
 from productos import Productos
 from publicos_objetivo import PublicosObjetivo
+from radiografia import Radiografia
 
 # Create a Class to handle the Monetizacion data that inherits from the Conn class
 class Monetizacion(Conn, Productos):
@@ -9,7 +10,7 @@ class Monetizacion(Conn, Productos):
         Conn.__init__(self, name=name)
         Productos.__init__(self)
         self.po = PublicosObjetivo()
-        # self.rad = Radiografia()
+        self.rad = Radiografia()
         # self.ds = DataScience()
 
     def generar_productos(self, skus, marcas, proveedores, clases, subclases, prod_type_desc, override):
@@ -47,12 +48,11 @@ class Monetizacion(Conn, Productos):
         # Crear Listas de Envío
         self.po.create_table_listas_envio(self)
     
-    def generar_rad(self):
+    def generar_datos_rad(self, inicio, termino, override):
         # Set variables
-        # self.rad.set_rad_variables()
+        self.rad.set_rad_variables(inicio=inicio, termino=termino)
         # Create RAD table
-        # self.rad.create_table_rad_temporal(self)
-        pass
+        self.rad.create_tables_rad(self, override=override)
     
     def ejecutar_ds(self):
         # self.ds.create_analisis_ds()
