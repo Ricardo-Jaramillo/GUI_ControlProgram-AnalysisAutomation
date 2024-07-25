@@ -706,9 +706,10 @@ class App:
     def rad_existentes(self):
         def seleccion_radiografia(event):
             seleccion = combo.get()
-            resultado = resultados.get(seleccion, "No hay resultados para esta opción.")
+            resultado_list = resultados.get(seleccion, ["No hay resultados para esta opción."])
             text_box.delete(1.0, tk.END)
-            text_box.insert(tk.END, resultado)
+            for resultado in resultado_list:
+                text_box.insert(tk.END, resultado + "\n")
 
         # Crear un Frame para los botones
         frame = tk.Tk()
@@ -717,9 +718,9 @@ class App:
         # Ejemplo de datos
         valores = ["Opción 1", "Opción 2", "Opción 3"]
         resultados = {
-            "Opción 1": "Resultado para Opción 1",
-            "Opción 2": "Resultado para Opción 2",
-            "Opción 3": "Resultado para Opción 3"
+            "Opción 1": ["Resultado 1A", "Resultado 1B", "Resultado 1C"],
+            "Opción 2": ["Resultado 2A", "Resultado 2B"],
+            "Opción 3": ["Resultado 3A", "Resultado 3B", "Resultado 3C", "Resultado 3D"]
         }
         # Label radiografias creadas anteriormente
         tk.Label(frame, text="Provedor", font=("Arial", 10, "bold")).grid(row=0, column=0, pady=5, padx=10)
