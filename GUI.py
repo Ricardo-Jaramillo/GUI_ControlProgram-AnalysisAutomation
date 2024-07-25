@@ -703,6 +703,37 @@ class App:
         messagebox.showinfo("Información", "Radiografía generada exitosamente.")
         # self.show_dataframe(self.mon.rad.df_rad, "Radiografía")
 
+    def rad_existentes(self):
+        def seleccion_radiografia(event):
+            seleccion = combo.get()
+            resultado = resultados.get(seleccion, "No hay resultados para esta opción.")
+            text_box.delete(1.0, tk.END)
+            text_box.insert(tk.END, resultado)
+
+        # Crear un Frame para los botones
+        frame = tk.Tk()
+        frame.title("Radiografías existentes")
+
+        # Ejemplo de datos
+        valores = ["Opción 1", "Opción 2", "Opción 3"]
+        resultados = {
+            "Opción 1": "Resultado para Opción 1",
+            "Opción 2": "Resultado para Opción 2",
+            "Opción 3": "Resultado para Opción 3"
+        }
+        # Label radiografias creadas anteriormente
+        tk.Label(frame, text="Provedor", font=("Arial", 10, "bold")).grid(row=0, column=0, pady=5, padx=10)
+        
+        # Crear y posicionar la lista desplegable (Combobox)
+        combo = ttk.Combobox(frame, values=valores)
+        combo.grid(row=1, column=0, pady=5, padx=10, sticky='n')
+        combo.bind("<<ComboboxSelected>>", seleccion_radiografia)
+
+        # Crear y posicionar la caja de texto (Text)
+        tk.Label(frame, text="Radiografías existentes", font=("Arial", 10, "bold")).grid(row=0, column=1, pady=5, padx=10, sticky='w')
+        text_box = tk.Text(frame, width=50, height=10)
+        text_box.grid(row=1, column=1, padx=10, pady=5)
+
     def generar_rad(self):
         # Crear layout para listas de envío
         self.menu_frame.pack_forget()
@@ -710,7 +741,7 @@ class App:
 
         # Crear un Frame para los botones
         frame = tk.Frame(self.content_frame)
-        frame.pack()
+        frame.pack(side="left", padx=10, pady=10)
 
         # Titulo de la sección
         tk.Label(frame, text="Radiografía", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
@@ -719,21 +750,31 @@ class App:
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
         separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="we")
 
+        # Boton para ver radiografias existentes
+        tk.Button(frame, text="Ver Radiografías existentes", command=self.rad_existentes).grid(row=3, column=0, columnspan=2, pady=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=4, column=0, columnspan=2, pady=5, sticky="we")
+
+        # Label para Generar Radiografía
+        tk.Label(frame, text="Generar Radiografía", font=("Arial", 12, "bold")).grid(row=5, column=0, columnspan=2, pady=5, padx=10)
+
         # Seleccionar fechas para la radiografía
-        tk.Label(frame, text="Periodo de la radiografía", font=("Arial", 12, "bold")).grid(row=2, column=0, columnspan=2, pady=5, padx=10)
+        tk.Label(frame, text="Periodo de la radiografía", font=("Arial", 10, "bold")).grid(row=6, column=0, columnspan=2, pady=5, padx=10)
 
         # Entrada para Definir las fechas de inicio y término
         # Periodo de la campaña
-        tk.Label(frame, text="Inicio:").grid(row=3, column=0, pady=5, padx=5, sticky='e')
+        tk.Label(frame, text="Inicio:").grid(row=7, column=0, pady=5, padx=5, sticky='e')
         entry_inicio = DateEntry(frame, date_pattern='yyyy-mm-dd')
-        entry_inicio.grid(row=3, column=1, pady=5, padx=5, sticky='w')
+        entry_inicio.grid(row=7, column=1, pady=5, padx=5, sticky='w')
         
-        tk.Label(frame, text="Termino:").grid(row=4, column=0, pady=5, padx=5, sticky='e')
+        tk.Label(frame, text="Termino:").grid(row=8, column=0, pady=5, padx=5, sticky='e')
         entry_termino = DateEntry(frame, date_pattern='yyyy-mm-dd')
-        entry_termino.grid(row=4, column=1, pady=5, padx=5, sticky='w')
+        entry_termino.grid(row=8, column=1, pady=5, padx=5, sticky='w')
 
         # Botón para generar listas de envío con canales seleccionados
-        tk.Button(frame, text="Generar Radiografía", command=lambda: self.submit_fechas_rad(entry_inicio, entry_termino)).grid(row=5, column=0, columnspan=2, pady=5, padx=10)
+        tk.Button(frame, text="Generar Radiografía", command=lambda: self.submit_fechas_rad(entry_inicio, entry_termino)).grid(row=9, column=0, columnspan=2, pady=5, padx=10)
 
         tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=0, columnspan=2, pady=10)
 
