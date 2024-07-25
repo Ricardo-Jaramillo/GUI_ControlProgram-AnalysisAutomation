@@ -707,33 +707,33 @@ class App:
         def seleccion_radiografia(event):
             seleccion = combo.get()
             resultado_list = resultados.get(seleccion, ["No hay resultados para esta opción."])
-            text_box.delete(1.0, tk.END)
+            # Limpiar la Listbox
+            list_box.delete(0, tk.END)
+            
+            # Insertar nuevos resultados
             for resultado in resultado_list:
-                text_box.insert(tk.END, resultado + "\n")
+                list_box.insert(tk.END, resultado)
 
         # Crear un Frame para los botones
         frame = tk.Tk()
         frame.title("Radiografías existentes")
 
-        # Ejemplo de datos
-        valores = ["Opción 1", "Opción 2", "Opción 3"]
-        resultados = {
-            "Opción 1": ["Resultado 1A", "Resultado 1B", "Resultado 1C"],
-            "Opción 2": ["Resultado 2A", "Resultado 2B"],
-            "Opción 3": ["Resultado 3A", "Resultado 3B", "Resultado 3C", "Resultado 3D"]
-        }
+        # Extraer datos
+        resultados, proveedores = self.mon.rad.select_radiografias(self.mon)
+
         # Label radiografias creadas anteriormente
         tk.Label(frame, text="Provedor", font=("Arial", 10, "bold")).grid(row=0, column=0, pady=5, padx=10)
         
         # Crear y posicionar la lista desplegable (Combobox)
-        combo = ttk.Combobox(frame, values=valores)
+        combo = ttk.Combobox(frame, values=proveedores)
         combo.grid(row=1, column=0, pady=5, padx=10, sticky='n')
         combo.bind("<<ComboboxSelected>>", seleccion_radiografia)
 
-        # Crear y posicionar la caja de texto (Text)
+        # Crear y posicionar la Listbox
         tk.Label(frame, text="Radiografías existentes", font=("Arial", 10, "bold")).grid(row=0, column=1, pady=5, padx=10, sticky='w')
-        text_box = tk.Text(frame, width=50, height=10)
-        text_box.grid(row=1, column=1, padx=10, pady=5)
+        # Crear y posicionar la Listbox
+        list_box = tk.Listbox(frame, width=50, height=10)
+        list_box.grid(row=1, column=1, padx=10, pady=5)
 
     def generar_rad(self):
         # Crear layout para listas de envío

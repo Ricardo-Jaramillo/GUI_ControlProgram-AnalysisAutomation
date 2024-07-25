@@ -62,3 +62,15 @@ class Radiografia():
         # Si override es False, se espera que la tabla exista, no se hace nada. Salir de la función
         else:
             return
+        
+    def select_radiografias(self, conn):
+        query = """
+            SELECT DISTINCT
+                PROVEEDOR
+                ,NOMBRE
+            FROM CHEDRAUI.MON_RAD_DESC
+        """
+        dic = conn.select(query).groupby('proveedor')['nombre'].apply(list).to_dict()
+        keys = list(dic.keys())
+        return dic, keys
+
