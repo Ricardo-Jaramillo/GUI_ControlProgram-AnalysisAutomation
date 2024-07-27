@@ -688,8 +688,231 @@ class Radiografia():
         """
 
         query_rad_funnel_clientes = f"""
-            -- 6. FUNNEL CLIENTES
-            SELECT 1 AS ONE;
+            -- 6. NUMERO DE COMPRAS
+            --NUMERO DE COMPRAS
+            DROP TABLE IF EXISTS #NUM_COMPRAS;
+            CREATE TABLE #NUM_COMPRAS AS (
+            WITH
+            --MARCA
+            __COMPRAS_POR_CLIENTE_MARCA AS (
+                SELECT
+                'MARCA' TIPO
+                ,MARCA
+                ,CUSTOMER_CODE
+                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 THEN INVOICE_NO END) TX_MARCA
+                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 0 THEN INVOICE_NO END) TX_COMPETENCIA
+                ,SUM(CASE WHEN IND_MARCA = 1 THEN VENTA END) VENTA_MARCA
+                ,SUM(CASE WHEN IND_MARCA = 0 THEN VENTA END) VENTA_COMPETENCIA
+                FROM CHEDRAUI.VTA
+                WHERE IND_MC = 1
+                AND PERIODO = 'ACTUAL'
+                GROUP BY 1,2,3
+            )
+            ,__COMPRAS_POR_CLIENTE_MARCA_TOTAL AS (
+            SELECT
+                'MARCA' TIPO
+                ,'TOTAL' MARCA
+                ,CUSTOMER_CODE
+                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 THEN INVOICE_NO END) TX_MARCA
+                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 0 THEN INVOICE_NO END) TX_COMPETENCIA
+                ,SUM(CASE WHEN IND_MARCA = 1 THEN VENTA END) VENTA_MARCA
+                ,SUM(CASE WHEN IND_MARCA = 0 THEN VENTA END) VENTA_COMPETENCIA
+                FROM CHEDRAUI.VTA
+                WHERE IND_MC = 1
+                AND PERIODO = 'ACTUAL'
+                GROUP BY 1,2,3
+            )
+            ,__COMPRAS_POR_CLIENTE_CAT AS (
+                SELECT
+                'CAT' TIPO
+                ,'CAT' MARCA
+                ,CUSTOMER_CODE
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA
+                ,0::INT TX_COMPETENCIA
+                ,SUM(VENTA) VENTA_MARCA
+                ,0::INT VENTA_COMPETENCIA
+                FROM CHEDRAUI.VTA
+                WHERE IND_MC = 1
+                AND PERIODO = 'ACTUAL'
+                GROUP BY 1,2,3
+            )
+            ,__NUM_COMPRAS AS (
+                SELECT
+                TIPO
+                ,MARCA
+                --CLIENTES
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT
+                ,COUNT(DISTINCT CASE WHEN TX_MARCA >= 1 THEN CUSTOMER_CODE END) CLIENTES_MARCA
+                ,COUNT(DISTINCT CASE WHEN TX_MARCA = 1 THEN CUSTOMER_CODE END) CLIENTES_UNA_VEZ
+                ,COUNT(DISTINCT CASE WHEN TX_MARCA > 1 THEN CUSTOMER_CODE END) CLIENTES_MAS_UNA_VEZ
+                ,COUNT(DISTINCT CASE WHEN TX_MARCA = 1 AND TX_COMPETENCIA = 0 THEN CUSTOMER_CODE END) CLIENTES_SOLO_MARCA_UNA_VEZ
+                ,COUNT(DISTINCT CASE WHEN TX_MARCA > 1 AND TX_COMPETENCIA = 0 THEN CUSTOMER_CODE END) CLIENTES_SOLO_MARCA_MAS_UNA_VEZ
+                --VENTA  
+                ,SUM(VENTA_MARCA + VENTA_COMPETENCIA) VENTA_CAT
+                ,SUM(CASE WHEN TX_MARCA >= 1 THEN VENTA_MARCA END) VENTA_MARCA
+                ,SUM(CASE WHEN TX_MARCA = 1 THEN VENTA_MARCA END) VENTA_UNA_VEZ
+                ,SUM(CASE WHEN TX_MARCA > 1 THEN VENTA_MARCA END) VENTA_MAS_UNA_VEZ
+                ,SUM(CASE WHEN TX_MARCA = 1 AND TX_COMPETENCIA = 0 THEN VENTA_MARCA END) VENTA_SOLO_MARCA_UNA_VEZ
+                ,SUM(CASE WHEN TX_MARCA > 1 AND TX_COMPETENCIA = 0 THEN VENTA_MARCA END) VENTA_SOLO_MARCA_MAS_UNA_VEZ
+
+                FROM __COMPRAS_POR_CLIENTE_MARCA
+                GROUP BY 1,2
+                
+                UNION
+                
+                SELECT
+                TIPO
+                ,MARCA
+                --CLIENTES
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT
+                ,COUNT(DISTINCT CASE WHEN TX_MARCA >= 1 THEN CUSTOMER_CODE END) CLIENTES_MARCA
+                ,COUNT(DISTINCT CASE WHEN TX_MARCA = 1 THEN CUSTOMER_CODE END) CLIENTES_UNA_VEZ
+                ,COUNT(DISTINCT CASE WHEN TX_MARCA > 1 THEN CUSTOMER_CODE END) CLIENTES_MAS_UNA_VEZ
+                ,COUNT(DISTINCT CASE WHEN TX_MARCA = 1 AND TX_COMPETENCIA = 0 THEN CUSTOMER_CODE END) CLIENTES_SOLO_MARCA_UNA_VEZ
+                ,COUNT(DISTINCT CASE WHEN TX_MARCA > 1 AND TX_COMPETENCIA = 0 THEN CUSTOMER_CODE END) CLIENTES_SOLO_MARCA_MAS_UNA_VEZ
+                --VENTA  
+                ,SUM(VENTA_MARCA + VENTA_COMPETENCIA) VENTA_CAT
+                ,SUM(CASE WHEN TX_MARCA >= 1 THEN VENTA_MARCA END) VENTA_MARCA
+                ,SUM(CASE WHEN TX_MARCA = 1 THEN VENTA_MARCA END) VENTA_UNA_VEZ
+                ,SUM(CASE WHEN TX_MARCA > 1 THEN VENTA_MARCA END) VENTA_MAS_UNA_VEZ
+                ,SUM(CASE WHEN TX_MARCA = 1 AND TX_COMPETENCIA = 0 THEN VENTA_MARCA END) VENTA_SOLO_MARCA_UNA_VEZ
+                ,SUM(CASE WHEN TX_MARCA > 1 AND TX_COMPETENCIA = 0 THEN VENTA_MARCA END) VENTA_SOLO_MARCA_MAS_UNA_VEZ
+            
+                FROM __COMPRAS_POR_CLIENTE_MARCA_TOTAL
+                GROUP BY 1,2
+                
+                UNION
+                
+                SELECT
+                TIPO
+                ,MARCA
+                --CLIENTES
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT
+                ,COUNT(DISTINCT CASE WHEN TX_MARCA >= 1 THEN CUSTOMER_CODE END) CLIENTES_MARCA
+                ,COUNT(DISTINCT CASE WHEN TX_MARCA = 1 THEN CUSTOMER_CODE END) CLIENTES_UNA_VEZ
+                ,COUNT(DISTINCT CASE WHEN TX_MARCA > 1 THEN CUSTOMER_CODE END) CLIENTES_MAS_UNA_VEZ
+                ,NULL CLIENTES_SOLO_MARCA_UNA_VEZ
+                ,NULL CLIENTES_SOLO_MARCA_MAS_UNA_VEZ
+                --VENTA  
+                ,SUM(VENTA_MARCA + VENTA_COMPETENCIA) VENTA_CAT
+                ,SUM(CASE WHEN TX_MARCA >= 1 THEN VENTA_MARCA END) VENTA_MARCA
+                ,SUM(CASE WHEN TX_MARCA = 1 THEN VENTA_MARCA END) VENTA_UNA_VEZ
+                ,SUM(CASE WHEN TX_MARCA > 1 THEN VENTA_MARCA END) VENTA_MAS_UNA_VEZ
+                ,NULL VENTA_SOLO_MARCA_UNA_VEZ
+                ,NULL VENTA_SOLO_MARCA_MAS_UNA_VEZ
+            
+                FROM __COMPRAS_POR_CLIENTE_CAT
+                GROUP BY 1,2
+            )
+
+            SELECT * FROM __NUM_COMPRAS
+            );
+
+            --DORMIDOS Y PERDIDOS
+            DROP TABLE IF EXISTS #DORMIDOS_PERDIDOS;
+            CREATE TABLE #DORMIDOS_PERDIDOS AS (
+            WITH
+                __CLIENTES_MARCA AS (
+                SELECT
+                MARCA
+                ,CUSTOMER_CODE
+
+                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_D1]' AND '$[FEC_FIN_D1]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_D1
+                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_D2]' AND '$[FEC_FIN_D2]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_D2
+                ,MAX(CASE WHEN (MES BETWEEN '$[FEC_INI_D2]' AND '$[FEC_FIN_D2]' OR MES BETWEEN '$[FEC_INI_P2]' AND '$[FEC_FIN_P2]') AND IND_MARCA = 0 THEN 1 ELSE 0 END) IND_COMPETENCIA_D2
+
+                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_P1]' AND '$[FEC_FIN_P1]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_P1
+                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_P2]' AND '$[FEC_FIN_P2]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_P2
+                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_P2]' AND '$[FEC_FIN_P2]' AND IND_MARCA = 0 THEN 1 ELSE 0 END) IND_COMPETENCIA_P2
+                
+                ,SUM(CASE WHEN MES BETWEEN '$[FEC_INI_D1]' AND '$[FEC_FIN_D2]' AND IND_MARCA=1 THEN VENTA ELSE 0 END) AS VENTA_DORMIDOS
+                ,SUM(CASE WHEN MES BETWEEN '$[FEC_INI_P1]' AND '$[FEC_FIN_P2]' AND IND_MARCA=1 THEN VENTA ELSE 0 END) AS VENTA_PERDIDOS
+                
+                FROM CHEDRAUI.VTA
+                WHERE MES BETWEEN '$[FEC_INI_P1]' AND '$[FEC_FIN_P2]'
+                AND IND_MC = 1
+                GROUP BY 1,2
+            )
+            ,__CLIENTES_MARCA_TOTAL AS (
+                SELECT
+                'TOTAL' MARCA
+                ,CUSTOMER_CODE
+
+                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_D1]' AND '$[FEC_FIN_D1]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_D1
+                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_D2]' AND '$[FEC_FIN_D2]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_D2
+                ,MAX(CASE WHEN (MES BETWEEN '$[FEC_INI_D2]' AND '$[FEC_FIN_D2]' OR MES BETWEEN '$[FEC_INI_P2]' AND '$[FEC_FIN_P2]') AND IND_MARCA = 0 THEN 1 ELSE 0 END) IND_COMPETENCIA_D2
+
+                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_P1]' AND '$[FEC_FIN_P1]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_P1
+                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_P2]' AND '$[FEC_FIN_P2]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_P2
+                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_P2]' AND '$[FEC_FIN_P2]' AND IND_MARCA = 0 THEN 1 ELSE 0 END) IND_COMPETENCIA_P2
+                
+                ,SUM(CASE WHEN MES BETWEEN '$[FEC_INI_D1]' AND '$[FEC_FIN_D2]' AND IND_MARCA=1 THEN VENTA ELSE 0 END) AS VENTA_DORMIDOS
+                ,SUM(CASE WHEN MES BETWEEN '$[FEC_INI_P1]' AND '$[FEC_FIN_P2]' AND IND_MARCA=1 THEN VENTA ELSE 0 END) AS VENTA_PERDIDOS
+                
+                FROM CHEDRAUI.VTA
+                WHERE MES BETWEEN '$[FEC_INI_P1]' AND '$[FEC_FIN_P2]'
+                AND IND_MC = 1
+                GROUP BY 1,2
+            )
+            ,__DORMIDOS_PERDIDOS AS (
+                -- SELECT TOP 10 * FROM __CLIENTES;
+                SELECT
+                MARCA
+                ,COUNT(DISTINCT CASE WHEN IND_MARCA_D1 = 1 AND IND_MARCA_D2 = 0 AND IND_COMPETENCIA_D2 = 1 THEN CUSTOMER_CODE END) DORMIDOS
+                ,COUNT(DISTINCT CASE WHEN IND_MARCA_P1 = 1 AND IND_MARCA_P2 = 0 AND IND_COMPETENCIA_P2 = 1 THEN CUSTOMER_CODE END) PERDIDOS
+                ,SUM(CASE WHEN IND_MARCA_D1 = 1 AND IND_MARCA_D2 = 0 AND IND_COMPETENCIA_D2 = 1 THEN VENTA_DORMIDOS END) VENTA_DORMIDOS
+                ,SUM(CASE WHEN IND_MARCA_P1 = 1 AND IND_MARCA_P2 = 0 AND IND_COMPETENCIA_P2 = 1 THEN VENTA_PERDIDOS END) VENTA_PERDIDOS
+                FROM __CLIENTES_MARCA
+                GROUP BY 1
+            
+                UNION
+            
+                SELECT
+                MARCA
+                ,COUNT(DISTINCT CASE WHEN IND_MARCA_D1 = 1 AND IND_MARCA_D2 = 0 AND IND_COMPETENCIA_D2 = 1 THEN CUSTOMER_CODE END) DORMIDOS
+                ,COUNT(DISTINCT CASE WHEN IND_MARCA_P1 = 1 AND IND_MARCA_P2 = 0 AND IND_COMPETENCIA_P2 = 1 THEN CUSTOMER_CODE END) PERDIDOS
+                ,SUM(CASE WHEN IND_MARCA_D1 = 1 AND IND_MARCA_D2 = 0 AND IND_COMPETENCIA_D2 = 1 THEN VENTA_DORMIDOS END) VENTA_DORMIDOS
+                ,SUM(CASE WHEN IND_MARCA_P1 = 1 AND IND_MARCA_P2 = 0 AND IND_COMPETENCIA_P2 = 1 THEN VENTA_PERDIDOS END) VENTA_PERDIDOS
+                FROM __CLIENTES_MARCA_TOTAL
+                GROUP BY 1
+            )
+            SELECT
+                *
+            FROM __DORMIDOS_PERDIDOS
+            );
+
+            --10.DATOS COMPRAS
+            DROP TABLE IF EXISTS #MON_RAD_FUNNEL_CLIENTES;
+            CREATE TABLE #MON_RAD_FUNNEL_CLIENTES AS (
+            SELECT
+                '{id}' ID_RADIOGRAFIA
+                ,TIPO
+                ,A.MARCA
+                --CLIENTES
+                ,CLIENTES_CAT
+                ,CLIENTES_MARCA
+                ,CLIENTES_UNA_VEZ
+                ,CLIENTES_MAS_UNA_VEZ
+                ,CLIENTES_SOLO_MARCA_UNA_VEZ
+                ,CLIENTES_SOLO_MARCA_MAS_UNA_VEZ
+                ,DORMIDOS
+                ,PERDIDOS
+                --VENTA  
+                ,VENTA_CAT
+                ,VENTA_MARCA
+                ,VENTA_UNA_VEZ
+                ,VENTA_MAS_UNA_VEZ
+                ,VENTA_SOLO_MARCA_UNA_VEZ
+                ,VENTA_SOLO_MARCA_MAS_UNA_VEZ
+                ,VENTA_DORMIDOS
+                ,VENTA_PERDIDOS
+            FROM #NUM_COMPRAS A
+            LEFT JOIN #DORMIDOS_PERDIDOS B ON A.MARCA = B.MARCA AND A.TIPO = 'MARCA'
+            ORDER BY 1,3 DESC
+            );
+
+            DELETE CHEDRAUI.MON_RAD_FUNNEL_CLIENTES WHERE ID_RADIOGRAFIA = '$[ID_RADIOGRAFIA]';
+            INSERT INTO CHEDRAUI.MON_RAD_FUNNEL_CLIENTES SELECT * FROM #MON_RAD_FUNNEL_CLIENTES;
         """
 
         query_rad_evolucion = f"""
@@ -742,7 +965,7 @@ class Radiografia():
                 --TOTAL MARCA
             SELECT
                 'NSE_FAMILIA' TABLA
-                ,'$[PROVEEDOR]' MARCA --AUNQUE MARCA ES GLOBAL, NO OCUPAMOS IND_DUPLICADO YA QUE SE CUENTAN DISTINCTOS CLIENTES, NO SE DUPLICAN. SOLO VENTA SE DUPLICARÍA.
+                ,'{proveedores}' MARCA --AUNQUE MARCA ES GLOBAL, NO OCUPAMOS IND_DUPLICADO YA QUE SE CUENTAN DISTINCTOS CLIENTES, NO SE DUPLICAN. SOLO VENTA SE DUPLICARÍA.
                 ,NSE
                 ,TIPO_FAMILIA
                 ,'TOTAL' REGION
@@ -777,7 +1000,7 @@ class Radiografia():
                 --TOTAL MARCA
             SELECT
                 'REGION' TABLA
-                ,'$[PROVEEDOR]' MARCA --AUNQUE MARCA ES GLOBAL, NO OCUPAMOS IND_DUPLICADO YA QUE SE CUENTAN DISTINCTOS CLIENTES, NO SE DUPLICAN. SOLO VENTA SE DUPLICARÍA.
+                ,'{proveedores}' MARCA --AUNQUE MARCA ES GLOBAL, NO OCUPAMOS IND_DUPLICADO YA QUE SE CUENTAN DISTINCTOS CLIENTES, NO SE DUPLICAN. SOLO VENTA SE DUPLICARÍA.
                 ,'TOTAL' NSE
                 ,'TOTAL' TIPO_FAMILIA
                 ,REGION
@@ -812,7 +1035,7 @@ class Radiografia():
                 --TOTAL MARCA
             SELECT
                 'FORMATO_TIENDA' TABLA
-                ,'$[PROVEEDOR]' MARCA --AUNQUE MARCA ES GLOBAL, NO OCUPAMOS IND_DUPLICADO YA QUE SE CUENTAN DISTINCTOS CLIENTES, NO SE DUPLICAN. SOLO VENTA SE DUPLICARÍA.
+                ,'{proveedores}' MARCA --AUNQUE MARCA ES GLOBAL, NO OCUPAMOS IND_DUPLICADO YA QUE SE CUENTAN DISTINCTOS CLIENTES, NO SE DUPLICAN. SOLO VENTA SE DUPLICARÍA.
                 ,'TOTAL' NSE
                 ,'TOTAL' TIPO_FAMILIA
                 ,'TOTAL' REGION
@@ -830,15 +1053,15 @@ class Radiografia():
             FROM __SEGMENTADO
             );
 
-            DELETE CHEDRAUI.MON_RAD_SEGMENTADO WHERE ID_RADIOGRAFIA='{id}';
-            INSERT INTO CHEDRAUI.MON_RAD_SEGMENTADO SELECT * FROM #MON_RAD_SEGMENTADO UNION SELECT  '$[ID_RADIOGRAFIA]' AS ID_RADIOGRAFIA,* FROM CHEDRAUI.MON_RAD_SEGMENTOS_CHEDRAUI;
+            DELETE CHEDRAUI.MON_RAD_SEGMENTADO WHERE ID_RADIOGRAFIA = '{id}';
+            INSERT INTO CHEDRAUI.MON_RAD_SEGMENTADO SELECT * FROM #MON_RAD_SEGMENTADO UNION SELECT  '{id}' AS ID_RADIOGRAFIA, * FROM CHEDRAUI.MON_RAD_SEGMENTOS_CHEDRAUI;
         """
 
         query_rad_mix = f"""
             SELECT 1 AS ONE;
         """
 
-        query_lis = [query_rad_desc, query_vta, query_rad_productos, query_rad_cat, query_rad_datos_producto, query_rad_marca, query_rad_funnel_clientes, query_rad_evolucion, query_rad_segmentado, query_rad_mix]
+        query_lis = [query_rad_desc, query_vta, query_rad_productos, query_rad_cat, query_rad_datos_producto, query_rad_marca, query_rad_funnel_clientes, query_rad_evolucion, query_rad_segmentado] #, query_rad_mix]
 
         return query_lis
 
@@ -853,8 +1076,8 @@ class Radiografia():
         proveedores = conn.select(query=f'SELECT DISTINCT PROVEEDOR FROM #PRODUCTOS')['proveedor'].str.cat(sep='-')
 
         # Concatenar los dos ultimos digitos del año de inicio, 2 dígitos del mes de inicio, dos ultimos digitos del año de termino, 2 dígitos del mes de termino, los proveedores y el nombre
-        id = f"{inicio[2:4]}{inicio[5:7]}_{termino[2:4]}{termino[5:7]}_{proveedores}_{nombre}".replace(' ', '_').upper()
-        return id, proveedores, nombre
+        id = f"{inicio[2:4]}{inicio[5:7]}_{termino[2:4]}{termino[5:7]}_{proveedores}_{nombre}".replace(' ', '_')
+        return id.upper(), proveedores.upper(), nombre.upper()
 
     def create_tables_rad(self, conn, override=False):
         id_rad, proveedores, nombre = self.__get_id_rad(conn, self.inicio, self.termino, self.nombre)

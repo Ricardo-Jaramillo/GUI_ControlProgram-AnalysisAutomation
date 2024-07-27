@@ -70,7 +70,10 @@ class Conn:
             table_names = args
 
         if table_names[0] == 'All':
-            table_names = ['#PRODUCTOS', '#PO', '#PO_AGG', '#NUM_TX', '#NUM_UNIDADES', '#TX_MEDIO', '#DATOS_CLIENTE', '#PO_ENVIOS', '#LISTAS_ENVIO', '#MON_RAD_DESC', '#MON_RAD', 'CHEDRAUI.VTA']
+            table_names = ['#PRODUCTOS', '#PO', '#PO_AGG', '#NUM_TX', '#NUM_UNIDADES', '#TX_MEDIO', '#DATOS_CLIENTE', '#PO_ENVIOS',
+                           '#LISTAS_ENVIO', '#MON_RAD_DESC', '#MON_RAD', '#MON_RAD_DESC', '#MON_RAD_PRODUCTOS',
+                           '#MON_RAD_CAT', '#MON_RAD_PRODUCTO', '#MON_RAD_MARCA', '#MON_RAD_FUNNEL_CLIENTES', '#MON_RAD_EVO', '#MON_RAD_SEGMENTADO'
+                           ]
             
         for table_name in table_names:
             print(f'Dropping temporal table: {table_name}...')
