@@ -48,9 +48,9 @@ class Monetizacion(Conn, Productos):
         # Crear Listas de Envío
         self.po.create_table_listas_envio(self)
     
-    def generar_datos_rad(self, inicio, termino, override):
+    def generar_datos_rad(self, inicio, termino, nombre, override):
         # Set variables
-        self.rad.set_rad_variables(inicio=inicio, termino=termino)
+        self.rad.set_rad_variables(inicio=inicio, termino=termino, nombre=nombre)
         # Create RAD table
         self.rad.create_tables_rad(self, override=override)
     
