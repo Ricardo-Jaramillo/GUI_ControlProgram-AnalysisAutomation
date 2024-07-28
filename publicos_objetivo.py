@@ -1169,7 +1169,7 @@ class PublicosObjetivo():
             return
 
     # Funcion para obtener los filtros del query de listas
-    def get_filtros_listas(self):
+    def __get_filtros_listas(self):
         # Filtro de venta antes
         if self.venta_antes.lower() == 'si':
             venta_antes = 'AND VENTA_MARCA > 0'
@@ -1204,8 +1204,8 @@ class PublicosObjetivo():
         
         return venta_antes, venta_camp, cond_antes, cond_camp
 
-    def get_query_select_po_envios_conteo(self, from_table='#PO_ENVIOS'):
-        venta_antes, venta_camp, cond_antes, cond_camp = self.get_filtros_listas()
+    def get_query_select_po_envios_conteo(self, from_table):
+        venta_antes, venta_camp, cond_antes, cond_camp = self.__get_filtros_listas()
 
         query_po_envios = f'''
             SELECT
@@ -1232,7 +1232,7 @@ class PublicosObjetivo():
         return query_po_envios
         
     def get_query_create_listas_envio(self, table_name, from_table):
-        venta_antes, venta_camp, cond_antes, cond_camp = self.get_filtros_listas()
+        venta_antes, venta_camp, cond_antes, cond_camp = self.__get_filtros_listas()
         
         # Extraer canales y numero de envios
 
@@ -1262,6 +1262,11 @@ class PublicosObjetivo():
                         ROW_NUMBER() OVER(PARTITION BY ORDEN_SEGMENTO, VALID_CONTACT_INFO ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, {orden_venta} DESC, CUSTOMER_CODE) ROW_N
                         ,*
                     FROM {from_table}
+                    WHERE 1 = 1
+                    {venta_antes}
+                    {venta_camp}
+                    {cond_antes}
+                    {cond_camp}
                 )
                 SELECT * FROM __PO_ENVIOS
 
@@ -1273,25 +1278,17 @@ class PublicosObjetivo():
                     (IND_FID = 1 AND VALID_CONTACT_INFO = '01 SMS'                AND ROW_N <= {fid_sms}/{porcentaje_gt})
                     OR (IND_FID = 1 AND VALID_CONTACT_INFO = '02 MAIL'            AND ROW_N <= {fid_email}/{porcentaje_gt})
                     OR (IND_FID = 1 AND VALID_CONTACT_INFO = '03 MAIL & SMS'      AND ROW_N <= {fid_sms_mail}/{porcentaje_gt})
-                    -- OR (IND_FID = 1 AND VALID_CONTACT_INFO = '04 INVALID CONTACT' AND ROW_N <= 0/{porcentaje_gt})
 
                     --REC
                     OR (IND_REC = 1 AND VALID_CONTACT_INFO = '01 SMS'             AND ROW_N <= {rec_sms}/{porcentaje_gt})
                     OR (IND_REC = 1 AND VALID_CONTACT_INFO = '02 MAIL'            AND ROW_N <= {rec_email}/{porcentaje_gt})
                     OR (IND_REC = 1 AND VALID_CONTACT_INFO = '03 MAIL & SMS'      AND ROW_N <= {rec_sms_mail}/{porcentaje_gt})
-                    -- OR (IND_REC = 1 AND VALID_CONTACT_INFO = '04 INVALID CONTACT' AND ROW_N <= 0/{porcentaje_gt})
 
                     --CAP
                     OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '01 SMS'             AND ROW_N <= {cap_sms}/{porcentaje_gt})
                     OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '02 MAIL'            AND ROW_N <= {cap_email}/{porcentaje_gt})
                     OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '03 MAIL & SMS'      AND ROW_N <= {cap_sms_mail}/{porcentaje_gt})
-                    -- OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '04 INVALID CONTACT' AND ROW_N <= 0/{porcentaje_gt})
                 )
-                
-                {venta_antes}
-                {venta_camp}
-                {cond_antes}
-                {cond_camp}
                 
                 ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, {orden_venta} DESC, CUSTOMER_CODE
             );
@@ -1315,3 +1312,6 @@ class PublicosObjetivo():
 
         query = f'SELECT * FROM {table_name} ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, {orden_venta} DESC, CUSTOMER_CODE'
         self.df_listas_envio = conn.select(query=query)
+
+    def split_lists(self):
+        pass

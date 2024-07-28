@@ -550,7 +550,7 @@ class App:
             messagebox.showwarning("Advertencia", "No hay Públicos Objetivo de Envíos generados.")
         else:
             self.mon.generar_po_envios_conteo(venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp)
-            self.show_dataframe(self.mon.po.df_po_conteo, "Conteo de Clientes")
+            self.show_dataframe(self.mon.po.df_po_conteo, f"Conteo de Clientes (Venta antes: {venta_antes} - Venta en: {venta_camp} - Condición antes: {cond_antes} - Condición en: {cond_camp}")
 
     def submit_canales(self, entries_canales:dict, var_grupo_control):
         # Validar las entradas de canales
