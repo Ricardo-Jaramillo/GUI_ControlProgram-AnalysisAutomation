@@ -114,23 +114,24 @@ class App:
             return False
         return True
 
-    # Función para limpiar los campos de productos
-    def clear_entries_productos(self, entry_skus, entry_marcas, entry_proveedores, entry_clases, entry_subclases, entry_prod_types):
-        skus = entry_skus.get().strip().replace(', ', ',')
-        marcas = self.add_quotes(entry_marcas.get().strip().replace(', ', ','))
-        proveedores = self.add_quotes(entry_proveedores.get().strip().replace(', ', ','))
-        clases = self.add_quotes((',').join([option for option, var in entry_clases.items() if var.get()]))
-        subclases = self.add_quotes((',').join([option for option, var in entry_subclases.items() if var.get()]))
-        prod_types = self.add_quotes((',').join([option for option, var in entry_prod_types.items() if var.get()]))
-        
-        return skus, marcas, proveedores, clases, subclases, prod_types
-
     # Función para agregar productos a DB
-    def submit_productos(self, entry_skus, entry_marcas, entry_proveedores, entry_clases, entry_subclases, entry_prod_types):
-        if self.validate_entries_productos(entry_marcas, entry_proveedores, entry_skus):
-            # Limpiar los campos de productos
-            skus, marcas, proveedores, clases, subclases, prod_types = self.clear_entries_productos(entry_skus, entry_marcas, entry_proveedores, entry_clases, entry_subclases, entry_prod_types)
+    def submit_productos(self, entry_skus, entry_marcas, entry_proveedores):
+        if self.validate_entries_productos(entry_skus, entry_marcas, entry_proveedores):
+            skus = entry_skus.get().strip().replace(', ', ',')
+            marcas = self.add_quotes(entry_marcas.get().strip().replace(', ', ','))
+            proveedores = self.add_quotes(entry_proveedores.get().strip().replace(', ', ','))
 
+            # Preguntar si se desea filtrar los productos
+            op = messagebox.askyesno("Advertencia", "¿Desea filtrar por Categorías?")
+            if op:
+                self.filtrar_productos(skus, marcas, proveedores)
+                clases = self.cat
+                subclases = self.subcat
+                prod_types = self.prod_type
+            else:
+                clases, subclases, prod_types = '', '', ''
+
+            print('Printing Clases...', clases, subclases, prod_types)
             # Preguntar si la tabla ya existe
             if self.mon.validate_if_table_exists('#PRODUCTOS'):
                 override = messagebox.askyesno("Advertencia", "Ya hay productos ingresados, ¿Desea sobreescribirlos?")
@@ -140,25 +141,258 @@ class App:
             self.mon.generar_productos(skus=skus, marcas=marcas, proveedores=proveedores, clases=clases, subclases=subclases, prod_type_desc=prod_types, override=override)
             self.show_dataframe(self.mon.get_productos_agg(), "Productos")
 
-    def productos_layout(self):
+    def filtrar_productos(self, skus, marcas, proveedores):        
+        df = self.mon.get_df_categorias(skus=skus, marcas=marcas, proveedores=proveedores)
+
+        categorias = df['class_desc'].unique()
+        subcategorias = df['subclass_desc'].unique()
+        prod_types = df['prod_type_desc'].unique()
+
+        categoria_global = []
+        subcategoria_global = []
+        prod_type_global = []
+
+        def actualizar_categoria(event):
+            categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
+            subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
+            prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
+            print(categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
+            print(categoria_global, subcategoria_global, prod_type_global)
+
+            if categoria_seleccionada:
+                if not subcategoria_global:
+                    subcategoria_seleccionada = subcategorias
+                else:
+                    subcategoria_seleccionada = subcategoria_global
+                if not prod_type_global:
+                    prod_type_seleccionado = prod_types
+                else:
+                    prod_type_seleccionado = prod_type_global
+
+                listbox_subcategoria.delete(0, tk.END)
+                listbox_subcategoria.insert(tk.END, *df[df['class_desc'].isin(categoria_seleccionada) & df['subclass_desc'].isin(subcategoria_seleccionada) & df['prod_type_desc'].isin(prod_type_seleccionado)]['subclass_desc'].unique())
+
+                listbox_prod_type.delete(0, tk.END)
+                listbox_prod_type.insert(tk.END, *df[df['class_desc'].isin(categoria_seleccionada) & df['subclass_desc'].isin(subcategoria_seleccionada) & df['prod_type_desc'].isin(prod_type_seleccionado)]['prod_type_desc'].unique())
+            
+
+        def actualizar_subcategoria(event):
+            categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
+            subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
+            prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
+            print(categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
+            print(categoria_global, subcategoria_global, prod_type_global)
+
+            if subcategoria_seleccionada:
+                if not categoria_global:
+                    categoria_seleccionada = categorias
+                else:
+                    categoria_seleccionada = categoria_global
+                if not prod_type_global:
+                    prod_type_seleccionado = prod_types
+                else:
+                    prod_type_seleccionado = prod_type_global
+
+                listbox_categoria.delete(0, tk.END)
+                listbox_categoria.insert(tk.END, *df[df['subclass_desc'].isin(subcategoria_seleccionada) & df['class_desc'].isin(categoria_seleccionada) & df['prod_type_desc'].isin(prod_type_seleccionado)]['class_desc'].unique())
+                
+                listbox_prod_type.delete(0, tk.END)
+                listbox_prod_type.insert(tk.END, *df[df['subclass_desc'].isin(subcategoria_seleccionada) & df['class_desc'].isin(categoria_seleccionada) & df['prod_type_desc'].isin(prod_type_seleccionado)]['prod_type_desc'].unique())
+
+        def actualizar_prod_type(event):
+            categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
+            subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
+            prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
+            print(categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
+            print(categoria_global, subcategoria_global, prod_type_global)
+
+            if prod_type_seleccionado:
+                if not categoria_global:
+                    categoria_seleccionada = categorias
+                else:
+                    categoria_seleccionada = categoria_global
+                if not subcategoria_global:
+                    subcategoria_seleccionada = subcategorias
+                else:
+                    subcategoria_seleccionada = subcategoria_global
+
+                listbox_categoria.delete(0, tk.END)
+                listbox_categoria.insert(tk.END, *df[df['prod_type_desc'].isin(prod_type_seleccionado) & df['class_desc'].isin(categoria_seleccionada) & df['subclass_desc'].isin(subcategoria_seleccionada)]['class_desc'].unique())
+                
+                listbox_subcategoria.delete(0, tk.END)
+                listbox_subcategoria.insert(tk.END, *df[df['prod_type_desc'].isin(prod_type_seleccionado) & df['class_desc'].isin(categoria_seleccionada) & df['subclass_desc'].isin(subcategoria_seleccionada)]['subclass_desc'].unique())
+                
+        def seleccionar_categoria():
+            global categoria_global
+            categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
+            if categoria_seleccionada:
+                # Actualizar los valores de los listbox
+                listbox_categoria.delete(0, tk.END)
+                listbox_categoria.insert(tk.END, *categoria_seleccionada)
+
+                # Desactivar edicion de los listbox
+                listbox_categoria.config(state=tk.DISABLED)
+
+                # Deshabilitar boton de seleccionar categoria y oscurecerlo
+                boton_categoria.config(state=tk.DISABLED)
+                boton_categoria.config(style='Dark.TButton')
+
+                # Guardar la categoria seleccionada
+                categoria_global = categoria_seleccionada
+
+        def seleccionar_subcategoria():
+            global subcategoria_global
+            subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
+            if subcategoria_seleccionada:
+                # Actualizar los valores de los listbox
+                listbox_subcategoria.delete(0, tk.END)
+                listbox_subcategoria.insert(tk.END, *subcategoria_seleccionada)
+
+                # Desactivar edicion de los listbox
+                listbox_subcategoria.config(state=tk.DISABLED)
+                
+                # Deshabilitar boton de seleccionar subcategoria y oscurecerlo
+                boton_subcategoria.config(state=tk.DISABLED)
+                boton_subcategoria.config(style='Dark.TButton')
+
+                # Guardar la subcategoria seleccionada
+                subcategoria_global = subcategoria_seleccionada
+
+        def seleccionar_prod_type():
+            global prod_type_global
+            prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
+            if prod_type_seleccionado:
+                # Actualizar los valores de los listbox
+                listbox_prod_type.delete(0, tk.END)
+                listbox_prod_type.insert(tk.END, *prod_type_seleccionado)
+                
+                # Desactivar edicion de los listbox
+                listbox_prod_type.config(state=tk.DISABLED)
+
+                # Deshabilitar boton de seleccionar prod_type y oscurecerlo
+                boton_prod_type.config(state=tk.DISABLED)
+                boton_prod_type.config(style='Dark.TButton')
+
+                # Guardar el prod_type seleccionado
+                prod_type_global = prod_type_seleccionado
+
+        def reiniciar_selecciones():
+            global categoria_global
+            global subcategoria_global
+            global prod_type_global
+            # Activar edicion de los listbox
+            listbox_categoria.config(state=tk.NORMAL)
+            listbox_subcategoria.config(state=tk.NORMAL)
+            listbox_prod_type.config(state=tk.NORMAL)
+            # Habilitar botones de seleccionar y aclararlos
+            boton_categoria.config(state=tk.NORMAL)
+            boton_categoria.config(style='TButton')
+            boton_subcategoria.config(state=tk.NORMAL)
+            boton_subcategoria.config(style='TButton')
+            boton_prod_type.config(state=tk.NORMAL)
+            boton_prod_type.config(style='TButton')
+            # Borrar las selecciones
+            listbox_categoria.delete(0, tk.END)
+            listbox_subcategoria.delete(0, tk.END)
+            listbox_prod_type.delete(0, tk.END)
+            # Insertar los valores originales
+            listbox_categoria.insert(tk.END, *categorias)
+            listbox_subcategoria.insert(tk.END, *subcategorias)
+            listbox_prod_type.insert(tk.END, *prod_types)
+            # Reiniciar las variables globales
+            categoria_global = []
+            subcategoria_global = []
+            prod_type_global = []
+
+        def aplicar_filtros():
+            categoria_seleccionada = [item for item in listbox_categoria.get(0, tk.END)]
+            subcategoria_seleccionada = [item for item in listbox_subcategoria.get(0, tk.END)]
+            prod_type_seleccionado = [item for item in listbox_prod_type.get(0, tk.END)]
+
+            print(f"Categoría: {categoria_seleccionada}")
+            print(f"Subcategoría: {subcategoria_seleccionada}")
+            print(f"Prod Type: {prod_type_seleccionado}")
+
+            # Mostrar en un messagebox que los filtros se aplicaron correctamente
+            messagebox.showinfo("Filtros Aplicados", f"Categoría: {(', ').join(categoria_seleccionada)}\nSubcategoría: {(', ').join(subcategoria_seleccionada)}\nProd Type: {(', ').join(prod_type_seleccionado)}")
+            self.cat = categoria_seleccionada
+            self.subcat = subcategoria_seleccionada
+            self.prod_type = prod_type_seleccionado
+
+        # Crear la ventana principal
+        ventana = tk.Tk()
+        ventana.title("Selección de Productos")
+
+        # Crear los widgets
+        label_categoria = ttk.Label(ventana, text="Categoría:")
+        listbox_categoria = tk.Listbox(ventana, selectmode=tk.EXTENDED, width=25)
+        listbox_categoria.insert(tk.END, *categorias)
+        listbox_categoria.bind("<<ListboxSelect>>", actualizar_categoria)
+
+        label_subcategoria = ttk.Label(ventana, text="Subcategoría:")
+        listbox_subcategoria = tk.Listbox(ventana, selectmode=tk.EXTENDED, width=25)
+        listbox_subcategoria.insert(tk.END, *subcategorias)
+        listbox_subcategoria.bind("<<ListboxSelect>>", actualizar_subcategoria)
+
+        label_prod_type = ttk.Label(ventana, text="Prod Type:")
+        listbox_prod_type = tk.Listbox(ventana, selectmode=tk.EXTENDED, width=25)
+        listbox_prod_type.insert(tk.END, *prod_types)
+        listbox_prod_type.bind("<<ListboxSelect>>", actualizar_prod_type)
+
+        # Boton para seleccionar cada uno de los elementos
+        boton_categoria = ttk.Button(ventana, text="Seleccionar Categoría", command=seleccionar_categoria)
+        boton_subcategoria = ttk.Button(ventana, text="Seleccionar Subcategoría", command=seleccionar_subcategoria)
+        boton_prod_type = ttk.Button(ventana, text="Seleccionar Prod Type", command=seleccionar_prod_type)
+
+        # Boton para reiniciar las selecciones
+        boton_reiniciar = ttk.Button(ventana, text="Reiniciar Selecciones", command=reiniciar_selecciones)
+
+        # Boton para aplicar los filtros
+        boton_aplicar = ttk.Button(ventana, text="Aplicar Filtros", command=aplicar_filtros)
+
+        # Posicionar los widgets en la ventana utilizando el sistema de gestión de geometría grid
+        label_categoria.grid(row=0, column=0, padx=5)
+        label_subcategoria.grid(row=0, column=1, padx=5)
+        label_prod_type.grid(row=0, column=2, padx=5)
+
+        listbox_categoria.grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        listbox_subcategoria.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+        listbox_prod_type.grid(row=1, column=2, sticky="w", padx=5, pady=5)
+
+        boton_categoria.grid(row=2, column=0, padx=5, pady=5)
+        boton_subcategoria.grid(row=2, column=1, padx=5, pady=5)
+        boton_prod_type.grid(row=2, column=2, padx=5, pady=5)
+
+        boton_reiniciar.grid(row=4, column=0, padx=5, pady=5)
+        boton_aplicar.grid(row=4, column=2, padx=5, pady=5)
+
+        # Configurar el tamaño de las columnas
+        ventana.grid_columnconfigure(0, weight=1)
+        ventana.grid_columnconfigure(1, weight=1)
+
+        # Iniciar el bucle de eventos
+        ventana.mainloop()
+
+    def ingresar_productos(self):
+        # Verificar si hay productos ingresados, si es así, mostrar advertencia
+        if not self.mon.df_productos.empty:
+            messagebox.showinfo("Información", "Ya hay productos ingresados.")
+
         self.menu_frame.pack_forget()
         self.clear_content_frame()
         # self.content_frame.pack(padx=100)
 
         marcas, proveedores = self.mon.get_marcas_proveedores()
-        clases, subclases, prod_types = self.mon.get_clases_subclases_prod_types()
-        print(marcas, proveedores)
-        print(clases, subclases, prod_types)
 
         frame = tk.Frame(self.content_frame)
         frame.pack(pady=10, padx=10)
 
         # Crear Labels y entradas para los productos
-        tk.Label(frame, text="Definir Productos", font=('Arial', 14, 'bold')).grid(row=0, column=0, columnspan=4, pady=10)
+        tk.Label(frame, text="Seleccionar Productos", font=('Arial', 14, 'bold')).grid(row=0, column=0, columnspan=2, pady=10)
         
         # Línea horizontal
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
-        separator.grid(row=1, column=0, columnspan=4, pady=5, sticky="we")
+        separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="we")
 
         # Definir los productos
         tk.Label(frame, text="SKUS").grid(row=2, column=0, pady=5)
@@ -168,80 +402,30 @@ class App:
         # Definir marcas
         tk.Label(frame, text="Marca(s):").grid(row=3, column=0, pady=5)
         entry_marcas = tk.StringVar()
-        entry_marcas.set("Seleccione una opción")
         dropdown_marcas = ttk.Combobox(frame, textvariable=entry_marcas, values=marcas, state='normal', width=22)
         dropdown_marcas.grid(row=3, column=1, pady=5)
         
         # Definir proveedores
         tk.Label(frame, text="Proveedor(es):").grid(row=4, column=0, pady=5)
         entry_proveedores = tk.StringVar()
-        entry_proveedores.set("Seleccione una opción")
         dropdown_proveedores = ttk.Combobox(frame, textvariable=entry_proveedores, values=proveedores, state='normal', width=22)
         dropdown_proveedores.grid(row=4, column=1, pady=5)
 
-        # Ingresar Clases, Subclases y Tipo de Producto según las opciones disponibles
-        # recuperar las opciones de clases, subclases y tipos de productos de la base de datos
-        
-
-        # # Filtrar por categorías de productos en la columna derecha
-        # tk.Label(frame, text="Filtrar por Clase, Sub-Clase y Tipo (opcional).", font=('Arial', 10, 'bold')).pack(pady=5)
-        # # Diccionario de opciones seleccionadas
-        # selected_options_clases = {}
-        # selected_options_subclases = {}
-        # selected_options_prod_types = {}
-        
-        # tk.Label(frame, text="Clase:").pack()
-        # entry_clases = tk.Menubutton(frame, text="Select Clase", relief=tk.RAISED, bg="light gray", activebackground="gray")
-        # entry_clases.menu = tk.Menu(entry_clases, tearoff=0)
-        # entry_clases["menu"] = entry_clases.menu
-        # for clase in clases:
-        #     selected_options_clases[clase] = tk.BooleanVar()
-        #     entry_clases.menu.add_checkbutton(label=clase, variable=selected_options_clases[clase])
-        # entry_clases.pack()
-
-        # tk.Label(frame, text="Sub-clase:").pack()
-        # entry_subclases = tk.Menubutton(frame, text="Select Sub-clase", relief=tk.RAISED, bg="light gray", activebackground="gray")
-        # entry_subclases.menu = tk.Menu(entry_subclases, tearoff=0)
-        # entry_subclases["menu"] = entry_subclases.menu
-        # for subclase in subclases:
-        #     selected_options_subclases[subclase] = tk.BooleanVar()
-        #     entry_subclases.menu.add_checkbutton(label=subclase, variable=selected_options_subclases[subclase])
-        # entry_subclases.pack()
-
-        # tk.Label(frame, text="Tipo de producto:").pack()
-        # entry_prod_types = tk.Menubutton(frame, text="Select Tipo de producto", relief=tk.RAISED, bg="light gray", activebackground="gray")
-        # entry_prod_types.menu = tk.Menu(entry_prod_types, tearoff=0)
-        # entry_prod_types["menu"] = entry_prod_types.menu
-        # for prod_type in prod_types:
-        #     selected_options_prod_types[prod_type] = tk.BooleanVar()
-        #     entry_prod_types.menu.add_checkbutton(label=prod_type, variable=selected_options_prod_types[prod_type])
-        # entry_prod_types.pack()
-
         # Label para advertencia. Datos separados por coma
-        tk.Label(frame, text="Nota: Ingresar datos separados por coma.", font=('Arial', 10, 'bold')).grid(row=80, column=0, columnspan=2, pady=10)
+        tk.Label(frame, text="Nota: Ingresar datos separados por coma.", font=('Arial', 10, 'bold')).grid(row=5, column=0, columnspan=2, pady=10)
+
+        # Ingresar productos
+        tk.Button(frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus, entry_marcas, entry_proveedores)).grid(row=6, column=0, columnspan=2, pady=10)
+
         # Verificar si hay productos ingresados, si es así, botón para ver productos
         if not self.mon.df_productos.empty:
             # Buton para ver productos agrupados
-            tk.Label(frame, text="Productos Ingresados", font=("Arial", 10, "bold")).grid(row=90, column=0, columnspan=2, pady=10)
-            tk.Button(frame, text="Ver", command=lambda: self.show_dataframe(self.mon.get_productos_agg(), 'Productos')).grid(row=100, column=0, columnspan=2, pady=10)
+            tk.Label(frame, text="Productos Ingresados", font=("Arial", 10, "bold")).grid(row=90, column=0, pady=10)
+            tk.Button(frame, text="Ver", command=lambda: self.show_dataframe(self.mon.get_productos_agg(), 'Productos')).grid(row=90, column=1, pady=10)
 
         # Botón para ingresar productos
         # tk.Button(frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus, entry_marcas, entry_proveedores, selected_options_clases, selected_options_subclases, selected_options_prod_types)).pack(pady=10)
-        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=2, columnspan=2, pady=10)
-
-    def ingresar_productos(self):
-        # Verificar si hay productos ingresados, si es así, mostrar advertencia
-        if not self.mon.df_productos.empty:
-            # Extraer las categorías de productos
-            clases = self.mon.df_productos['class_desc'].unique()
-            subclases = self.mon.df_productos['subclass_desc'].unique()
-            prod_types = self.mon.df_productos['prod_type_desc'].unique()
-            # Mostrar advertencia y botón para ver productos
-            messagebox.showinfo("Información", "Ya hay productos ingresados.")
-        else:
-            clases, subclases, prod_types = '', '', ''
-
-        self.productos_layout(clases, subclases, prod_types)
+        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=0, columnspan=2, pady=10)
 
     # Función para validar los campos de PO
     def validate_entries_po(self, entry_tiendas, entry_is_online, entry_condicion, entry_inicio, entry_termino):

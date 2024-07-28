@@ -89,9 +89,6 @@ def actualizar_prod_type(event):
         listbox_subcategoria.delete(0, tk.END)
         listbox_subcategoria.insert(tk.END, *df[df['Prod Type'].isin(prod_type_seleccionado) & df['Categoria'].isin(categoria_seleccionada) & df['Subcategoria'].isin(subcategoria_seleccionada)]['Subcategoria'].unique())
         
-    else:
-        print("Selecciona un prod_type")
-
 def seleccionar_categoria():
     global categoria_global
     categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]

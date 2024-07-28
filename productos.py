@@ -169,3 +169,16 @@ class Productos():
         '''
         return query_productos_temporal
     
+    def get_df_categorias(self, skus, marcas, proveedores):
+        query = f'''
+            SELECT DISTINCT
+                CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+            FROM DIM_PRODUCT A
+            INNER JOIN CHEDRAUI.MON_CRM_SKU_RAZONSOCIAL B ON A.PRODUCT_CODE = B.PRODUCT_CODE
+            {f'AND A.PRODUCT_CODE::BIGINT IN ({skus})' if skus else ''}
+            {f'AND B.MARCA IN ({marcas})' if marcas else ''}
+            {f'AND B.PROVEEDOR = ({proveedores})' if proveedores else ''}
+        '''
+        return self.select(query)
