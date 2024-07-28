@@ -13,6 +13,31 @@ class Monetizacion(Conn, Productos):
         self.rad = Radiografia()
         # self.ds = DataScience()
 
+    def get_marcas_proveedores(self):
+        query = f'''
+            SELECT DISTINCT
+                MARCA
+                ,PROVEEDOR
+            FROM CHEDRAUI.MON_CRM_SKU_RAZONSOCIAL
+        '''
+        df = self.select(query)
+        return sorted(list(df.marca.unique())), sorted(list(df.proveedor.unique()))
+    
+    def get_clases_subclases_prod_types(self):
+        # Validate if table exists
+        if not self.validate_if_table_exists('#PRODUCTOS'):
+            return None, None, None, None
+        else:
+            query = f'''
+                SELECT DISTINCT
+                    CLASS_DESC
+                    ,SUBCLASS_DESC
+                    ,PROD_TYPE_DESC
+                FROM #PRODUCTOS
+            '''
+            df = self.select(query)
+            return df
+
     def generar_productos(self, skus, marcas, proveedores, clases, subclases, prod_type_desc, override):
         # Set variables
         self.set_products(skus=skus, marcas=marcas, proveedores=proveedores, clases=clases, subclases=subclases, prod_type_desc=prod_type_desc)

@@ -79,7 +79,8 @@ class App:
             ("3. Generar BusinessCase", self.generar_bc),
             ("4. Generar Listas de envío", self.generar_listas),
             ("5. Generar Radiografía", self.generar_rad),
-            ("6. Ver/Guardar Datos", self.ver_guardar_datos),
+            ("6. Resultados de Campañas", self.generar_resultados),
+            ("7. Ver/Guardar Datos", self.ver_guardar_datos),
             ("Salir", self.end_program)
         ]
 
@@ -139,76 +140,94 @@ class App:
             self.mon.generar_productos(skus=skus, marcas=marcas, proveedores=proveedores, clases=clases, subclases=subclases, prod_type_desc=prod_types, override=override)
             self.show_dataframe(self.mon.get_productos_agg(), "Productos")
 
-    def productos_layout(self, clases, subclases, prod_types):
+    def productos_layout(self):
         self.menu_frame.pack_forget()
         self.clear_content_frame()
-        self.content_frame.pack(padx=100)
+        # self.content_frame.pack(padx=100)
 
-        # Crear frames para las dos columnas
-        left_frame = tk.Frame(self.content_frame)
-        right_frame = tk.Frame(self.content_frame)
-        left_frame.pack(side=tk.LEFT, padx=10, pady=10)
-        right_frame.pack(side=tk.RIGHT, padx=10, pady=10)
+        marcas, proveedores = self.mon.get_marcas_proveedores()
+        clases, subclases, prod_types = self.mon.get_clases_subclases_prod_types()
+        print(marcas, proveedores)
+        print(clases, subclases, prod_types)
 
-        # Crear los campos para ingresar productos
-        tk.Label(left_frame, text="Ingresar Productos separados por coma", font=('Arial', 10, 'bold')).pack(pady=5)
+        frame = tk.Frame(self.content_frame)
+        frame.pack(pady=10, padx=10)
 
-        # Ingresar productos en la columna izquierda
-        tk.Label(left_frame, text="SKUs:").pack()
-        entry_skus = tk.Entry(left_frame)
-        entry_skus.pack()
+        # Crear Labels y entradas para los productos
+        tk.Label(frame, text="Definir Productos", font=('Arial', 14, 'bold')).grid(row=0, column=0, columnspan=4, pady=10)
         
-        tk.Label(left_frame, text="Marcas:").pack()
-        entry_marcas = tk.Entry(left_frame)
-        entry_marcas.pack()
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=0, columnspan=4, pady=5, sticky="we")
+
+        # Definir los productos
+        tk.Label(frame, text="SKUS").grid(row=2, column=0, pady=5)
+        entry_skus = tk.Entry(frame, width=25)
+        entry_skus.grid(row=2, column=1, pady=5)
         
-        tk.Label(left_frame, text="Proveedor(es):").pack()
-        entry_proveedores = tk.Entry(left_frame)
-        entry_proveedores.pack()
-
-        # Filtrar por categorías de productos en la columna derecha
-        tk.Label(right_frame, text="Filtrar por Clase, Sub-Clase y Tipo (opcional).", font=('Arial', 10, 'bold')).pack(pady=5)
-        # Diccionario de opciones seleccionadas
-        selected_options_clases = {}
-        selected_options_subclases = {}
-        selected_options_prod_types = {}
+        # Definir marcas
+        tk.Label(frame, text="Marca(s):").grid(row=3, column=0, pady=5)
+        entry_marcas = tk.StringVar()
+        entry_marcas.set("Seleccione una opción")
+        dropdown_marcas = ttk.Combobox(frame, textvariable=entry_marcas, values=marcas, state='normal', width=22)
+        dropdown_marcas.grid(row=3, column=1, pady=5)
         
-        tk.Label(right_frame, text="Clase:").pack()
-        entry_clases = tk.Menubutton(right_frame, text="Select Clase", relief=tk.RAISED, bg="light gray", activebackground="gray")
-        entry_clases.menu = tk.Menu(entry_clases, tearoff=0)
-        entry_clases["menu"] = entry_clases.menu
-        for clase in clases:
-            selected_options_clases[clase] = tk.BooleanVar()
-            entry_clases.menu.add_checkbutton(label=clase, variable=selected_options_clases[clase])
-        entry_clases.pack()
+        # Definir proveedores
+        tk.Label(frame, text="Proveedor(es):").grid(row=4, column=0, pady=5)
+        entry_proveedores = tk.StringVar()
+        entry_proveedores.set("Seleccione una opción")
+        dropdown_proveedores = ttk.Combobox(frame, textvariable=entry_proveedores, values=proveedores, state='normal', width=22)
+        dropdown_proveedores.grid(row=4, column=1, pady=5)
 
-        tk.Label(right_frame, text="Sub-clase:").pack()
-        entry_subclases = tk.Menubutton(right_frame, text="Select Sub-clase", relief=tk.RAISED, bg="light gray", activebackground="gray")
-        entry_subclases.menu = tk.Menu(entry_subclases, tearoff=0)
-        entry_subclases["menu"] = entry_subclases.menu
-        for subclase in subclases:
-            selected_options_subclases[subclase] = tk.BooleanVar()
-            entry_subclases.menu.add_checkbutton(label=subclase, variable=selected_options_subclases[subclase])
-        entry_subclases.pack()
+        # Ingresar Clases, Subclases y Tipo de Producto según las opciones disponibles
+        # recuperar las opciones de clases, subclases y tipos de productos de la base de datos
+        
 
-        tk.Label(right_frame, text="Tipo de producto:").pack()
-        entry_prod_types = tk.Menubutton(right_frame, text="Select Tipo de producto", relief=tk.RAISED, bg="light gray", activebackground="gray")
-        entry_prod_types.menu = tk.Menu(entry_prod_types, tearoff=0)
-        entry_prod_types["menu"] = entry_prod_types.menu
-        for prod_type in prod_types:
-            selected_options_prod_types[prod_type] = tk.BooleanVar()
-            entry_prod_types.menu.add_checkbutton(label=prod_type, variable=selected_options_prod_types[prod_type])
-        entry_prod_types.pack()
+        # # Filtrar por categorías de productos en la columna derecha
+        # tk.Label(frame, text="Filtrar por Clase, Sub-Clase y Tipo (opcional).", font=('Arial', 10, 'bold')).pack(pady=5)
+        # # Diccionario de opciones seleccionadas
+        # selected_options_clases = {}
+        # selected_options_subclases = {}
+        # selected_options_prod_types = {}
+        
+        # tk.Label(frame, text="Clase:").pack()
+        # entry_clases = tk.Menubutton(frame, text="Select Clase", relief=tk.RAISED, bg="light gray", activebackground="gray")
+        # entry_clases.menu = tk.Menu(entry_clases, tearoff=0)
+        # entry_clases["menu"] = entry_clases.menu
+        # for clase in clases:
+        #     selected_options_clases[clase] = tk.BooleanVar()
+        #     entry_clases.menu.add_checkbutton(label=clase, variable=selected_options_clases[clase])
+        # entry_clases.pack()
 
+        # tk.Label(frame, text="Sub-clase:").pack()
+        # entry_subclases = tk.Menubutton(frame, text="Select Sub-clase", relief=tk.RAISED, bg="light gray", activebackground="gray")
+        # entry_subclases.menu = tk.Menu(entry_subclases, tearoff=0)
+        # entry_subclases["menu"] = entry_subclases.menu
+        # for subclase in subclases:
+        #     selected_options_subclases[subclase] = tk.BooleanVar()
+        #     entry_subclases.menu.add_checkbutton(label=subclase, variable=selected_options_subclases[subclase])
+        # entry_subclases.pack()
+
+        # tk.Label(frame, text="Tipo de producto:").pack()
+        # entry_prod_types = tk.Menubutton(frame, text="Select Tipo de producto", relief=tk.RAISED, bg="light gray", activebackground="gray")
+        # entry_prod_types.menu = tk.Menu(entry_prod_types, tearoff=0)
+        # entry_prod_types["menu"] = entry_prod_types.menu
+        # for prod_type in prod_types:
+        #     selected_options_prod_types[prod_type] = tk.BooleanVar()
+        #     entry_prod_types.menu.add_checkbutton(label=prod_type, variable=selected_options_prod_types[prod_type])
+        # entry_prod_types.pack()
+
+        # Label para advertencia. Datos separados por coma
+        tk.Label(frame, text="Nota: Ingresar datos separados por coma.", font=('Arial', 10, 'bold')).grid(row=80, column=0, columnspan=2, pady=10)
         # Verificar si hay productos ingresados, si es así, botón para ver productos
         if not self.mon.df_productos.empty:
             # Buton para ver productos agrupados
-            tk.Label(right_frame, text="Productos Ingresados", font=("Arial", 10, "bold")).pack(pady=5)
-            tk.Button(right_frame, text="Ver Productos Ingresados", command=lambda: self.show_dataframe(self.mon.get_productos_agg(), 'Productos')).pack(pady=5)
+            tk.Label(frame, text="Productos Ingresados", font=("Arial", 10, "bold")).grid(row=90, column=0, columnspan=2, pady=10)
+            tk.Button(frame, text="Ver", command=lambda: self.show_dataframe(self.mon.get_productos_agg(), 'Productos')).grid(row=100, column=0, columnspan=2, pady=10)
 
         # Botón para ingresar productos
-        tk.Button(left_frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus, entry_marcas, entry_proveedores, selected_options_clases, selected_options_subclases, selected_options_prod_types)).pack(pady=10)
-        tk.Button(left_frame, text="Regresar al Menú", command=self.show_menu).pack()
+        # tk.Button(frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus, entry_marcas, entry_proveedores, selected_options_clases, selected_options_subclases, selected_options_prod_types)).pack(pady=10)
+        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=2, columnspan=2, pady=10)
 
     def ingresar_productos(self):
         # Verificar si hay productos ingresados, si es así, mostrar advertencia
@@ -754,7 +773,7 @@ class App:
 
         # Crear un Frame para los botones
         frame = tk.Frame(self.content_frame)
-        frame.pack(side="left", padx=10, pady=10)
+        frame.pack(padx=10, pady=10)
 
         # Titulo de la sección
         tk.Label(frame, text="Radiografía", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
@@ -796,6 +815,9 @@ class App:
         tk.Button(frame, text="Generar Radiografía", command=lambda: self.submit_datos_rad(entry_inicio, entry_termino, entry_nombre)).grid(row=10, column=0, columnspan=2, pady=5, padx=10)
 
         tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=0, columnspan=2, pady=10)
+
+    def generar_resultados(self):
+        pass
 
 # root = tk.Tk()
 # app = App(root)
