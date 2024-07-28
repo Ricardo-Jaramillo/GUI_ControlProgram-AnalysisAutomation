@@ -15,17 +15,26 @@ categorias = df['Categoria'].unique()
 subcategorias = df['Subcategoria'].unique()
 prod_types = df['Prod Type'].unique()
 
+categoria_global = []
+subcategoria_global = []
+prod_type_global = []
+
 def actualizar_categoria(event):
     categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
     subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
     prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
     print(categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
+    print(categoria_global, subcategoria_global, prod_type_global)
 
     if categoria_seleccionada:
-        if not subcategoria_seleccionada:
+        if not subcategoria_global:
             subcategoria_seleccionada = subcategorias
-        if not prod_type_seleccionado:
+        else:
+            subcategoria_seleccionada = subcategoria_global
+        if not prod_type_global:
             prod_type_seleccionado = prod_types
+        else:
+            prod_type_seleccionado = prod_type_global
 
         listbox_subcategoria.delete(0, tk.END)
         listbox_subcategoria.insert(tk.END, *df[df['Categoria'].isin(categoria_seleccionada) & df['Subcategoria'].isin(subcategoria_seleccionada) & df['Prod Type'].isin(prod_type_seleccionado)]['Subcategoria'].unique())
@@ -39,12 +48,17 @@ def actualizar_subcategoria(event):
     subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
     prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
     print(categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
+    print(categoria_global, subcategoria_global, prod_type_global)
 
     if subcategoria_seleccionada:
-        if not categoria_seleccionada:
+        if not categoria_global:
             categoria_seleccionada = categorias
-        if not prod_type_seleccionado:
+        else:
+            categoria_seleccionada = categoria_global
+        if not prod_type_global:
             prod_type_seleccionado = prod_types
+        else:
+            prod_type_seleccionado = prod_type_global
 
         listbox_categoria.delete(0, tk.END)
         listbox_categoria.insert(tk.END, *df[df['Subcategoria'].isin(subcategoria_seleccionada) & df['Categoria'].isin(categoria_seleccionada) & df['Prod Type'].isin(prod_type_seleccionado)]['Categoria'].unique())
@@ -57,12 +71,17 @@ def actualizar_prod_type(event):
     subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
     prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
     print(categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
+    print(categoria_global, subcategoria_global, prod_type_global)
 
     if prod_type_seleccionado:
-        if not categoria_seleccionada:
+        if not categoria_global:
             categoria_seleccionada = categorias
-        if not subcategoria_seleccionada:
+        else:
+            categoria_seleccionada = categoria_global
+        if not subcategoria_global:
             subcategoria_seleccionada = subcategorias
+        else:
+            subcategoria_seleccionada = subcategoria_global
 
         listbox_categoria.delete(0, tk.END)
         listbox_categoria.insert(tk.END, *df[df['Prod Type'].isin(prod_type_seleccionado) & df['Categoria'].isin(categoria_seleccionada) & df['Subcategoria'].isin(subcategoria_seleccionada)]['Categoria'].unique())
@@ -74,6 +93,7 @@ def actualizar_prod_type(event):
         print("Selecciona un prod_type")
 
 def seleccionar_categoria():
+    global categoria_global
     categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
     if categoria_seleccionada:
         # Actualizar los valores de los listbox
@@ -87,7 +107,11 @@ def seleccionar_categoria():
         boton_categoria.config(state=tk.DISABLED)
         boton_categoria.config(style='Dark.TButton')
 
+        # Guardar la categoria seleccionada
+        categoria_global = categoria_seleccionada
+
 def seleccionar_subcategoria():
+    global subcategoria_global
     subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
     if subcategoria_seleccionada:
         # Actualizar los valores de los listbox
@@ -101,7 +125,11 @@ def seleccionar_subcategoria():
         boton_subcategoria.config(state=tk.DISABLED)
         boton_subcategoria.config(style='Dark.TButton')
 
+        # Guardar la subcategoria seleccionada
+        subcategoria_global = subcategoria_seleccionada
+
 def seleccionar_prod_type():
+    global prod_type_global
     prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
     if prod_type_seleccionado:
         # Actualizar los valores de los listbox
@@ -115,7 +143,13 @@ def seleccionar_prod_type():
         boton_prod_type.config(state=tk.DISABLED)
         boton_prod_type.config(style='Dark.TButton')
 
+        # Guardar el prod_type seleccionado
+        prod_type_global = prod_type_seleccionado
+
 def reiniciar_selecciones():
+    global categoria_global
+    global subcategoria_global
+    global prod_type_global
     # Activar edicion de los listbox
     listbox_categoria.config(state=tk.NORMAL)
     listbox_subcategoria.config(state=tk.NORMAL)
@@ -135,6 +169,10 @@ def reiniciar_selecciones():
     listbox_categoria.insert(tk.END, *categorias)
     listbox_subcategoria.insert(tk.END, *subcategorias)
     listbox_prod_type.insert(tk.END, *prod_types)
+    # Reiniciar las variables globales
+    categoria_global = []
+    subcategoria_global = []
+    prod_type_global = []
 
 def aplicar_filtros():
     categoria_seleccionada = [item for item in listbox_categoria.get(0, tk.END)]
