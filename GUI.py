@@ -19,6 +19,9 @@ warnings.filterwarnings('ignore')
 class App:
     def __init__(self, root):
         self.mon = Monetizacion()
+        self.clases = ''
+        self.subclases = ''
+        self.prod_types = ''
         self.root = root
         self.root.title("Cognodata Monetización - Data Science")
         self.set_icon(".\images\icono_cogno_resized.png")
@@ -117,57 +120,62 @@ class App:
     # Función para agregar productos a DB
     def submit_productos(self, entry_skus, entry_marcas, entry_proveedores):
         if self.validate_entries_productos(entry_skus, entry_marcas, entry_proveedores):
+            # Extraer los datos de los campos de productos
             skus = entry_skus.get().strip().replace(', ', ',')
             marcas = self.add_quotes(entry_marcas.get().strip().replace(', ', ','))
             proveedores = self.add_quotes(entry_proveedores.get().strip().replace(', ', ','))
 
+            df = self.mon.get_df_categorias(skus=skus, marcas=marcas, proveedores=proveedores)
+
             # Preguntar si se desea filtrar los productos
             op = messagebox.askyesno("Advertencia", "¿Desea filtrar por Categorías?")
+            print('Filtrar productos:', op)
+            print('Printing Clases Antes...', self.clases, self.subclases, self.prod_types)
             if op:
-                self.filtrar_productos(skus, marcas, proveedores)
-                clases = self.cat
-                subclases = self.subcat
-                prod_types = self.prod_type
-            else:
-                clases, subclases, prod_types = '', '', ''
+                print('Printing Clases Durante...', self.clases, self.subclases, self.prod_types)
+                ventana = tk.Toplevel(self.root)
+                self.filtrar_productos(ventana, df)
+                ventana.wait_window(ventana)
+                # self.wait_window(self.ventana)
+            # else:
+            #     self.clases, subclases, prod_types = '', '', ''
 
-            print('Printing Clases...', clases, subclases, prod_types)
+            print('Printing Clases Después...', self.clases, self.subclases, self.prod_types)
             # Preguntar si la tabla ya existe
             if self.mon.validate_if_table_exists('#PRODUCTOS'):
                 override = messagebox.askyesno("Advertencia", "Ya hay productos ingresados, ¿Desea sobreescribirlos?")
             else:
                 override = None
                 
-            self.mon.generar_productos(skus=skus, marcas=marcas, proveedores=proveedores, clases=clases, subclases=subclases, prod_type_desc=prod_types, override=override)
+            self.mon.generar_productos(skus=skus, marcas=marcas, proveedores=proveedores, clases=self.clases, subclases=self.subclases, prod_type_desc=self.prod_types, override=override)
             self.show_dataframe(self.mon.get_productos_agg(), "Productos")
 
-    def filtrar_productos(self, skus, marcas, proveedores):        
-        df = self.mon.get_df_categorias(skus=skus, marcas=marcas, proveedores=proveedores)
-
+    def filtrar_productos(self, ventana, df):
+        
         categorias = df['class_desc'].unique()
         subcategorias = df['subclass_desc'].unique()
         prod_types = df['prod_type_desc'].unique()
 
-        categoria_global = []
-        subcategoria_global = []
-        prod_type_global = []
+        self.categoria_global = []
+        self.subcategoria_global = []
+        self.prod_type_global = []
 
         def actualizar_categoria(event):
             categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
             subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
             prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
-            print(categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
-            print(categoria_global, subcategoria_global, prod_type_global)
+            print('Seleccionados:', categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
+            print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
 
             if categoria_seleccionada:
-                if not subcategoria_global:
+                if not self.subcategoria_global:
                     subcategoria_seleccionada = subcategorias
                 else:
-                    subcategoria_seleccionada = subcategoria_global
-                if not prod_type_global:
+                    subcategoria_seleccionada = self.subcategoria_global
+                if not self.prod_type_global:
                     prod_type_seleccionado = prod_types
                 else:
-                    prod_type_seleccionado = prod_type_global
+                    prod_type_seleccionado = self.prod_type_global
 
                 listbox_subcategoria.delete(0, tk.END)
                 listbox_subcategoria.insert(tk.END, *df[df['class_desc'].isin(categoria_seleccionada) & df['subclass_desc'].isin(subcategoria_seleccionada) & df['prod_type_desc'].isin(prod_type_seleccionado)]['subclass_desc'].unique())
@@ -180,18 +188,18 @@ class App:
             categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
             subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
             prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
-            print(categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
-            print(categoria_global, subcategoria_global, prod_type_global)
+            print('Seleccionados:', categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
+            print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
 
             if subcategoria_seleccionada:
-                if not categoria_global:
+                if not self.categoria_global:
                     categoria_seleccionada = categorias
                 else:
-                    categoria_seleccionada = categoria_global
-                if not prod_type_global:
+                    categoria_seleccionada = self.categoria_global
+                if not self.prod_type_global:
                     prod_type_seleccionado = prod_types
                 else:
-                    prod_type_seleccionado = prod_type_global
+                    prod_type_seleccionado = self.prod_type_global
 
                 listbox_categoria.delete(0, tk.END)
                 listbox_categoria.insert(tk.END, *df[df['subclass_desc'].isin(subcategoria_seleccionada) & df['class_desc'].isin(categoria_seleccionada) & df['prod_type_desc'].isin(prod_type_seleccionado)]['class_desc'].unique())
@@ -203,18 +211,18 @@ class App:
             categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
             subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
             prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
-            print(categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
-            print(categoria_global, subcategoria_global, prod_type_global)
+            print('Seleccionados:', categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
+            print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
 
             if prod_type_seleccionado:
-                if not categoria_global:
+                if not self.categoria_global:
                     categoria_seleccionada = categorias
                 else:
-                    categoria_seleccionada = categoria_global
-                if not subcategoria_global:
+                    categoria_seleccionada = self.categoria_global
+                if not self.subcategoria_global:
                     subcategoria_seleccionada = subcategorias
                 else:
-                    subcategoria_seleccionada = subcategoria_global
+                    subcategoria_seleccionada = self.subcategoria_global
 
                 listbox_categoria.delete(0, tk.END)
                 listbox_categoria.insert(tk.END, *df[df['prod_type_desc'].isin(prod_type_seleccionado) & df['class_desc'].isin(categoria_seleccionada) & df['subclass_desc'].isin(subcategoria_seleccionada)]['class_desc'].unique())
@@ -223,8 +231,10 @@ class App:
                 listbox_subcategoria.insert(tk.END, *df[df['prod_type_desc'].isin(prod_type_seleccionado) & df['class_desc'].isin(categoria_seleccionada) & df['subclass_desc'].isin(subcategoria_seleccionada)]['subclass_desc'].unique())
                 
         def seleccionar_categoria():
-            global categoria_global
+            # global categoria_global
             categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
+            print('Seleccionados:', categoria_seleccionada)
+            print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
             if categoria_seleccionada:
                 # Actualizar los valores de los listbox
                 listbox_categoria.delete(0, tk.END)
@@ -238,11 +248,15 @@ class App:
                 boton_categoria.config(style='Dark.TButton')
 
                 # Guardar la categoria seleccionada
-                categoria_global = categoria_seleccionada
+                self.categoria_global = categoria_seleccionada
+                print('Asignado a global:', self.categoria_global)
+                print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
 
         def seleccionar_subcategoria():
-            global subcategoria_global
+            # global subcategoria_global
             subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
+            print('Seleccionados:', subcategoria_seleccionada)
+            print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
             if subcategoria_seleccionada:
                 # Actualizar los valores de los listbox
                 listbox_subcategoria.delete(0, tk.END)
@@ -256,11 +270,15 @@ class App:
                 boton_subcategoria.config(style='Dark.TButton')
 
                 # Guardar la subcategoria seleccionada
-                subcategoria_global = subcategoria_seleccionada
+                self.subcategoria_global = subcategoria_seleccionada
+                print('Asignado a global:', self.subcategoria_global)
+                print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
 
         def seleccionar_prod_type():
-            global prod_type_global
+            # global prod_type_global
             prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
+            print('Seleccionados:', prod_type_seleccionado)
+            print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
             if prod_type_seleccionado:
                 # Actualizar los valores de los listbox
                 listbox_prod_type.delete(0, tk.END)
@@ -274,12 +292,14 @@ class App:
                 boton_prod_type.config(style='Dark.TButton')
 
                 # Guardar el prod_type seleccionado
-                prod_type_global = prod_type_seleccionado
+                self.prod_type_global = prod_type_seleccionado
+                print('Asignado a global:', self.prod_type_global)
+                print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
 
         def reiniciar_selecciones():
-            global categoria_global
-            global subcategoria_global
-            global prod_type_global
+            # global categoria_global
+            # global subcategoria_global
+            # global prod_type_global
             # Activar edicion de los listbox
             listbox_categoria.config(state=tk.NORMAL)
             listbox_subcategoria.config(state=tk.NORMAL)
@@ -300,27 +320,36 @@ class App:
             listbox_subcategoria.insert(tk.END, *subcategorias)
             listbox_prod_type.insert(tk.END, *prod_types)
             # Reiniciar las variables globales
-            categoria_global = []
-            subcategoria_global = []
-            prod_type_global = []
-
+            self.categoria_global = []
+            self.subcategoria_global = []
+            self.prod_type_global = []
+            
         def aplicar_filtros():
-            categoria_seleccionada = [item for item in listbox_categoria.get(0, tk.END)]
-            subcategoria_seleccionada = [item for item in listbox_subcategoria.get(0, tk.END)]
-            prod_type_seleccionado = [item for item in listbox_prod_type.get(0, tk.END)]
+            # global categoria_global
+            # global subcategoria_global
+            # global prod_type_global
+
+            categoria_seleccionada = (', ').join([item for item in listbox_categoria.get(0, tk.END)])
+            subcategoria_seleccionada = (', ').join([item for item in listbox_subcategoria.get(0, tk.END)])
+            prod_type_seleccionado = (', ').join([item for item in listbox_prod_type.get(0, tk.END)])
 
             print(f"Categoría: {categoria_seleccionada}")
             print(f"Subcategoría: {subcategoria_seleccionada}")
             print(f"Prod Type: {prod_type_seleccionado}")
 
             # Mostrar en un messagebox que los filtros se aplicaron correctamente
-            messagebox.showinfo("Filtros Aplicados", f"Categoría: {(', ').join(categoria_seleccionada)}\nSubcategoría: {(', ').join(subcategoria_seleccionada)}\nProd Type: {(', ').join(prod_type_seleccionado)}")
-            self.cat = categoria_seleccionada
-            self.subcat = subcategoria_seleccionada
-            self.prod_type = prod_type_seleccionado
+            messagebox.showinfo("Filtros Aplicados", f"Categoría: {categoria_seleccionada}\nSubcategoría: {subcategoria_seleccionada}\nProd Type: {prod_type_seleccionado}")
+            # categoria_global = categoria_seleccionada
+            # subcategoria_global = subcategoria_seleccionada
+            # prod_type_global = prod_type_seleccionado
+            
+            self.clases = self.add_quotes(categoria_seleccionada.replace(', ', ','))
+            self.subclases = self.add_quotes(subcategoria_seleccionada.replace(', ', ','))
+            self.prod_types = self.add_quotes(prod_type_seleccionado.replace(', ', ','))
+            ventana.destroy()
 
         # Crear la ventana principal
-        ventana = tk.Tk()
+
         ventana.title("Selección de Productos")
 
         # Crear los widgets
@@ -370,8 +399,10 @@ class App:
         ventana.grid_columnconfigure(0, weight=1)
         ventana.grid_columnconfigure(1, weight=1)
 
+        # return categoria_global, subcategoria_global, prod_type_global
+
         # Iniciar el bucle de eventos
-        ventana.mainloop()
+        # ventana.mainloop()
 
     def ingresar_productos(self):
         # Verificar si hay productos ingresados, si es así, mostrar advertencia
@@ -415,17 +446,16 @@ class App:
         tk.Label(frame, text="Nota: Ingresar datos separados por coma.", font=('Arial', 10, 'bold')).grid(row=5, column=0, columnspan=2, pady=10)
 
         # Ingresar productos
-        tk.Button(frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus, entry_marcas, entry_proveedores)).grid(row=6, column=0, columnspan=2, pady=10)
+        tk.Button(frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus, entry_marcas, entry_proveedores)).grid(row=6, column=1, pady=10)
 
         # Verificar si hay productos ingresados, si es así, botón para ver productos
         if not self.mon.df_productos.empty:
-            # Buton para ver productos agrupados
-            tk.Label(frame, text="Productos Ingresados", font=("Arial", 10, "bold")).grid(row=90, column=0, pady=10)
-            tk.Button(frame, text="Ver", command=lambda: self.show_dataframe(self.mon.get_productos_agg(), 'Productos')).grid(row=90, column=1, pady=10)
+            # Buton para ver productos ya ingresados
+            tk.Button(frame, text="Ver Productos", command=lambda: self.show_dataframe(self.mon.get_productos_agg(), 'Productos')).grid(row=6, column=0, pady=10)
 
         # Botón para ingresar productos
         # tk.Button(frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus, entry_marcas, entry_proveedores, selected_options_clases, selected_options_subclases, selected_options_prod_types)).pack(pady=10)
-        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=0, columnspan=2, pady=10)
+        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=1, pady=10)
 
     # Función para validar los campos de PO
     def validate_entries_po(self, entry_tiendas, entry_is_online, entry_condicion, entry_inicio, entry_termino):
