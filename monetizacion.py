@@ -63,6 +63,10 @@ class Monetizacion(Conn, Productos):
         self.rad.set_rad_variables(inicio=inicio, termino=termino, nombre=nombre)
         # Create RAD table
         self.rad.create_tables_rad(self, override=override)
+
+    def separar_listas_envio(self):
+        # Separar Listas de Envío
+        self.po.separar_listas_envio()
     
     def ejecutar_ds(self):
         # self.ds.create_analisis_ds()

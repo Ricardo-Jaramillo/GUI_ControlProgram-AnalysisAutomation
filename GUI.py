@@ -576,26 +576,28 @@ class App:
         # Label de Titulo
         tk.Label(frame, text="Ver/Guardar Datos generados", font=("Arial", 12, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
         
-        options = ['Productos', 'Públicos Objetivos', 'BusinessCase']
+        options = ['Productos', 'Públicos Objetivos', 'BusinessCase', 'Listas']
         for row, option in enumerate(options, start=1):
-            tk.Button(frame, width=30, text=f"Ver {option}", command=lambda opt=option: self.__get_dataframe(opt, type='show')).grid(row=row, column=0, pady=5, padx=5)
-            tk.Button(frame, width=30, text=f"Guardar {option}", command=lambda opt=option: self.__get_dataframe(opt, type='save')).grid(row=row, column=1, pady=5, padx=5)
+            tk.Button(frame, width=30, text=f"Ver {option}", command=lambda opt=option: self.get_dataframe(opt, type='show')).grid(row=row, column=0, pady=5, padx=5)
+            tk.Button(frame, width=30, text=f"Guardar {option}", command=lambda opt=option: self.get_dataframe(opt, type='save')).grid(row=row, column=1, pady=5, padx=5)
         
         # Botón para regresar al menú
         tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=0, columnspan=2, pady=10)
 
-    def __get_dataframe(self, title, type=None):
+    def get_dataframe(self, title, type=None):
         # Dictionary to map the dataframe
         dic = {
             'Productos': (self.mon.df_productos, 'Productos'),
             'Públicos Objetivos': (self.mon.po.df_pos_agg, 'Públicos Objetivos'),
             'BusinessCase': ([self.mon.po.df_bc_tx, self.mon.po.df_bc_unidades, self.mon.po.df_bc_tx_medio],
                              ['BusinessCase - Número de Tickets', 'BusinessCase - Número de Unidades', 'BusinessCase - Ticket Medio']),
-            'Listas de Envío': ([self.mon.po.df_listas_envio], ['Listas de Envío']),
+            'Listas': (list(self.mon.po.dict_listas_envios.values()), list(self.mon.po.dict_listas_envios.keys())),
         }
 
         lis_dataframe = dic[title][0]
         lis_title = dic[title][1]
+        # print('List of Dataframe:', lis_dataframe)
+        # print('List of Title:', lis_title)
 
         if not isinstance(lis_dataframe, list):
             lis_dataframe = [lis_dataframe]
@@ -682,7 +684,7 @@ class App:
 
             # Extraer datos para el BusinessCase
             self.mon.generar_datos_bc(override=override)
-            self.__get_dataframe('BusinessCase', type='show')
+            self.get_dataframe('BusinessCase', type='show')
 
     def generar_bc(self):
         # Crear layout para el BusinessCase
@@ -807,9 +809,16 @@ class App:
             # Preguntar si ya existe la tabla PO envíos
             if not self.mon.validate_if_table_exists('#PO_ENVIOS'):
                 messagebox.showwarning("Advertencia", "No hay Públicos Objetivo de Envíos generados.")
-            else:
-                self.mon.generar_listas_envio(canales=canales, grupo_control=grupo_control)
-                self.show_dataframe(self.mon.po.df_listas_envio, "Listas de Envío")
+                return
+            
+            self.mon.generar_listas_envio(canales=canales, grupo_control=grupo_control)
+            
+            # Preguntar si desea separar las listas de envío
+            op = messagebox.askyesno("Información", "Listas de Envío generadas exitosamente.\n¿Desea separarlas por segmento?")
+            if op:
+                self.mon.separar_listas_envio()
+
+            self.get_dataframe('Listas', type='show')
 
     def generar_listas(self):
         # Crear layout para listas de envío
@@ -893,18 +902,18 @@ class App:
         # Etiquetas de encabezado
         headers = ["Canal", "Fid", "Rec", "Cap"]
         for col, header in enumerate(headers, start=1):
-            label = tk.Label(frame_2, text=header, font=("Arial", 10, "bold"), width=10)
-            label.grid(row=1, column=col, padx=5, pady=10)
+            label = tk.Label(frame_2, text=header, font=("Arial", 10, "bold"))
+            label.grid(row=1, column=col, padx=0, pady=10)
 
         # Filas de datos
-        canales = ["SMS", "Mail", "SMS&Mail"]
+        canales = ["01 SMS", "02 MAIL", "03 MAIL & SMS"]
         for row, canal in enumerate(canales, start=2):
-            label = tk.Label(frame_2, text=canal, borderwidth=1, width=10)
+            label = tk.Label(frame_2, text=canal)
             label.grid(row=row, column=1, padx=5, pady=5)
             for col, header in enumerate(headers[1:], start=2):
                 entry_name = f"entry_{header.lower()}_{canal.lower()}"
-                entry = tk.Entry(frame_2, width=10)
-                entry.grid(row=row, column=col, padx=4, pady=5)
+                entry = tk.Entry(frame_2, width=14)
+                entry.grid(row=row, column=col, padx=5, pady=5)
                 entries_canal[entry_name] = entry
         
         # entries_canal

@@ -1239,17 +1239,17 @@ class PublicosObjetivo():
         print('canales:')
         print(self.canales)
 
-        fid_sms = self.canales['entry_fid_sms']
-        fid_email = self.canales['entry_fid_mail']
-        fid_sms_mail = self.canales['entry_fid_sms&mail']
+        fid_sms = self.canales['entry_fid_01 sms']
+        fid_email = self.canales['entry_fid_02 mail']
+        fid_sms_mail = self.canales['entry_fid_03 mail & sms']
         
-        rec_sms = self.canales['entry_rec_sms']
-        rec_email = self.canales['entry_rec_mail']
-        rec_sms_mail = self.canales['entry_rec_sms&mail']
+        rec_sms = self.canales['entry_rec_01 sms']
+        rec_email = self.canales['entry_rec_02 mail']
+        rec_sms_mail = self.canales['entry_rec_03 mail & sms']
 
-        cap_sms = self.canales['entry_cap_sms']
-        cap_email = self.canales['entry_cap_mail']
-        cap_sms_mail = self.canales['entry_cap_sms&mail']
+        cap_sms = self.canales['entry_cap_01 sms']
+        cap_email = self.canales['entry_cap_02 mail']
+        cap_sms_mail = self.canales['entry_cap_03 mail & sms']
         
         orden_venta = 'VENTA_MARCA' if any([self.venta_antes, self.venta_camp, self.cond_antes, self.cond_camp]) else 'VENTA_CAT'
         porcentaje_gt = 1 - self.ratio_grupo_control
@@ -1311,7 +1311,48 @@ class PublicosObjetivo():
         orden_venta = 'VENTA_MARCA' if any([self.venta_antes, self.venta_camp, self.cond_antes, self.cond_camp]) else 'VENTA_CAT'
 
         query = f'SELECT * FROM {table_name} ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, {orden_venta} DESC, CUSTOMER_CODE'
-        self.df_listas_envio = conn.select(query=query)
+        
+        self.df_listas_total = conn.select(query=query)
+        
+        # Separar las listas de envio por canal y agregar a un diccionario
+        df_sms = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '01 SMS']
+        df_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '02 MAIL']
+        df_sms_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '03 MAIL & SMS']
 
-    def split_lists(self):
-        pass
+        self.dict_listas_envios = {
+            'list_sms': df_sms[['customer_code']],
+            'list_mail': df_email[['customer_code']],
+            'list_sms_mail': df_sms_email[['customer_code']]
+        }
+
+    def separar_listas_envio(self):
+        df_sms = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '01 SMS']
+        df_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '02 MAIL']
+        df_sms_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '03 MAIL & SMS']
+
+        # Separar listas de envio por canal y segmento y agregar a un diccionario
+        df_sms_fid = df_sms[df_sms['orden_segmento'] == '1 FID']
+        df_sms_rec = df_sms[df_sms['orden_segmento'] == '2 REC']
+        df_sms_cap = df_sms[df_sms['orden_segmento'] == '3 CAP']
+
+        df_email_fid = df_email[df_email['orden_segmento'] == '1 FID']
+        df_email_rec = df_email[df_email['orden_segmento'] == '2 REC']
+        df_email_cap = df_email[df_email['orden_segmento'] == '3 CAP']
+
+        df_sms_email_fid = df_sms_email[df_sms_email['orden_segmento'] == '1 FID']
+        df_sms_email_rec = df_sms_email[df_sms_email['orden_segmento'] == '2 REC']
+        df_sms_email_cap = df_sms_email[df_sms_email['orden_segmento'] == '3 CAP']
+
+        self.dict_listas_envios = {
+            'list_sms_fid': df_sms_fid[['customer_code']],
+            'list_sms_rec': df_sms_rec[['customer_code']],
+            'list_sms_cap': df_sms_cap[['customer_code']],
+            
+            'list_email_fid': df_email_fid[['customer_code']],
+            'list_email_rec': df_email_rec[['customer_code']],
+            'list_email_cap': df_email_cap[['customer_code']],
+
+            'list_sms_email_fid': df_sms_email_fid[['customer_code']],
+            'list_sms_email_rec': df_sms_email_rec[['customer_code']],
+            'list_sms_email_cap': df_sms_email_cap[['customer_code']]
+        }
