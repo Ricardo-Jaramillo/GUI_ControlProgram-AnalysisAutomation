@@ -11,7 +11,7 @@ credentials.py
 
 # Ignora los archivos que comienzan con test_
 test_*.*
-# test.*
+test.*
 docs/
 
 # Distribution / packaging
