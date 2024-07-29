@@ -628,7 +628,7 @@ class App:
     def save_dataframe(self, dataframe, title):
         file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv"), ("All files", "*.*")], initialfile=title+'.csv')
         if file_path:
-            self.mon.df_productos.to_csv(file_path, index=False)
+            dataframe.to_csv(file_path, index=False)
             messagebox.showinfo("Información", title + " guardado exitosamente.")
 
     # Validar los campos para el BusinessCase
