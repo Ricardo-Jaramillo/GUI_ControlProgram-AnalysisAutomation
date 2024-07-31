@@ -585,34 +585,42 @@ class App:
         tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=0, columnspan=2, pady=10)
 
     def get_dataframe(self, title, type=None):
+        # Extraer datos de BC
+        lis_df_bc = [self.mon.po.df_bc_tx, self.mon.po.df_bc_unidades, self.mon.po.df_bc_tx_medio]
+        lis_title_bc = ['BusinessCase - Número de Tickets', 'BusinessCase - Número de Unidades', 'BusinessCase - Ticket Medio']
+        
+        # Extraer datos de listas
+        if self.mon.po.dict_listas_envios:
+            lis_df_listas = list(self.mon.po.dict_listas_envios.values())
+            lis_title_listas = list(self.mon.po.dict_listas_envios.keys())
+        else:
+            lis_df_listas = pd.DataFrame()
+            lis_title_listas = 'Listas de Envío'
+        
         # Dictionary to map the dataframe
         dic = {
             'Productos': (self.mon.df_productos, 'Productos'),
             'Públicos Objetivos': (self.mon.po.df_pos_agg, 'Públicos Objetivos'),
-            'BusinessCase': ([self.mon.po.df_bc_tx, self.mon.po.df_bc_unidades, self.mon.po.df_bc_tx_medio],
-                             ['BusinessCase - Número de Tickets', 'BusinessCase - Número de Unidades', 'BusinessCase - Ticket Medio']),
-            'Listas': (list(self.mon.po.dict_listas_envios.values()), list(self.mon.po.dict_listas_envios.keys())),
+            'BusinessCase': (lis_df_bc, lis_title_bc),
+            'Listas': (lis_df_listas, lis_title_listas),
         }
 
         lis_dataframe = dic[title][0]
         lis_title = dic[title][1]
-        # print('List of Dataframe:', lis_dataframe)
-        # print('List of Title:', lis_title)
 
         if not isinstance(lis_dataframe, list):
             lis_dataframe = [lis_dataframe]
             lis_title = [lis_title]
-        
 
         for dataframe, title in zip(lis_dataframe, lis_title):
+            print(dataframe, title)
             if dataframe.empty:
                 messagebox.showwarning("Advertencia", f"No hay {title} ingresados. Por favor genere los datos en la sección correspondiente.")
-                return
-        
-            if type == 'save':
-                self.save_dataframe(dataframe, title)
-            elif type == 'show':
-                self.show_dataframe(dataframe, title)
+            else:
+                if type == 'save':
+                    self.save_dataframe(dataframe, title)
+                elif type == 'show':
+                    self.show_dataframe(dataframe, title)
 
     def show_dataframe(self, dataframe, title):
         top = tk.Toplevel(self.root)
