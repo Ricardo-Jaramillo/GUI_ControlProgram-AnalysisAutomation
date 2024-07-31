@@ -21,6 +21,11 @@ class Monetizacion(Conn, Productos):
             FROM CHEDRAUI.MON_CRM_SKU_RAZONSOCIAL
         '''
         df = self.select(query)
+
+        # Reemplaza nulos por 'Sin Marca' y 'Sin Proveedor'
+        df['marca'] = df['marca'].fillna('SIN MARCA')
+        df['proveedor'] = df['proveedor'].fillna('SIN PROVEEDOR')
+
         return sorted(list(df.marca.unique())), sorted(list(df.proveedor.unique()))
 
     def generar_productos(self, skus, marcas, proveedores, clases, subclases, prod_type_desc, override):
