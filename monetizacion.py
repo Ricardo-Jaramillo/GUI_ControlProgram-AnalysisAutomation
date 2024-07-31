@@ -2,6 +2,7 @@ from connection import Conn
 from productos import Productos
 from publicos_objetivo import PublicosObjetivo
 from radiografia import Radiografia
+from campana import Campana
 
 # Create a Class to handle the Monetizacion data that inherits from the Conn class
 class Monetizacion(Conn, Productos):
@@ -11,6 +12,7 @@ class Monetizacion(Conn, Productos):
         Productos.__init__(self)
         self.po = PublicosObjetivo()
         self.rad = Radiografia()
+        self.camp = Campana()
         # self.ds = DataScience()
 
     def get_marcas_proveedores(self):
@@ -27,6 +29,10 @@ class Monetizacion(Conn, Productos):
         df['proveedor'] = df['proveedor'].fillna('SIN PROVEEDOR')
 
         return sorted(list(df.marca.unique())), sorted(list(df.proveedor.unique()))
+    
+    def get_campanas(self):
+        query = "SELECT * FROM CHEDRAUI.MON_CAMP_DESC ORDER BY NOMBRE"
+        return self.select(query)
 
     def generar_productos(self, skus, marcas, proveedores, clases, subclases, prod_type_desc, override):
         # Set variables
