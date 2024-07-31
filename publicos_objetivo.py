@@ -9,6 +9,7 @@ class PublicosObjetivo():
         self.df_bc_unidades = pd.DataFrame()
         self.df_bc_tx_medio = pd.DataFrame()
         self.df_listas_envio = pd.DataFrame()
+        self.dict_listas_envios = {}
         self.set_pos_variables()
     
     def set_pos_variables(self, tiendas='', is_online=0, condicion=0, inicio='', termino=''):
@@ -86,7 +87,7 @@ class PublicosObjetivo():
                     FROM FCT_SALE_LINE_NM
                     INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
                     WHERE IND_MARCA = 1
-                    AND LEFT(INVOICE_DATE, 7) BETWEEN ''{self.dict_fechas['ini_12']}' AND '{self.dict_fechas['fin']}'
+                    AND LEFT(INVOICE_DATE, 7) BETWEEN '{self.dict_fechas['ini_12']}' AND '{self.dict_fechas['fin']}'
                     AND BUSINESS_TYPE = 'R'
                     AND SALE_NET_VAL > 0
                     GROUP BY 1,2
@@ -1304,7 +1305,6 @@ class PublicosObjetivo():
         table_name = '#LISTAS_ENVIO'
         from_table = '#PO_ENVIOS'
         query = self.get_query_create_listas_envio(table_name, from_table=from_table)
-        print(query)
 
         conn.execute(query=query)
 
@@ -1315,15 +1315,21 @@ class PublicosObjetivo():
         self.df_listas_total = conn.select(query=query)
         
         # Separar las listas de envio por canal y agregar a un diccionario
-        df_sms = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '01 SMS']
-        df_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '02 MAIL']
-        df_sms_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '03 MAIL & SMS']
+        df_sms = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '01 SMS'][['customer_code']]
+        df_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '02 MAIL'][['customer_code']]
+        df_sms_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '03 MAIL & SMS'][['customer_code']]
 
-        self.dict_listas_envios = {
-            'list_sms': df_sms[['customer_code']],
-            'list_mail': df_email[['customer_code']],
-            'list_sms_mail': df_sms_email[['customer_code']]
-        }
+        lis_df = [df_sms, df_email, df_sms_email]
+        lis_names = ['list_sms', 'list_mail', 'list_sms_mail']
+
+        # Guardar listas de envio en un diccionario. Guardar solo los df no vacios
+        self.dict_listas_envios = {}
+        for df, name in zip(lis_df, lis_names):
+            if not df.empty:
+                self.dict_listas_envios[name] = df
+
+        # Agregar lista de envíos total
+        self.dict_listas_envios['list_total'] = self.df_listas_total
 
     def separar_listas_envio(self):
         df_sms = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '01 SMS']
@@ -1331,28 +1337,27 @@ class PublicosObjetivo():
         df_sms_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '03 MAIL & SMS']
 
         # Separar listas de envio por canal y segmento y agregar a un diccionario
-        df_sms_fid = df_sms[df_sms['orden_segmento'] == '1 FID']
-        df_sms_rec = df_sms[df_sms['orden_segmento'] == '2 REC']
-        df_sms_cap = df_sms[df_sms['orden_segmento'] == '3 CAP']
+        df_sms_fid = df_sms[df_sms['orden_segmento'] == '1 FID'][['customer_code']]
+        df_sms_rec = df_sms[df_sms['orden_segmento'] == '2 REC'][['customer_code']]
+        df_sms_cap = df_sms[df_sms['orden_segmento'] == '3 CAP'][['customer_code']]
 
-        df_email_fid = df_email[df_email['orden_segmento'] == '1 FID']
-        df_email_rec = df_email[df_email['orden_segmento'] == '2 REC']
-        df_email_cap = df_email[df_email['orden_segmento'] == '3 CAP']
+        df_email_fid = df_email[df_email['orden_segmento'] == '1 FID'][['customer_code']]
+        df_email_rec = df_email[df_email['orden_segmento'] == '2 REC'][['customer_code']]
+        df_email_cap = df_email[df_email['orden_segmento'] == '3 CAP'][['customer_code']]
 
-        df_sms_email_fid = df_sms_email[df_sms_email['orden_segmento'] == '1 FID']
-        df_sms_email_rec = df_sms_email[df_sms_email['orden_segmento'] == '2 REC']
-        df_sms_email_cap = df_sms_email[df_sms_email['orden_segmento'] == '3 CAP']
+        df_sms_email_fid = df_sms_email[df_sms_email['orden_segmento'] == '1 FID'][['customer_code']]
+        df_sms_email_rec = df_sms_email[df_sms_email['orden_segmento'] == '2 REC'][['customer_code']]
+        df_sms_email_cap = df_sms_email[df_sms_email['orden_segmento'] == '3 CAP'][['customer_code']]
 
-        self.dict_listas_envios = {
-            'list_sms_fid': df_sms_fid[['customer_code']],
-            'list_sms_rec': df_sms_rec[['customer_code']],
-            'list_sms_cap': df_sms_cap[['customer_code']],
-            
-            'list_email_fid': df_email_fid[['customer_code']],
-            'list_email_rec': df_email_rec[['customer_code']],
-            'list_email_cap': df_email_cap[['customer_code']],
+        lis_df = [df_sms_fid, df_sms_rec, df_sms_cap, df_email_fid, df_email_rec, df_email_cap, df_sms_email_fid, df_sms_email_rec, df_sms_email_cap]
+        lis_names = ['list_sms_fid', 'list_sms_rec', 'list_sms_cap', 'list_email_fid', 'list_email_rec', 'list_email_cap', 'list_sms_email_fid', 'list_sms_email_rec', 'list_sms_email_cap']
 
-            'list_sms_email_fid': df_sms_email_fid[['customer_code']],
-            'list_sms_email_rec': df_sms_email_rec[['customer_code']],
-            'list_sms_email_cap': df_sms_email_cap[['customer_code']]
-        }
+        # Guardar listas de envio en un diccionario. Guardar solo los df no vacios
+        self.dict_listas_envios = {}
+        for df, name in zip(lis_df, lis_names):
+            if not df.empty:
+                self.dict_listas_envios[name] = df
+
+        # Agregar lista de envíos total
+        self.dict_listas_envios['list_total'] = self.df_listas_total
+        
