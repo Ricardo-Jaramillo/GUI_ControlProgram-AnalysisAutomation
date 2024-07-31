@@ -1058,8 +1058,91 @@ class App:
 
         tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=9, column=1, pady=10)
 
+    def show_campaign(self, list_box):
+        try:
+            seleccion = list_box.get(list_box.curselection())
+            # campana = self.mon.camp.get_campana(seleccion)
+            messagebox.showinfo("Información", seleccion)
+        except:
+            messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
+
+    def edit_campaign(self, list_box):
+        try:
+            seleccion = list_box.get(list_box.curselection())
+            # campana = self.mon.camp.get_campana(seleccion)
+            messagebox.showinfo("Información", seleccion)
+        except:
+            messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
+
+    def delete_campaign(self, list_box):
+        try:
+            seleccion = list_box.get(list_box.curselection())
+            # campana = self.mon.camp.get_campana(seleccion)
+            messagebox.showinfo("Información", seleccion)
+        except:
+            messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
+
+    def create_campaign(self):
+        try:
+            # campana = self.mon.camp.get_campana(seleccion)
+            messagebox.showinfo("Información", "Crear campaña")
+        except:
+            messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
+    
+    def update_campaign(self):
+        try:
+            # campana = self.mon.camp.get_campana(seleccion)
+            messagebox.showinfo("Información", "Actualizar campaña")
+        except:
+            messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
+
+    def show_results(self):
+        try:
+            # campana = self.mon.camp.get_campana(seleccion)
+            messagebox.showinfo("Información", "Ver resultados")
+        except:
+            messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
+
     def generar_resultados(self):
-        pass
+        # Crear layout para ventana de resultados
+        self.menu_frame.pack_forget()
+        self.clear_content_frame()
+
+        campanas = self.mon.get_campanas()
+
+        # Crear un Frame para los botones
+        frame = tk.Frame(self.content_frame)
+        frame.pack(padx=10, pady=10)
+
+        # Titulo de la sección
+        tk.Label(frame, text="Campañas Monetización", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="we")
+
+        # Label Campañas Monetización
+        tk.Label(frame, text="Campañas", font=("Arial", 10, "bold")).grid(row=2, column=0, pady=5, padx=10, sticky='w')
+
+        # Listbox para mostrar las campañas
+        list_box = tk.Listbox(frame, width=70, height=15, selectmode='single')
+        list_box.grid(row=3, rowspan=7, column=0, padx=10, pady=5)
+        list_box.insert(tk.END, *campanas.nombre)
+
+        # Botones laterales para Ver, Editar, Eliminar, Crear, espacio en blanco, Actualizar, Ver Resultados y Regresar al Menú
+        tk.Button(frame, text="Ver", width=12, command=lambda: self.show_campaign(list_box)).grid(row=3, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Editar", width=12, command=lambda: self.edit_campaign(list_box)).grid(row=4, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Agregar", width=12, command=self.create_campaign).grid(row=5, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Eliminar", width=12, command=lambda: self.delete_campaign(list_box)).grid(row=6, column=1, pady=2, padx=10)
+        tk.Label(frame, text="").grid(row=7, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Actualizar", width=12, command=self.update_campaign, bg="navy", fg="white").grid(row=8, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Ver Resultados", width=12, command=self.show_results, bg="green", fg="white").grid(row=9, column=1, pady=2, padx=10)
+        
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=10, column=0, columnspan=2, pady=5, sticky="we")
+        
+        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=11, column=0, columnspan=2, pady=5)
 
 # root = tk.Tk()
 # app = App(root)
