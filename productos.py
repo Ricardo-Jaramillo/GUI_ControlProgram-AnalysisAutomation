@@ -75,7 +75,7 @@ class Productos():
         # Resta un mes a la fecha actual y luego usa MonthEnd para obtener el último día de ese mes
         # Resta 12 meses a la fecha final para obtener la fecha inicial más 1 día
         val_end = (datetime.now() - pd.DateOffset(months=1) + MonthEnd(1)).strftime('%Y-%m-%d')
-        val_ini = (pd.to_datetime(val_end) - pd.DateOffset(months=12) + pd.DateOffset(days=1)).strftime('%Y-%m-%d')
+        val_ini = (pd.to_datetime(val_end) - pd.DateOffset(months=24) + pd.DateOffset(days=1)).strftime('%Y-%m-%d')
         val_dash = f"'{val_ini}' AND '{val_end}'"
 
         query_productos_temporal = \
