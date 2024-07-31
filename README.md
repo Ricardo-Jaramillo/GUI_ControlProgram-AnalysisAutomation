@@ -26,4 +26,4 @@ La interfaz conecta las entradas del usuario a la base de datos, internamente se
 * Ajustar codigo para guardar productos y listas de envío por campañas
 * Guardar lista de grrupo control cuando se especifique la opción en la generación de listas
 * Agregar toda la lógica de carga y actualización de datos de campañas
-
+* Agregar ventana de carga/progreso
