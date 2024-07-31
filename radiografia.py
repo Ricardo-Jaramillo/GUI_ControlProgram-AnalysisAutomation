@@ -1,5 +1,6 @@
 import pandas as pd
 from tqdm import tqdm
+from datetime import datetime, timedelta
 
 # Create a Class to handle the Radiografia data
 class Radiografia():
@@ -7,20 +8,35 @@ class Radiografia():
         self.set_rad_variables()
     
     def set_rad_variables(self, inicio='', termino='', nombre=''):
-        self.inicio = inicio
-        self.termino = termino
-        self.nombre = nombre
-        self.__get_fechas_campana()
-
-    def __get_fechas_campana(self):
-        # Crear diccionario de fechas
         self.dict_fechas = {}
+        self.nombre = nombre
+        self.__get_fechas_campana(inicio, termino)
 
-        if self.inicio and self.termino:
+    def __get_fechas_campana(self, inicio, termino):
+        # Crear diccionario de fechas
+        if inicio and termino:
             # Obtener las fechas de inicio y fin un año antes
-            self.inicio_a = (pd.to_datetime(self.inicio) - pd.DateOffset(years=1)).strftime('%Y-%m-%d')
-            self.termino_a = (pd.to_datetime(self.termino) - pd.DateOffset(years=1)).strftime('%Y-%m-%d')
-        
+            inicio_a = (pd.to_datetime(inicio) - pd.DateOffset(years=1)).strftime('%Y-%m-%d')
+            termino_a = (pd.to_datetime(termino) - pd.DateOffset(years=1)).strftime('%Y-%m-%d')
+
+            # Obtener las fechas para dormidos y perdidos
+            fecha_fin = datetime.strptime(termino, '%Y-%m-%d')
+            
+            self.dict_fechas = {
+                'fecha_ini': inicio,
+                'fecha_fin': termino,
+                'fecha_ini_a': inicio_a,
+                'fecha_fin_a': termino_a,
+                'fecha_ini_d1': (pd.to_datetime(fecha_fin) - pd.DateOffset(months=6)).strftime('%Y-%m-%d'),
+                'fecha_fin_d1': (pd.to_datetime(fecha_fin) - pd.DateOffset(months=4)).strftime('%Y-%m-%d'),
+                'fecha_ini_d2': (pd.to_datetime(fecha_fin) - pd.DateOffset(months=3)).strftime('%Y-%m-%d'),
+                'fecha_fin_d2': (pd.to_datetime(fecha_fin) - pd.DateOffset(months=1)).strftime('%Y-%m-%d'),
+                'fecha_ini_p1': (pd.to_datetime(fecha_fin) - pd.DateOffset(years=1)).strftime('%Y-%m-%d'),
+                'fecha_fin_p1': (pd.to_datetime(fecha_fin) - pd.DateOffset(months=7)).strftime('%Y-%m-%d'),
+                'fecha_ini_p2': (pd.to_datetime(fecha_fin) - pd.DateOffset(months=6)).strftime('%Y-%m-%d'),
+                'fecha_fin_p2': (pd.to_datetime(fecha_fin) - pd.DateOffset(months=1)).strftime('%Y-%m-%d')
+            }
+
     def get_query_create_rad_tables(self, id, proveedores, nombre):
         query_rad_desc = f"""
             DROP TABLE IF EXISTS #MON_RAD_DESC;
@@ -33,7 +49,7 @@ class Radiografia():
             );
 
             INSERT INTO #MON_RAD_DESC VALUES
-            ('{id}' ,'{nombre}', '{proveedores}', '{self.inicio}', '{self.termino}');
+            ('{id}' ,'{nombre}', '{proveedores}', '{self.dict_fechas['fecha_ini']}', '{self.dict_fechas['fecha_fin']}');
 
             DELETE CHEDRAUI.MON_RAD_DESC WHERE ID_RADIOGRAFIA = '{id}';
             INSERT INTO CHEDRAUI.MON_RAD_DESC SELECT * FROM #MON_RAD_DESC;
@@ -64,8 +80,8 @@ class Radiografia():
                 ,B.IND_DUPLICADO
                 
                 ,CASE
-                WHEN INVOICE_DATE BETWEEN '{self.inicio}' AND '{self.termino}' THEN 'ACTUAL'
-                WHEN INVOICE_DATE BETWEEN '{self.inicio_a}' AND '{self.termino_a}' THEN 'ANO_ANTERIOR'
+                WHEN INVOICE_DATE BETWEEN '{self.dict_fechas['fecha_ini']}' AND '{self.dict_fechas['fecha_fin']}' THEN 'ACTUAL'
+                WHEN INVOICE_DATE BETWEEN '{self.dict_fechas['fecha_ini_a']}' AND '{self.dict_fechas['fecha_fin_a']}' THEN 'ANO_ANTERIOR'
                 END PERIODO
 
                 ,COALESCE(C.NSE, 'NO SEGMENTADO') NSE
@@ -93,7 +109,7 @@ class Radiografia():
             --   LEFT JOIN CHEDRAUI.V_STORE E ON C.STORE_CODE = E.STORE_CODE AND C.STORE_KEY = E.STORE_KEY -- FAVORITE STORE OF CUSTOMER
             LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER) F USING(INVOICE_NO)
             WHERE (A.SALE_NET_VAL > 0 AND A.BUSINESS_TYPE = 'R')
-            AND INVOICE_DATE BETWEEN '{self.inicio_a}' AND '{self.termino}'
+            AND INVOICE_DATE BETWEEN '{self.dict_fechas['fecha_ini_a']}' AND '{self.dict_fechas['fecha_fin']}'
             GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
             
             UNION ALL
@@ -119,8 +135,8 @@ class Radiografia():
                 ,B.IND_DUPLICADO
                 
                 ,CASE
-                WHEN INVOICE_DATE BETWEEN '{self.inicio}' AND '{self.termino}' THEN 'ACTUAL'
-                WHEN INVOICE_DATE BETWEEN '{self.inicio_a}' AND '{self.termino_a}' THEN 'ANO_ANTERIOR'
+                WHEN INVOICE_DATE BETWEEN '{self.dict_fechas['fecha_ini']}' AND '{self.dict_fechas['fecha_fin']}' THEN 'ACTUAL'
+                WHEN INVOICE_DATE BETWEEN '{self.dict_fechas['fecha_ini_a']}' AND '{self.dict_fechas['fecha_fin_a']}' THEN 'ANO_ANTERIOR'
                 END PERIODO
 
                 ,NULL NSE
@@ -146,7 +162,7 @@ class Radiografia():
             LEFT JOIN CHEDRAUI.V_STORE D ON A.STORE_CODE = D.STORE_CODE AND A.STORE_KEY = D.STORE_KEY -- STORE OF THE CURRENT SALE
             LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER_NM) F USING(INVOICE_NO)
             WHERE (A.SALE_NET_VAL > 0 AND A.BUSINESS_TYPE = 'R')
-            AND INVOICE_DATE BETWEEN '{self.inicio_a}' AND '{self.termino}'
+            AND INVOICE_DATE BETWEEN '{self.dict_fechas['fecha_ini_a']}' AND '{self.dict_fechas['fecha_fin']}'
             GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
             );
             """
@@ -817,19 +833,19 @@ class Radiografia():
                 MARCA
                 ,CUSTOMER_CODE
 
-                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_D1]' AND '$[FEC_FIN_D1]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_D1
-                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_D2]' AND '$[FEC_FIN_D2]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_D2
-                ,MAX(CASE WHEN (MES BETWEEN '$[FEC_INI_D2]' AND '$[FEC_FIN_D2]' OR MES BETWEEN '$[FEC_INI_P2]' AND '$[FEC_FIN_P2]') AND IND_MARCA = 0 THEN 1 ELSE 0 END) IND_COMPETENCIA_D2
+                ,MAX(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_d1']}' AND '{self.dict_fechas['fecha_fin_d1']}' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_D1
+                ,MAX(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_d2']}' AND '{self.dict_fechas['fecha_fin_d2']}' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_D2
+                ,MAX(CASE WHEN (MES BETWEEN '{self.dict_fechas['fecha_ini_d2']}' AND '{self.dict_fechas['fecha_fin_d2']}' OR MES BETWEEN '{self.dict_fechas['fecha_ini_p2']}' AND '{self.dict_fechas['fecha_fin_p2']}') AND IND_MARCA = 0 THEN 1 ELSE 0 END) IND_COMPETENCIA_D2
 
-                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_P1]' AND '$[FEC_FIN_P1]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_P1
-                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_P2]' AND '$[FEC_FIN_P2]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_P2
-                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_P2]' AND '$[FEC_FIN_P2]' AND IND_MARCA = 0 THEN 1 ELSE 0 END) IND_COMPETENCIA_P2
+                ,MAX(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_p1']}' AND '{self.dict_fechas['fecha_fin_p1']}' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_P1
+                ,MAX(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_p2']}' AND '{self.dict_fechas['fecha_fin_p2']}' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_P2
+                ,MAX(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_p2']}' AND '{self.dict_fechas['fecha_fin_p2']}' AND IND_MARCA = 0 THEN 1 ELSE 0 END) IND_COMPETENCIA_P2
                 
-                ,SUM(CASE WHEN MES BETWEEN '$[FEC_INI_D1]' AND '$[FEC_FIN_D2]' AND IND_MARCA=1 THEN VENTA ELSE 0 END) AS VENTA_DORMIDOS
-                ,SUM(CASE WHEN MES BETWEEN '$[FEC_INI_P1]' AND '$[FEC_FIN_P2]' AND IND_MARCA=1 THEN VENTA ELSE 0 END) AS VENTA_PERDIDOS
+                ,SUM(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_d1']}' AND '{self.dict_fechas['fecha_fin_d2']}' AND IND_MARCA = 1 THEN VENTA ELSE 0 END) AS VENTA_DORMIDOS
+                ,SUM(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_p1']}' AND '{self.dict_fechas['fecha_fin_p2']}' AND IND_MARCA = 1 THEN VENTA ELSE 0 END) AS VENTA_PERDIDOS
                 
                 FROM CHEDRAUI.VTA
-                WHERE MES BETWEEN '$[FEC_INI_P1]' AND '$[FEC_FIN_P2]'
+                WHERE MES BETWEEN '{self.dict_fechas['fecha_ini_p1']}' AND '{self.dict_fechas['fecha_fin_p2']}'
                 AND IND_MC = 1
                 GROUP BY 1,2
             )
@@ -838,19 +854,19 @@ class Radiografia():
                 'TOTAL' MARCA
                 ,CUSTOMER_CODE
 
-                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_D1]' AND '$[FEC_FIN_D1]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_D1
-                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_D2]' AND '$[FEC_FIN_D2]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_D2
-                ,MAX(CASE WHEN (MES BETWEEN '$[FEC_INI_D2]' AND '$[FEC_FIN_D2]' OR MES BETWEEN '$[FEC_INI_P2]' AND '$[FEC_FIN_P2]') AND IND_MARCA = 0 THEN 1 ELSE 0 END) IND_COMPETENCIA_D2
+                ,MAX(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_d1']}' AND '{self.dict_fechas['fecha_fin_d1']}' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_D1
+                ,MAX(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_d2']}' AND '{self.dict_fechas['fecha_fin_d2']}' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_D2
+                ,MAX(CASE WHEN (MES BETWEEN '{self.dict_fechas['fecha_ini_d2']}' AND '{self.dict_fechas['fecha_fin_d2']}' OR MES BETWEEN '{self.dict_fechas['fecha_ini_p2']}' AND '{self.dict_fechas['fecha_fin_p2']}') AND IND_MARCA = 0 THEN 1 ELSE 0 END) IND_COMPETENCIA_D2
 
-                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_P1]' AND '$[FEC_FIN_P1]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_P1
-                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_P2]' AND '$[FEC_FIN_P2]' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_P2
-                ,MAX(CASE WHEN MES BETWEEN '$[FEC_INI_P2]' AND '$[FEC_FIN_P2]' AND IND_MARCA = 0 THEN 1 ELSE 0 END) IND_COMPETENCIA_P2
+                ,MAX(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_p1']}' AND '{self.dict_fechas['fecha_fin_p1']}' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_P1
+                ,MAX(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_p2']}' AND '{self.dict_fechas['fecha_fin_p2']}' AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_MARCA_P2
+                ,MAX(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_p2']}' AND '{self.dict_fechas['fecha_fin_p2']}' AND IND_MARCA = 0 THEN 1 ELSE 0 END) IND_COMPETENCIA_P2
                 
-                ,SUM(CASE WHEN MES BETWEEN '$[FEC_INI_D1]' AND '$[FEC_FIN_D2]' AND IND_MARCA=1 THEN VENTA ELSE 0 END) AS VENTA_DORMIDOS
-                ,SUM(CASE WHEN MES BETWEEN '$[FEC_INI_P1]' AND '$[FEC_FIN_P2]' AND IND_MARCA=1 THEN VENTA ELSE 0 END) AS VENTA_PERDIDOS
+                ,SUM(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_d1']}' AND '{self.dict_fechas['fecha_fin_d2']}' AND IND_MARCA = 1 THEN VENTA ELSE 0 END) AS VENTA_DORMIDOS
+                ,SUM(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_p1']}' AND '{self.dict_fechas['fecha_fin_p2']}' AND IND_MARCA = 1 THEN VENTA ELSE 0 END) AS VENTA_PERDIDOS
                 
                 FROM CHEDRAUI.VTA
-                WHERE MES BETWEEN '$[FEC_INI_P1]' AND '$[FEC_FIN_P2]'
+                WHERE MES BETWEEN '{self.dict_fechas['fecha_ini_p1']}' AND '{self.dict_fechas['fecha_fin_p2']}'
                 AND IND_MC = 1
                 GROUP BY 1,2
             )
@@ -1080,7 +1096,7 @@ class Radiografia():
         return id.upper(), proveedores.upper(), nombre.upper()
 
     def create_tables_rad(self, conn, override=False):
-        id_rad, proveedores, nombre = self.__get_id_rad(conn, self.inicio, self.termino, self.nombre)
+        id_rad, proveedores, nombre = self.__get_id_rad(conn, self.dict_fechas['fecha_ini'], self.dict_fechas['fecha_fin'], self.nombre)
         # Crear tablas de Radiografía
         query_lis = self.get_query_create_rad_tables(id=id_rad, proveedores=proveedores, nombre=nombre)
         
