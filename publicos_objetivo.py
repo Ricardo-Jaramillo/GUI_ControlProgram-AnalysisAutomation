@@ -1252,7 +1252,6 @@ class PublicosObjetivo():
         cap_email = self.canales['entry_cap_02 mail']
         cap_sms_mail = self.canales['entry_cap_03 mail & sms']
         
-        orden_venta = 'VENTA_MARCA' if any([self.venta_antes, self.venta_camp, self.cond_antes, self.cond_camp]) else 'VENTA_CAT'
         porcentaje_gt = 1 - self.ratio_grupo_control
 
         query = f'''
@@ -1260,10 +1259,24 @@ class PublicosObjetivo():
             CREATE TABLE {table_name} AS (
                 WITH __PO_ENVIOS AS (
                     SELECT
-                        ROW_NUMBER() OVER(PARTITION BY ORDEN_SEGMENTO, VALID_CONTACT_INFO ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, {orden_venta} DESC, CUSTOMER_CODE) ROW_N
+                        ROW_NUMBER() OVER(PARTITION BY ORDEN_SEGMENTO, VALID_CONTACT_INFO ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, VENTA_MARCA DESC, VENTA_CAT DESC, CUSTOMER_CODE) ROW_N
                         ,*
                     FROM {from_table}
                     WHERE 1 = 1
+                    AND ORDEN_SEGMENTO IN ('1 FID', '2 REC')
+                    {venta_antes}
+                    {venta_camp}
+                    {cond_antes}
+                    {cond_camp}
+
+                    UNION
+
+                    SELECT
+                        ROW_NUMBER() OVER(PARTITION BY ORDEN_SEGMENTO, VALID_CONTACT_INFO ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, VENTA_CAT DESC, CUSTOMER_CODE) ROW_N
+                        ,*
+                    FROM {from_table}
+                    WHERE 1 = 1
+                    AND ORDEN_SEGMENTO IN ('3 CAP')
                     {venta_antes}
                     {venta_camp}
                     {cond_antes}
@@ -1291,7 +1304,7 @@ class PublicosObjetivo():
                     OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '03 MAIL & SMS'      AND ROW_N <= {cap_sms_mail}/{porcentaje_gt})
                 )
                 
-                ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, {orden_venta} DESC, CUSTOMER_CODE
+                ORDER BY ROW_N
             );
         '''
         return query
@@ -1308,9 +1321,7 @@ class PublicosObjetivo():
 
         conn.execute(query=query)
 
-        orden_venta = 'VENTA_MARCA' if any([self.venta_antes, self.venta_camp, self.cond_antes, self.cond_camp]) else 'VENTA_CAT'
-
-        query = f'SELECT * FROM {table_name} ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, {orden_venta} DESC, CUSTOMER_CODE'
+        query = f'SELECT * FROM {table_name} ORDER BY ROW_N'
         
         self.df_listas_total = conn.select(query=query)
         
