@@ -772,69 +772,63 @@ class App:
                 return False
         return True
 
-    def submit_po_envios(self, entry_condicion, entry_excluir):
-        # Validar las entradas
-        if self.validate_entries_po_envios(entry_condicion, entry_excluir):
-            # Limpiar los campos de listas
-            condicion = entry_condicion.get().strip()
-            excluir = self.add_quotes(entry_excluir.get().replace(', ', ','))
+    # def submit_po_envios(self, entry_condicion, entry_excluir):
+    #     # Validar las entradas
+    #     if self.validate_entries_po_envios(entry_condicion, entry_excluir):
+    #         # Limpiar los campos de listas
+    #         condicion = entry_condicion.get().strip()
+    #         excluir = self.add_quotes(entry_excluir.get().replace(', ', ','))
 
-            # Preguntar si ya existe la tabla PRODUCTOS
-            if not self.mon.validate_if_table_exists('#PRODUCTOS'):
-                messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar Listas de Envío.")
-                return
+    #         # Preguntar si ya existe la tabla PRODUCTOS
+    #         if not self.mon.validate_if_table_exists('#PRODUCTOS'):
+    #             messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar Listas de Envío.")
+    #             return
             
-            # Preguntar si ya existe la tabla PO
-            if not self.mon.validate_if_table_exists('#PO'):
-                messagebox.showwarning("Advertencia", "Por favor Genere los Públicos Objetivos antes de generar Listas de Envío.")
-                return
+    #         # Preguntar si ya existe la tabla PO
+    #         if not self.mon.validate_if_table_exists('#PO'):
+    #             messagebox.showwarning("Advertencia", "Por favor Genere los Públicos Objetivos antes de generar Listas de Envío.")
+    #             return
 
-            # Preguntar si ya existe la tabla PO envíos
-            if self.mon.validate_if_table_exists('#PO_ENVIOS'):
-                override = messagebox.askyesno("Advertencia", "Ya se ha generado un Público Objetivo para Envíos, ¿Desea sobreescribirlo?")
-            else:
-                override = None
+    #         # Preguntar si ya existe la tabla PO envíos
+    #         if self.mon.validate_if_table_exists('#PO_ENVIOS'):
+    #             override = messagebox.askyesno("Advertencia", "Ya se ha generado un Público Objetivo para Envíos, ¿Desea sobreescribirlo?")
+    #         else:
+    #             override = None
 
-            self.mon.generar_po_envios(condicion=condicion, excluir=excluir, override=override)
-            messagebox.showinfo("Información", "Públicos Objetivos de Envíos generados exitosamente.")
+    #         self.mon.generar_po_envios(condicion=condicion, excluir=excluir, override=override)
+    #         messagebox.showinfo("Información", "Públicos Objetivos de Envíos generados exitosamente.")
 
-    def submit_po_filtros(self, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp):
+    def submit_filtros_listas(self, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_online):
         # Todas las entradas son opcionales
         venta_antes = var_venta_antes.get()
         venta_camp = var_venta_camp.get()
         cond_antes = var_cond_antes.get()
         cond_camp = var_cond_camp.get()
+        online = var_online.get()
 
         # Preguntar si ya existe la tabla PO
         if not self.mon.validate_if_table_exists('#PO'):
             messagebox.showwarning("Advertencia", "Por favor Genere los Públicos Objetivos antes de generar Listas de Envío.")
             return
         
-        # Preguntar si ya existe la tabla PO envíos, si no, generarla con los filtros cada vez
-        if not self.mon.validate_if_table_exists('#PO_ENVIOS'):
-            messagebox.showwarning("Advertencia", "No hay Públicos Objetivo de Envíos generados.")
-        else:
-            self.mon.generar_po_envios_conteo(venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp)
-            self.show_dataframe(self.mon.po.df_po_conteo, f"Conteo de Clientes (Venta antes: {venta_antes} - Venta en: {venta_camp} - Condición antes: {cond_antes} - Condición en: {cond_camp}")
+        self.mon.generar_po_envios_conteo(venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp, online=online)
+        messagebox.showinfo("Información", f"Públicos Objetivos de Envíos generados exitosamente:\n\nFiltros aplicados:\nVenta antes: {venta_antes}\nVenta en: {venta_camp}\nCondición antes: {cond_antes}\nCondición en: {cond_camp}\Online: {online}")
+        self.show_dataframe(self.mon.po.df_po_conteo, 'Conteo para Listas')
 
-    def submit_canales(self, entries_canales:dict, var_grupo_control):
+    def submit_canales(self, entries_canales:dict, var_grupo_control, var_prioridad_online):
         # Validar las entradas de canales
         if self.validate_entries_filtros(entries_canales):
             # Limpiar los campos de canales
             canales = {canal: int(entry.get().strip()) if entry.get().strip() else 0 for canal, entry in entries_canales.items()}
             grupo_control = var_grupo_control.get()
+            prioridad_online = var_prioridad_online.get()
             
             # Preguntar si ya existe la tabla PO
             if not self.mon.validate_if_table_exists('#PO'):
                 messagebox.showwarning("Advertencia", "Por favor Genere los Públicos Objetivos antes de generar Listas de Envío.")
                 return
-
-            # Preguntar si ya existe la tabla PO envíos
-            if not self.mon.validate_if_table_exists('#PO_ENVIOS'):
-                messagebox.showwarning("Advertencia", "No hay Públicos Objetivo de Envíos generados.")
-                return
             
-            self.mon.generar_listas_envio(canales=canales, grupo_control=grupo_control)
+            self.mon.generar_listas_envio(canales=canales, grupo_control=grupo_control, prioridad_online=prioridad_online)
             
             # Preguntar si desea separar las listas de envío
             op = messagebox.askyesno("Información", "Listas de Envío generadas exitosamente.\n¿Desea separarlas por segmento?")
@@ -859,26 +853,26 @@ class App:
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
         separator.grid(row=1, column=0, columnspan=3, pady=5, sticky="we")
 
-        # Generar el úblico objetivo de envíos
-        tk.Label(frame, text="1. Generar Público Objetivo de Envíos", font=("Arial", 12, "bold"), wraplength=150).grid(row=2, column=0, rowspan=3, pady=5, padx=10, sticky='w')
-        # Entrada para Definir las condición de compra
-        tk.Label(frame, text="Condición de compra", font=("Arial", 10, "bold"), anchor='w').grid(row=2, column=1, pady=5, padx=5, sticky='w')
-        entry_condicion = tk.Entry(frame)
-        entry_condicion.grid(row=2, column=2, pady=5, padx=5, sticky='w')
-        # Entrada para excluir listas de envío
-        tk.Label(frame, text="Excluir listas de envío", font=("Arial", 10, "bold"), anchor='w').grid(row=3, column=1, pady=5, padx=5, sticky='w')
-        entry_excluir = tk.Entry(frame)
-        entry_excluir.grid(row=3, column=2, pady=5, padx=5, sticky='w')
+        # # Generar el úblico objetivo de envíos
+        # tk.Label(frame, text="1. Generar Público Objetivo de Envíos", font=("Arial", 12, "bold"), wraplength=150).grid(row=2, column=0, rowspan=3, pady=5, padx=10, sticky='w')
+        # # Entrada para Definir las condición de compra
+        # tk.Label(frame, text="Condición de compra", font=("Arial", 10, "bold"), anchor='w').grid(row=2, column=1, pady=5, padx=5, sticky='w')
+        # entry_condicion = tk.Entry(frame)
+        # entry_condicion.grid(row=2, column=2, pady=5, padx=5, sticky='w')
+        # # Entrada para excluir listas de envío
+        # tk.Label(frame, text="Excluir listas de envío", font=("Arial", 10, "bold"), anchor='w').grid(row=3, column=1, pady=5, padx=5, sticky='w')
+        # entry_excluir = tk.Entry(frame)
+        # entry_excluir.grid(row=3, column=2, pady=5, padx=5, sticky='w')
 
-        # Botón para generar listas de envío con monto de condición de compra y listas a excluir
-        tk.Button(frame, text="Actualizar", command=lambda: self.submit_po_envios(entry_condicion, entry_excluir)).grid(row=4, column=2, pady=10)
+        # # Botón para generar listas de envío con monto de condición de compra y listas a excluir
+        # tk.Button(frame, text="Actualizar", command=lambda: self.submit_po_envios(entry_condicion, entry_excluir)).grid(row=4, column=2, pady=10)
 
-        # Línea horizontal
-        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
-        separator.grid(row=5, column=0, columnspan=3, pady=5, sticky="we")
+        # # Línea horizontal
+        # separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        # separator.grid(row=5, column=0, columnspan=3, pady=5, sticky="we")
 
         # Entrada para seleccionar los filtros de las listas: venta antes de campaña, venta en campaña, cumple condición antes de campaña, cumple condición en campaña
-        tk.Label(frame, text="2. Filtros de la campaña", font=("Arial", 12, "bold"), wraplength=150).grid(row=6, column=0, rowspan=7, pady=5, padx=10)
+        tk.Label(frame, text="1. Filtros de la Lista", font=("Arial", 12, "bold"), wraplength=150).grid(row=6, column=0, rowspan=7, pady=5, padx=10)
         
         var_venta_antes = tk.StringVar()
         var_venta_actual = tk.StringVar()
@@ -905,8 +899,12 @@ class App:
         tk.Label(frame, text="En campaña", font=("Arial", 10), anchor='w').grid(row=11, column=1, pady=5, padx=5, sticky='w')
         ttk.Combobox(frame, textvariable=var_cond_actual, values=options, state='readonly').grid(row=11, column=2, pady=5, padx=5, sticky='w')
 
+        # Casilla para filtrar solo Online
+        var_online = tk.IntVar()
+        tk.Checkbutton(frame, text="Solo Online?", variable=var_online).grid(row=12, column=1, padx=10, pady=5)
+
         # Boton para ver conteo máximo de envíos con los filtros seleccionados
-        tk.Button(frame, text="Ver Conteo", command=lambda: self.submit_po_filtros(var_venta_antes, var_venta_actual, var_cond_antes, var_cond_actual)).grid(row=12, column=2, pady=10)
+        tk.Button(frame, text="Ver Conteo", command=lambda: self.submit_filtros_listas(var_venta_antes, var_venta_actual, var_cond_antes, var_cond_actual, var_online)).grid(row=12, column=2, pady=10)
 
         # Línea horizontal
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
@@ -917,7 +915,7 @@ class App:
         frame_2.pack()
 
         # Label para Extraer Lista de envío
-        tk.Label(frame_2, text="3. Generar Lista de Envío", font=("Arial", 12, "bold"), wraplength=150).grid(row=0, column=0, rowspan=10, pady=5, padx=10)
+        tk.Label(frame_2, text="2. Generar Lista de Envío", font=("Arial", 12, "bold"), wraplength=150).grid(row=0, column=0, rowspan=10, pady=5, padx=10)
         
         # Diccionario para almacenar las entradas
         entries_canal = {}
@@ -943,10 +941,14 @@ class App:
 
         # Entrada para seleccionar si se quiere Grupo Control
         var_grupo_control = tk.IntVar()
-        tk.Checkbutton(frame_2, text="Grupo Control?", variable=var_grupo_control).grid(row=6, column=1, columnspan=2, padx=10, pady=5)
+        tk.Checkbutton(frame_2, text="Grupo Control", variable=var_grupo_control).grid(row=6, column=1, padx=10, pady=5)
+
+        # Casilla para dar prioridad a Online
+        var_prioridad_online = tk.IntVar()
+        tk.Checkbutton(frame_2, text="Prioridad Online", variable=var_prioridad_online).grid(row=6, column=2, padx=10, pady=5)
 
         # Botón para generar listas de envío con canales seleccionados
-        tk.Button(frame_2, text="Generar Listas", command=lambda: self.submit_canales(entries_canal, var_grupo_control)).grid(row=6, column=3, columnspan=2, pady=5, padx=10)
+        tk.Button(frame_2, text="Generar Listas", command=lambda: self.submit_canales(entries_canal, var_grupo_control, var_prioridad_online)).grid(row=6, column=3, columnspan=2, pady=5, padx=10)
 
         # Línea horizontal
         separator = tk.Frame(frame_2, height=2, bd=1, relief="sunken")

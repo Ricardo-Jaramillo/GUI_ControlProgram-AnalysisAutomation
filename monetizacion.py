@@ -57,15 +57,15 @@ class Monetizacion(Conn, Productos):
         # Crear Público Objetivo de Envíos
         self.po.create_table_po_envios(self, override)
 
-    def generar_po_envios_conteo(self, venta_antes, venta_camp, cond_antes, cond_camp):
+    def generar_po_envios_conteo(self, venta_antes, venta_camp, cond_antes, cond_camp, online):
         # Set variables
-        self.po.set_po_filtros_variables(venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp)
+        self.po.set_po_filtros_variables(venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp, online=online)
         # Ver Conteo de  Público Objetivo con Filtros aplicados
         self.po.create_table_po_envios_conteo(self)
 
-    def generar_listas_envio(self, canales, grupo_control):
+    def generar_listas_envio(self, canales, grupo_control, prioridad_online):
         # Set variables
-        self.po.set_listas_envio_variables(canales=canales, grupo_control=grupo_control)
+        self.po.set_listas_envio_variables(canales=canales, grupo_control=grupo_control, prioridad_online=prioridad_online)
         # Crear Listas de Envío
         self.po.create_table_listas_envio(self)
     

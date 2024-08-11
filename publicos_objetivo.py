@@ -5,8 +5,7 @@ class PublicosObjetivo():
     
     def __init__(self):
         self.df_pos_agg = pd.DataFrame()
-        self.df_bc_tx = pd.DataFrame()
-        self.df_bc_unidades = pd.DataFrame()
+        self.df_bc_tx_unidades = pd.DataFrame()
         self.df_bc_tx_medio = pd.DataFrame()
         self.df_listas_envio = pd.DataFrame()
         self.dict_listas_envios = {}
@@ -25,15 +24,17 @@ class PublicosObjetivo():
         self.condicion = condicion
         self.excluir = excluir
     
-    def set_po_filtros_variables(self, venta_antes, venta_camp, cond_antes, cond_camp):
+    def set_po_filtros_variables(self, venta_antes, venta_camp, cond_antes, cond_camp, online):
         self.venta_antes = venta_antes
         self.venta_camp = venta_camp
         self.cond_antes = cond_antes
         self.cond_camp = cond_camp
+        self.online = online
 
-    def set_listas_envio_variables(self, canales, grupo_control):
+    def set_listas_envio_variables(self, canales, grupo_control, prioridad_online):
         self.canales = canales
         self.grupo_control = grupo_control
+        self.prioridad_online = prioridad_online
         # Configurar el ratio de control
         self.ratio_grupo_control = 0.1 if self.grupo_control else 0
 
@@ -905,40 +906,46 @@ class PublicosObjetivo():
     def __get_filtros_listas(self):
         # Filtro de venta antes
         if self.venta_antes.lower() == 'si':
-            venta_antes = 'AND VENTA_MARCA > 0'
+            venta_antes = 'AND IND_ANTERIOR = 1'
         elif self.venta_antes.lower() == 'no':
-            venta_antes = 'AND VENTA_MARCA = 0 OR VENTA_MARCA IS NULL'
+            venta_antes = 'AND IND_ANTERIOR = 0'
         else:
             venta_antes = ''
 
         # Filtro de venta campaña
         if self.venta_camp.lower() == 'si':
-            venta_camp = 'AND VENTA_MARCA_NATURAL > 0'
+            venta_camp = 'AND IND_CAMPANA = 1'
         elif self.venta_camp.lower() == 'no':
-            venta_camp = 'AND VENTA_MARCA_NATURAL = 0 OR VENTA_MARCA_NATURAL IS NULL'
+            venta_camp = 'AND IND_CAMPANA = 0'
         else:
             venta_camp = ''
 
         # Filtro de condición antes
         if self.cond_antes.lower() == 'si':
-            cond_antes = 'AND TX_ELEGIBLES_MARCA > 0'
+            cond_antes = 'AND IND_ANTERIOR_ELEGIBLE = 1'
         elif self.cond_antes.lower() == 'no':
-            cond_antes = 'AND TX_ELEGIBLES_MARCA = 0 OR TX_ELEGIBLES_MARCA IS NULL'
+            cond_antes = 'AND IND_ANTERIOR_ELEGIBLE = 0'
         else:
             cond_antes = ''
 
         # Filtro de condición campaña
         if self.cond_camp.lower() == 'si':
-            cond_camp = 'AND TX_ELEGIBLES_NATURAL_MARCA > 0'
+            cond_camp = 'AND IND_CAMPANA_ELEGIBLE = 1'
         elif self.cond_camp.lower() == 'no':
-            cond_camp = 'AND TX_ELEGIBLES_NATURAL_MARCA = 0 OR TX_ELEGIBLES_NATURAL_MARCA IS NULL'
+            cond_camp = 'AND IND_CAMPANA_ELEGIBLE = 0'
         else:
             cond_camp = ''
+
+        # Filtro de condición campaña
+        if self.online:
+            online = 'AND IND_ONLINE = 1'
+        else:
+            online = ''
         
-        return venta_antes, venta_camp, cond_antes, cond_camp
+        return venta_antes, venta_camp, cond_antes, cond_camp, online
 
     def get_query_select_po_envios_conteo(self, from_table):
-        venta_antes, venta_camp, cond_antes, cond_camp = self.__get_filtros_listas()
+        venta_antes, venta_camp, cond_antes, cond_camp, online = self.__get_filtros_listas()
 
         query_po_envios = f'''
             SELECT
@@ -946,18 +953,19 @@ class PublicosObjetivo():
             FROM (
                 SELECT
                     VALID_CONTACT_INFO,
-                    CUSTOMER_CODE,
+                    CUSTOMER_CODE_TY,
                     ORDEN_SEGMENTO
                 FROM {from_table}
-                WHERE 1= 1
+                WHERE PO_CAP_12_REC_12_FID_6 = 1
                 {venta_antes}
                 {venta_camp}
                 {cond_antes}
                 {cond_camp}
+                {online}
 
             ) AS PO_ENVIOS
             PIVOT (
-            COUNT(DISTINCT CUSTOMER_CODE)
+            COUNT(DISTINCT CUSTOMER_CODE_TY)
             FOR ORDEN_SEGMENTO IN ('1 FID', '2 REC', '3 CAP')
             ) AS PIVOT_TABLE
             ORDER BY 1;
@@ -965,7 +973,7 @@ class PublicosObjetivo():
         return query_po_envios
         
     def get_query_create_listas_envio(self, table_name, from_table):
-        venta_antes, venta_camp, cond_antes, cond_camp = self.__get_filtros_listas()
+        venta_antes, venta_camp, cond_antes, cond_camp, online = self.__get_filtros_listas()
         
         # Extraer canales y numero de envios
 
@@ -987,80 +995,67 @@ class PublicosObjetivo():
         porcentaje_gt = 1 - self.ratio_grupo_control
 
         query = f'''
+
+            --FILTRAR Y DAR ORDEN AL PO
+            DROP TABLE IF EXISTS #PO_ORDENADO;
+            CREATE TABLE #PO_ORDENADO AS (
+            SELECT
+                ROW_NUMBER() OVER(PARTITION BY ORDEN_SEGMENTO, VALID_CONTACT_INFO ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, {f'IND_ONLINE DESC, ' if self.prioridad_online else ''}VENTA_MARCA DESC, VENTA_CAT DESC, CUSTOMER_CODE_TY) N_PREVIO
+                ,ROW_NUMBER() OVER(PARTITION BY ORDEN_SEGMENTO, VALID_CONTACT_INFO ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, {f'IND_ONLINE DESC, ' if self.prioridad_online else ''}VENTA_CAT DESC, CUSTOMER_CODE_TY) N_NUEVO
+                ,CUSTOMER_CODE_TY,VALID_CONTACT_INFO,NSE,TIPO_FAMILIA,RECOMPRA_6M_CAT,RECOMPRA_6M_MARCA,IND_FID,IND_REC,IND_CAP,ORDEN_SEGMENTO,IND_ONLINE,IND_CAMPANA,IND_CAMPANA_ELEGIBLE,IND_ANTERIOR,IND_ANTERIOR_ELEGIBLE,LAST_INVOICE_DATE,LAST_INVOICE_DATE_MARCA,DIAS_CON_COMPRA,DIAS_CON_COMPRA_MARCA,PROMEDIO_DIAS_RECOMPRA,PROMEDIO_DIAS_RECOMPRA_MARCA,VENTA_CAT,VENTA_MARCA,TX_CAT,TX_MARCA,TICKET_MEDIO_CAT,TICKET_MEDIO_MARCA,VENTA_ELEGIBLE_CAT,VENTA_ELEGIBLE_MARCA,TX_ELEGIBLE_CAT,TX_ELEGIBLE_MARCA,TICKET_MEDIO_ELEGIBLE_CAT,TICKET_MEDIO_ELEGIBLE_MARCA
+            FROM {from_table}
+            WHERE PO_CAP_12_REC_12_FID_6 = 1 = 1
+            {venta_antes}
+            {venta_camp}
+            {cond_antes}
+            {cond_camp}
+            {online}
+            );
+
+            --CREAR LISTA DE CLIENTES
             DROP TABLE IF EXISTS {table_name};
             CREATE TABLE {table_name} AS (
-                WITH __PO_ENVIOS AS (
-                    SELECT
-                        ROW_NUMBER() OVER(PARTITION BY ORDEN_SEGMENTO, VALID_CONTACT_INFO ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, VENTA_MARCA DESC, VENTA_CAT DESC, CUSTOMER_CODE) ROW_N
-                        ,*
-                    FROM {from_table}
-                    WHERE 1 = 1
-                    AND ORDEN_SEGMENTO IN ('1 FID', '2 REC')
-                    {venta_antes}
-                    {venta_camp}
-                    {cond_antes}
-                    {cond_camp}
-
-                    UNION
-
-                    SELECT
-                        ROW_NUMBER() OVER(PARTITION BY ORDEN_SEGMENTO, VALID_CONTACT_INFO ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, VENTA_CAT DESC, CUSTOMER_CODE) ROW_N
-                        ,*
-                    FROM {from_table}
-                    WHERE 1 = 1
-                    AND ORDEN_SEGMENTO IN ('3 CAP')
-                    {venta_antes}
-                    {venta_camp}
-                    {cond_antes}
-                    {cond_camp}
+                SELECT
+                *
+                FROM #PO_ORDENADO
+                WHERE (
+                --FID
+                   (IND_FID = 1 AND VALID_CONTACT_INFO = '01 SMS'             AND N_PREVIO <= {fid_sms}/{porcentaje_gt})
+                OR (IND_FID = 1 AND VALID_CONTACT_INFO = '02 MAIL'            AND N_PREVIO <= {fid_email}/{porcentaje_gt})
+                OR (IND_FID = 1 AND VALID_CONTACT_INFO = '03 MAIL & SMS'      AND N_PREVIO <= {fid_sms_mail}/{porcentaje_gt})
+                --REC
+                OR (IND_REC = 1 AND VALID_CONTACT_INFO = '01 SMS'             AND N_PREVIO <= {rec_sms}/{porcentaje_gt})
+                OR (IND_REC = 1 AND VALID_CONTACT_INFO = '02 MAIL'            AND N_PREVIO <= {rec_email}/{porcentaje_gt})
+                OR (IND_REC = 1 AND VALID_CONTACT_INFO = '03 MAIL & SMS'      AND N_PREVIO <= {rec_sms_mail}/{porcentaje_gt})
+                --CAP
+                OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '01 SMS'             AND N_NUEVO <= {cap_sms}/{porcentaje_gt})
+                OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '02 MAIL'            AND N_NUEVO <= {cap_email}/{porcentaje_gt})
+                OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '03 MAIL & SMS'      AND N_NUEVO <= {cap_sms_mail}/{porcentaje_gt})
                 )
-                SELECT * FROM __PO_ENVIOS
-
-                WHERE VALID_CONTACT_INFO IN ('01 SMS', '02 MAIL', '03 MAIL & SMS', '04 INVALID CONTACT') --('01 SMS', '02 MAIL', '03 MAIL & SMS', '04 INVALID CONTACT')
-                AND (IND_FID = 1 OR IND_REC = 1 OR IND_CAP = 1) --(IND_FID = 1 OR IND_REC = 1 OR IND_CAP = 1)
-
-                AND (
-                    --FID
-                    (IND_FID = 1 AND VALID_CONTACT_INFO = '01 SMS'                AND ROW_N <= {fid_sms}/{porcentaje_gt})
-                    OR (IND_FID = 1 AND VALID_CONTACT_INFO = '02 MAIL'            AND ROW_N <= {fid_email}/{porcentaje_gt})
-                    OR (IND_FID = 1 AND VALID_CONTACT_INFO = '03 MAIL & SMS'      AND ROW_N <= {fid_sms_mail}/{porcentaje_gt})
-
-                    --REC
-                    OR (IND_REC = 1 AND VALID_CONTACT_INFO = '01 SMS'             AND ROW_N <= {rec_sms}/{porcentaje_gt})
-                    OR (IND_REC = 1 AND VALID_CONTACT_INFO = '02 MAIL'            AND ROW_N <= {rec_email}/{porcentaje_gt})
-                    OR (IND_REC = 1 AND VALID_CONTACT_INFO = '03 MAIL & SMS'      AND ROW_N <= {rec_sms_mail}/{porcentaje_gt})
-
-                    --CAP
-                    OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '01 SMS'             AND ROW_N <= {cap_sms}/{porcentaje_gt})
-                    OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '02 MAIL'            AND ROW_N <= {cap_email}/{porcentaje_gt})
-                    OR (IND_CAP = 1 AND VALID_CONTACT_INFO = '03 MAIL & SMS'      AND ROW_N <= {cap_sms_mail}/{porcentaje_gt})
-                )
-                
-                ORDER BY ROW_N
             );
         '''
         return query
 
     def create_table_po_envios_conteo(self, conn):
-        from_table = '#PO_ENVIOS'
+        from_table = '#PO'
         query = self.get_query_select_po_envios_conteo(from_table=from_table)
         self.df_po_conteo = conn.select(query=query)
     
     def create_table_listas_envio(self, conn):
         table_name = '#LISTAS_ENVIO'
-        from_table = '#PO_ENVIOS'
+        from_table = '#PO'
         query = self.get_query_create_listas_envio(table_name, from_table=from_table)
 
         conn.execute(query=query)
 
-        query = f'SELECT * FROM {table_name} ORDER BY ROW_N'
+        query = f'SELECT * FROM {table_name} ORDER BY ORDEN_SEGMENTO, VALID_CONTACT_INFO, N_PREVIO, N_NUEVO'
         
         self.df_listas_total = conn.select(query=query)
         
         # Separar las listas de envio por canal y agregar a un diccionario
-        df_sms = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '01 SMS'][['customer_code']]
-        df_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '02 MAIL'][['customer_code']]
-        df_sms_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '03 MAIL & SMS'][['customer_code']]
+        df_sms = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '01 SMS'][['customer_code_ty']]
+        df_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '02 MAIL'][['customer_code_ty']]
+        df_sms_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '03 MAIL & SMS'][['customer_code_ty']]
 
         lis_df = [df_sms, df_email, df_sms_email]
         lis_names = ['list_sms', 'list_mail', 'list_sms_mail']
@@ -1080,17 +1075,17 @@ class PublicosObjetivo():
         df_sms_email = self.df_listas_total[self.df_listas_total['valid_contact_info'] == '03 MAIL & SMS']
 
         # Separar listas de envio por canal y segmento y agregar a un diccionario
-        df_sms_fid = df_sms[df_sms['orden_segmento'] == '1 FID'][['customer_code']]
-        df_sms_rec = df_sms[df_sms['orden_segmento'] == '2 REC'][['customer_code']]
-        df_sms_cap = df_sms[df_sms['orden_segmento'] == '3 CAP'][['customer_code']]
+        df_sms_fid = df_sms[df_sms['orden_segmento'] == '1 FID'][['customer_code_ty']]
+        df_sms_rec = df_sms[df_sms['orden_segmento'] == '2 REC'][['customer_code_ty']]
+        df_sms_cap = df_sms[df_sms['orden_segmento'] == '3 CAP'][['customer_code_ty']]
 
-        df_email_fid = df_email[df_email['orden_segmento'] == '1 FID'][['customer_code']]
-        df_email_rec = df_email[df_email['orden_segmento'] == '2 REC'][['customer_code']]
-        df_email_cap = df_email[df_email['orden_segmento'] == '3 CAP'][['customer_code']]
+        df_email_fid = df_email[df_email['orden_segmento'] == '1 FID'][['customer_code_ty']]
+        df_email_rec = df_email[df_email['orden_segmento'] == '2 REC'][['customer_code_ty']]
+        df_email_cap = df_email[df_email['orden_segmento'] == '3 CAP'][['customer_code_ty']]
 
-        df_sms_email_fid = df_sms_email[df_sms_email['orden_segmento'] == '1 FID'][['customer_code']]
-        df_sms_email_rec = df_sms_email[df_sms_email['orden_segmento'] == '2 REC'][['customer_code']]
-        df_sms_email_cap = df_sms_email[df_sms_email['orden_segmento'] == '3 CAP'][['customer_code']]
+        df_sms_email_fid = df_sms_email[df_sms_email['orden_segmento'] == '1 FID'][['customer_code_ty']]
+        df_sms_email_rec = df_sms_email[df_sms_email['orden_segmento'] == '2 REC'][['customer_code_ty']]
+        df_sms_email_cap = df_sms_email[df_sms_email['orden_segmento'] == '3 CAP'][['customer_code_ty']]
 
         lis_df = [df_sms_fid, df_sms_rec, df_sms_cap, df_email_fid, df_email_rec, df_email_cap, df_sms_email_fid, df_sms_email_rec, df_sms_email_cap]
         lis_names = ['list_sms_fid', 'list_sms_rec', 'list_sms_cap', 'list_email_fid', 'list_email_rec', 'list_email_cap', 'list_sms_email_fid', 'list_sms_email_rec', 'list_sms_email_cap']
