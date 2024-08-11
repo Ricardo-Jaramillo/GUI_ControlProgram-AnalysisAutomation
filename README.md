@@ -27,3 +27,11 @@ La interfaz conecta las entradas del usuario a la base de datos, internamente se
 * Guardar lista de grrupo control cuando se especifique la opción en la generación de listas
 * Agregar toda la lógica de carga y actualización de datos de campañas
 * Agregar ventana de carga/progreso
+* Agregar indicador compra online para facilitar orden y selección
+
+* Ajustar temporalidad en resultados
+* Ajustar periodo/fechas en la selección de POs
+* Tasa natural y de recompra mensual
+* Recompra por tiendas
+* Ordenar por tienda
+* *Comparativas de crecimientos. Ej. 2022 a 2023 y 2023 a 2024
