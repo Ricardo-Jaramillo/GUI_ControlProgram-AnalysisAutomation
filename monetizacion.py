@@ -51,12 +51,6 @@ class Monetizacion(Conn, Productos):
         # Create BusinessCase tables
         self.po.create_tables_bc(self, override)
 
-    def generar_po_envios(self, condicion, excluir, override):
-        # Set variables
-        self.po.set_po_envios_variables(condicion=condicion, excluir=excluir)
-        # Crear Público Objetivo de Envíos
-        self.po.create_table_po_envios(self, override)
-
     def generar_po_envios_conteo(self, venta_antes, venta_camp, cond_antes, cond_camp, online):
         # Set variables
         self.po.set_po_filtros_variables(venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp, online=online)
