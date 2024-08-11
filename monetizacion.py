@@ -40,9 +40,9 @@ class Monetizacion(Conn, Productos):
         # Create Productos table
         self.create_tabla_productos(self, override)
 
-    def generar_po(self, tiendas, is_online, condicion, inicio, termino, override):
+    def generar_po(self, tiendas, excluir, is_online, condicion, inicio, termino, override):
         # Set variables
-        self.po.set_pos_variables(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino)
+        self.po.set_pos_variables(tiendas=tiendas, excluir=excluir, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino)
         # Create PO table
         self.po.create_table_pos_temporal(self, override)
 

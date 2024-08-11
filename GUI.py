@@ -461,7 +461,7 @@ class App:
         tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=8, column=1, pady=10)
 
     # Función para validar los campos de PO
-    def validate_entries_po(self, entry_tiendas, entry_is_online, entry_condicion, entry_inicio, entry_termino):
+    def validate_entries_po(self, entry_tiendas, entry_excluir, entry_is_online, entry_condicion, entry_inicio, entry_termino):
 
         # Validar que inicio es fecha en formato YYYY-MM-DD
         try:
@@ -487,24 +487,30 @@ class App:
             if not all(len(x) == 4 for x in entry_tiendas.get().strip().split(',')):
                 messagebox.showwarning("Advertencia", "Por favor ingrese tiendas de 4 dígitos separadas por coma.")
                 return False
-        
+            
+        # validar que excluir numerico separadas por coma
+        if entry_excluir.get().strip() and not all(x.isdigit() for x in entry_excluir.get().strip().split(',')):
+            messagebox.showwarning("Advertencia", "Por favor ingrese listas numéricas separadas por coma.")
+            return False        
+
         return True
     
     # Funcion para limpiar los campos de PO
-    def clear_entries_po(self, entry_tiendas, entry_is_online, entry_condicion, entry_inicio, entry_termino):
+    def clear_entries_po(self, entry_tiendas, entry_excluir, entry_is_online, entry_condicion, entry_inicio, entry_termino):
         tiendas = self.add_quotes(entry_tiendas.get().replace(', ', ','))
+        excluir = self.add_quotes(entry_excluir.get().replace(', ', ','))
         is_online = entry_is_online.get()
         condicion = entry_condicion.get()
         inicio = entry_inicio.get()
         termino = entry_termino.get()
         
-        return tiendas, is_online, condicion, inicio, termino
+        return tiendas, excluir, is_online, condicion, inicio, termino
 
     # Función para agregar POs a DB
-    def submit_publicos(self, entry_tiendas, var, entry_condicion, entry_inicio, entry_termino):
-        if self.validate_entries_po(entry_tiendas=entry_tiendas, entry_is_online=var, entry_condicion=entry_condicion, entry_inicio=entry_inicio, entry_termino=entry_termino):
+    def submit_publicos(self, entry_tiendas, entry_excluir, var, entry_condicion, entry_inicio, entry_termino):
+        if self.validate_entries_po(entry_tiendas=entry_tiendas, entry_excluir=entry_excluir, entry_is_online=var, entry_condicion=entry_condicion, entry_inicio=entry_inicio, entry_termino=entry_termino):
             # Limpiar los campos de PO
-            tiendas, is_online, condicion, inicio, termino = self.clear_entries_po(entry_tiendas, var, entry_condicion, entry_inicio, entry_termino)
+            tiendas, excluir, is_online, condicion, inicio, termino = self.clear_entries_po(entry_tiendas, entry_excluir, var, entry_condicion, entry_inicio, entry_termino)
 
             # Preguntar si ya existe la tabla PRODUCTOS
             if not self.mon.validate_if_table_exists('#PRODUCTOS'):
@@ -517,7 +523,7 @@ class App:
             else:
                 override = None
             
-            self.mon.generar_po(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino, override=override)
+            self.mon.generar_po(tiendas=tiendas, excluir=excluir, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino, override=override)
             self.show_dataframe(self.mon.po.df_pos_agg, "Públicos Objetivos")
 
     def generar_publicos_objetivos(self):
@@ -535,35 +541,44 @@ class App:
         separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="we")
 
         # Periodo de la campaña
-        tk.Label(frame, text="Periodo del PO", font=("Arial", 10, "bold")).grid(row=2, column=0, columnspan=2, pady=10)
-        tk.Label(frame, text="Inicio:").grid(row=3, column=0, sticky='e', pady=5, padx=5)
+        tk.Label(frame, text="Periodo del PO", font=("Arial", 10, "bold")).grid(row=2, column=0, pady=10)
+        tk.Label(frame, text="Inicio (mes):").grid(row=3, column=0, pady=5, padx=5)
         entry_inicio = DateEntry(frame, date_pattern='yyyy-mm-dd')
-        entry_inicio.grid(row=3, column=1, pady=5, padx=5)
+        entry_inicio.grid(row=4, column=0, pady=5, padx=5)
         
-        tk.Label(frame, text="Termino:").grid(row=4, column=0, sticky='e', pady=5, padx=5)
+        tk.Label(frame, text="Termino (mes):").grid(row=3, column=1, pady=5, padx=5)
         entry_termino = DateEntry(frame, date_pattern='yyyy-mm-dd')
         entry_termino.grid(row=4, column=1, pady=5, padx=5)
 
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=5, column=0, columnspan=2, pady=5, sticky="we")
+
         # Datos de la campaña
-        tk.Label(frame, text="Filtros (opcional)", font=("Arial", 10, "bold")).grid(row=5, column=0, columnspan=2, pady=10)
-        tk.Label(frame, text="Tiendas (store_code):").grid(row=6, column=0, sticky='e', pady=5, padx=5)
+        tk.Label(frame, text="Filtros (opcional)", font=("Arial", 10, "bold")).grid(row=6, column=0, columnspan=2, pady=10)
+        tk.Label(frame, text="Tiendas (store_code):").grid(row=7, column=0, pady=5, padx=5, sticky='e')
         entry_tiendas = tk.Entry(frame)
-        entry_tiendas.grid(row=6, column=1, pady=5, padx=5)
+        entry_tiendas.grid(row=7, column=1, pady=5, padx=5)
         
-        tk.Label(frame, text="Monto de Venta:").grid(row=7, column=0, sticky='e', pady=5, padx=5)
+        # Entrada para excluir listas de envío
+        tk.Label(frame, text="Excluir listas de envío:").grid(row=8, column=0, pady=5, padx=5, sticky='e')
+        entry_excluir = tk.Entry(frame)
+        entry_excluir.grid(row=8, column=1, pady=5, padx=5, sticky='w')
+
+        tk.Label(frame, text="Condición de Compra:").grid(row=9, column=0, pady=5, padx=5, sticky='e')
         entry_condicion = tk.Entry(frame)
-        entry_condicion.grid(row=7, column=1, pady=5, padx=5)
+        entry_condicion.grid(row=9, column=1, pady=5, padx=5)
         
         var = tk.IntVar()
         entry_is_online = tk.Checkbutton(frame, text="Venta Online?", variable=var)
-        entry_is_online.grid(row=8, column=0, columnspan=2)
+        entry_is_online.grid(row=10, column=0, columnspan=2)
 
         # Línea horizontal
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
-        separator.grid(row=9, column=0, columnspan=2, pady=5, sticky="we")
+        separator.grid(row=11, column=0, columnspan=2, pady=5, sticky="we")
         
-        tk.Button(frame, text="Calcular PO", command=lambda: self.submit_publicos(entry_tiendas, var, entry_condicion, entry_inicio, entry_termino)).grid(row=10, column=0, pady=5)
-        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=10, column=1, columnspan=2, pady=5)
+        tk.Button(frame, text="Calcular PO", command=lambda: self.submit_publicos(entry_tiendas, entry_excluir, var, entry_condicion, entry_inicio, entry_termino)).grid(row=12, column=0, pady=5)
+        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=12, column=1, columnspan=2, pady=5)
 
     def ver_guardar_datos(self):
         self.menu_frame.pack_forget()
@@ -586,8 +601,8 @@ class App:
 
     def get_dataframe(self, title, type=None):
         # Extraer datos de BC
-        lis_df_bc = [self.mon.po.df_bc_tx, self.mon.po.df_bc_unidades, self.mon.po.df_bc_tx_medio]
-        lis_title_bc = ['BusinessCase - Número de Tickets', 'BusinessCase - Número de Unidades', 'BusinessCase - Ticket Medio']
+        lis_df_bc = [self.mon.po.df_bc_tx_unidades, self.mon.po.df_bc_tx_medio]
+        lis_title_bc = ['BusinessCase - Tickets y Unidades', 'BusinessCase - Ticket Medio']
         
         # Extraer datos de listas
         if self.mon.po.dict_listas_envios:
