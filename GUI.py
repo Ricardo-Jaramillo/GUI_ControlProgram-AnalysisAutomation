@@ -1075,13 +1075,63 @@ class App:
 
         tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=9, column=1, pady=10)
 
-    def show_campaign(self, list_box):
+    def validate_entry_campana(self, list_box):
         try:
             seleccion = list_box.get(list_box.curselection())
-            # campana = self.mon.camp.get_campana(seleccion)
-            messagebox.showinfo("Información", seleccion)
+            return seleccion
         except:
             messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
+            return None
+
+    def show_campaign(self, list_box):
+        nombre_campana = self.validate_entry_campana(list_box)
+        
+        def create_table(frame, title, df):
+            headers = df.columns
+
+            # Agregar un título encima de la tabla
+            title_label = tk.Label(frame, text=title, font=("Arial", 12, "bold"))
+            title_label.pack(side="top", anchor="w", pady=5)
+
+            # Crear un Treeview con columnas
+            tree = ttk.Treeview(frame, columns=list(range(1, len(headers) + 1)), show="headings", height=5)
+
+            # Configurar los encabezados y el ancho de las columnas
+            for i, header in enumerate(headers, 1):
+                tree.heading(i, text=header)
+                tree.column(i, width=150)  # Aproximadamente 15 caracteres de ancho
+
+            # Insertar los datos
+            for row in df.itertuples(index=False):
+                tree.insert("", tk.END, values=row)
+
+            # Configurar scrollbars
+            vsb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+            hsb = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
+            tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+
+            # Empacar los widgets
+            tree.pack(side="left", fill="both", expand=True)
+            vsb.pack(side="right", fill="y")
+            hsb.pack(side="bottom", fill="x")
+
+            return tree
+
+        # Crear un frame principal
+        frame = tk.Toplevel(self.root)
+        frame.state("zoomed")
+        # frame = tk.Frame(self.content_frame)
+        # frame.pack(fill="both", expand=True)
+
+        # Configurar las tablas, títulos y datos
+        lis_titles = ["Información General", "Listas", "Cupones", "Ofertas"]
+        lis_df = self.mon.obtener_info_campana(nombre_campana)
+
+        # Crear las tablas con títulos y scrollbars
+        for title, df in zip(lis_titles, lis_df):
+            frame_table = tk.Frame(frame)
+            frame_table.pack(fill="both", expand=True, padx=10, pady=10)
+            create_table(frame_table, title, df)
 
     def edit_campaign(self, list_box):
         try:

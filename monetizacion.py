@@ -72,6 +72,10 @@ class Monetizacion(Conn, Productos):
     def separar_listas_envio(self):
         # Separar Listas de Envío
         self.po.separar_listas_envio()
+
+    def obtener_info_campana(self, nombre):
+        lis_df = self.camp.get_campana_info(self, nombre)
+        return lis_df
     
     def ejecutar_ds(self):
         # self.ds.create_analisis_ds()
