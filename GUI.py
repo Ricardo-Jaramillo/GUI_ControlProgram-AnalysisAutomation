@@ -1298,19 +1298,18 @@ class App:
         except:
             messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
     
-    def update_campaign(self):
-        try:
-            # campana = self.mon.camp.get_campana(seleccion)
-            messagebox.showinfo("Información", "Actualizar campaña")
-        except:
-            messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
+    def update_campaign(self, list_box):
+        nombre_campana = self.validate_entry_campana(list_box)
 
-    def show_results(self):
-        try:
-            # campana = self.mon.camp.get_campana(seleccion)
-            messagebox.showinfo("Información", "Ver resultados")
-        except:
-            messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
+        # Preguntar si desea guardar los cambios
+        op = messagebox.askyesno("Advertencia", f"¿Está seguro que desea actualizar los resultados de la campaña {nombre_campana}?")
+        if op:
+            # self.mon.actualizar_campana(nombre_campana)
+            messagebox.showinfo("Información", f"Los resultados de la campaña {nombre_campana} han sido actualizados exitosamente.")
+
+    def show_results(self, list_box):
+        nombre_campana = self.validate_entry_campana(list_box)
+        # self.mon.mostrar_resultados_campana(nombre_campana)
 
     def generar_resultados(self):
         # Crear layout para ventana de resultados
@@ -1344,8 +1343,8 @@ class App:
         tk.Button(frame, text="Agregar", width=12, command=self.add_campaign).grid(row=5, column=1, pady=2, padx=10)
         tk.Button(frame, text="Eliminar", width=12, command=lambda: self.delete_campaign(list_box)).grid(row=6, column=1, pady=2, padx=10)
         tk.Label(frame, text="").grid(row=7, column=1, pady=2, padx=10)
-        tk.Button(frame, text="Actualizar", width=12, command=self.update_campaign, bg="navy", fg="white").grid(row=8, column=1, pady=2, padx=10)
-        tk.Button(frame, text="Ver Resultados", width=12, command=self.show_results, bg="green", fg="white").grid(row=9, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Actualizar", width=12, command=lambda: self.update_campaign(list_box), bg="navy", fg="white").grid(row=8, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Ver Resultados", width=12, command=lambda: self.show_results(list_box), bg="green", fg="white").grid(row=9, column=1, pady=2, padx=10)
         
         # Línea horizontal
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
