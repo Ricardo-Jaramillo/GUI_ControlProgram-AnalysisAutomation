@@ -1283,14 +1283,15 @@ class App:
         save_button.pack(pady=10)
 
     def delete_campaign(self, list_box):
-        try:
-            seleccion = list_box.get(list_box.curselection())
-            # campana = self.mon.camp.get_campana(seleccion)
-            messagebox.showinfo("Información", seleccion)
-        except:
-            messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
+        nombre_campana = self.validate_entry_campana(list_box)
 
-    def create_campaign(self):
+        # Preguntar si desea eliminar la campaña
+        op = messagebox.askyesno("Advertencia", f"¿Está seguro que desea eliminar la campaña {nombre_campana}?")
+        if op:
+            # self.mon.eliminar_campana(nombre_campana)
+            messagebox.showinfo("Información", f"La campaña {nombre_campana} ha sido eliminada exitosamente.")
+
+    def add_campaign(self):
         try:
             # campana = self.mon.camp.get_campana(seleccion)
             messagebox.showinfo("Información", "Crear campaña")
@@ -1340,7 +1341,7 @@ class App:
         # Botones laterales para Ver, Editar, Eliminar, Crear, espacio en blanco, Actualizar, Ver Resultados y Regresar al Menú
         tk.Button(frame, text="Ver", width=12, command=lambda: self.show_campaign(list_box)).grid(row=3, column=1, pady=2, padx=10)
         tk.Button(frame, text="Editar", width=12, command=lambda: self.edit_campaign(list_box)).grid(row=4, column=1, pady=2, padx=10)
-        tk.Button(frame, text="Agregar", width=12, command=self.create_campaign).grid(row=5, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Agregar", width=12, command=self.add_campaign).grid(row=5, column=1, pady=2, padx=10)
         tk.Button(frame, text="Eliminar", width=12, command=lambda: self.delete_campaign(list_box)).grid(row=6, column=1, pady=2, padx=10)
         tk.Label(frame, text="").grid(row=7, column=1, pady=2, padx=10)
         tk.Button(frame, text="Actualizar", width=12, command=self.update_campaign, bg="navy", fg="white").grid(row=8, column=1, pady=2, padx=10)
