@@ -1134,12 +1134,153 @@ class App:
             create_table(frame_table, title, df)
 
     def edit_campaign(self, list_box):
-        try:
-            seleccion = list_box.get(list_box.curselection())
-            # campana = self.mon.camp.get_campana(seleccion)
-            messagebox.showinfo("Información", seleccion)
-        except:
-            messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
+        nombre_campana = self.validate_entry_campana(list_box)
+
+        def edit_row(tree, row_id, headers):
+            current_values = tree.item(row_id, "values")
+            
+            edit_window = tk.Toplevel()
+            edit_window.title("Editar Fila")
+            
+            entries = []
+            
+            for i, value in enumerate(current_values):
+                tk.Label(edit_window, text=headers[i]).grid(row=i, column=0, padx=5, pady=5)
+                entry = tk.Entry(edit_window)
+                entry.grid(row=i, column=1, padx=5, pady=5)
+                entry.insert(0, value)
+                entries.append(entry)
+            
+            def save_changes():
+                new_values = [entry.get() for entry in entries]
+                tree.item(row_id, values=new_values)
+                edit_window.destroy()
+            
+            save_button = tk.Button(edit_window, text="Guardar Cambios", command=save_changes)
+            save_button.grid(row=len(entries), column=0, columnspan=2, pady=10)
+
+        def delete_row(tree):
+            selected_item = tree.selection()
+            if selected_item:
+                tree.delete(selected_item)
+
+        def add_row(tree, headers):
+            add_window = tk.Toplevel()
+            add_window.title("Agregar Nueva Fila")
+            
+            entries = []
+            
+            for i, header in enumerate(headers):
+                tk.Label(add_window, text=header).grid(row=i, column=0, padx=5, pady=5)
+                entry = tk.Entry(add_window)
+                entry.grid(row=i, column=1, padx=5, pady=5)
+                entries.append(entry)
+
+            def save_new_row():
+                new_values = [entry.get() for entry in entries]
+                tree.insert("", "end", values=new_values)
+                add_window.destroy()
+            
+            save_button = tk.Button(add_window, text="Agregar Fila", command=save_new_row)
+            save_button.grid(row=len(entries), column=0, columnspan=2, pady=10)
+
+        def on_double_click(event, headers):
+            item = event.widget.identify('item', event.x, event.y)
+            if item:
+                edit_row(event.widget, item, headers)
+
+        def create_table(frame, df):
+            headers = df.columns
+            tree = ttk.Treeview(frame, columns=list(range(1, len(headers) + 1)), show="headings", height=8)
+            
+            for i, header in enumerate(headers, 1):
+                tree.heading(i, text=header)
+                tree.column(i, width=150)
+            
+            for row in df.itertuples(index=False):
+                tree.insert("", "end", values=row)
+            
+            vsb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+            hsb = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
+            tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+            
+            tree.pack(side="left", fill="both", expand=True)
+            vsb.pack(side="right", fill="y")
+            hsb.pack(side="bottom", fill="x")
+            
+            tree.bind("<Double-1>", lambda event: on_double_click(event, headers))
+            
+            return tree
+
+        def extract_tree_data(tree, headers):
+            rows = tree.get_children()
+            data = []
+            for row in rows:
+                data.append(tree.item(row)['values'])
+            return pd.DataFrame(data, columns=headers)
+
+        def compare_dataframes(df_original, df_updated):
+            # Revisar cuál df es más largo
+            if len(df_original) < len(df_updated):
+                df_original, df_updated = df_updated, df_original
+            
+            # Reindexar df_updated para que coincida con df_original
+            df_updated = df_updated.reindex_like(df_original)
+
+            comparison = df_original.compare(df_updated)
+            if comparison.empty:
+                print("No hay diferencias.")
+            else:
+                print("Cambios detectados:")
+                print(comparison)
+
+        # Crear la ventana principal
+        frame = tk.Toplevel(self.root)
+        # frame.state("zoomed")
+
+        # Crear un Notebook para organizar las tablas
+        notebook = ttk.Notebook(frame)
+        notebook.pack(fill="both", expand=True)
+
+        # Configurar las tablas, títulos y datos
+        lis_titles = ["Información General", "Listas", "Cupones", "Ofertas"]
+        lis_df = self.mon.obtener_info_campana(nombre_campana)
+        lis_tree = []
+
+        # Crear un tab por cada tabla
+        for title, df in zip(lis_titles, lis_df):
+            # Crear un tab por cada tabla
+            tab = tk.Frame(notebook)
+            notebook.add(tab, text=title)
+            tree = create_table(tab, df)
+            # Guardar el tree y el df en una lista
+            lis_tree.append(tree)
+            # Sustituir el dataframe con la info del tree para mantener el mismo formato y comparar cambios
+            lis_df[lis_titles.index(title)] = extract_tree_data(tree, df.columns)
+
+            # Botones para agregar y eliminar filas
+            add_button = tk.Button(tab, text="Agregar Fila", command=lambda t=tree, h=df.columns: add_row(t, h))
+            add_button.pack(side="top", pady=5)
+
+            delete_button = tk.Button(tab, text="Eliminar Fila", command=lambda t=tree: delete_row(t))
+            delete_button.pack(side="top", pady=5)
+        
+        # Función para extraer y comparar los datos de todas las tablas
+        def on_save_and_compare_all():
+            for i, (tree, df) in enumerate(zip(lis_tree, lis_df)):
+                name = lis_titles[i]
+                df_new = extract_tree_data(tree, df.columns)
+                # Comparar los DataFrames
+                print(f"Comparando: {name}")
+                compare_dataframes(df, df_new)
+                # self.mon.guardar_info_campana(nombre_campana, data)
+
+            # Salir de la ventana
+            frame.destroy()
+
+        # Botón para guardar los cambios y comparar todas las tablas
+        save_button = tk.Button(frame, text="Guardar y Salir", command=on_save_and_compare_all)
+        save_button.pack(pady=10)
 
     def delete_campaign(self, list_box):
         try:
