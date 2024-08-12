@@ -812,7 +812,7 @@ class App:
             return
         
         self.mon.generar_po_envios_conteo(venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp, online=online)
-        messagebox.showinfo("Información", f"Públicos Objetivos de Envíos generados exitosamente:\n\nFiltros aplicados:\nVenta antes: {venta_antes}\nVenta en: {venta_camp}\nCondición antes: {cond_antes}\nCondición en: {cond_camp}\Online: {online}")
+        messagebox.showinfo("Información", f"Públicos Objetivos de Envíos generados exitosamente:\n\nFiltros aplicados:\nVenta antes: {venta_antes}\nVenta en: {venta_camp}\nCondición antes: {cond_antes}\nCondición en: {cond_camp}\nOnline: {online}")
         self.show_dataframe(self.mon.po.df_po_conteo, 'Conteo para Listas')
 
     def submit_canales(self, entries_canales:dict, var_grupo_control, var_prioridad_online):
@@ -853,24 +853,6 @@ class App:
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
         separator.grid(row=1, column=0, columnspan=3, pady=5, sticky="we")
 
-        # # Generar el úblico objetivo de envíos
-        # tk.Label(frame, text="1. Generar Público Objetivo de Envíos", font=("Arial", 12, "bold"), wraplength=150).grid(row=2, column=0, rowspan=3, pady=5, padx=10, sticky='w')
-        # # Entrada para Definir las condición de compra
-        # tk.Label(frame, text="Condición de compra", font=("Arial", 10, "bold"), anchor='w').grid(row=2, column=1, pady=5, padx=5, sticky='w')
-        # entry_condicion = tk.Entry(frame)
-        # entry_condicion.grid(row=2, column=2, pady=5, padx=5, sticky='w')
-        # # Entrada para excluir listas de envío
-        # tk.Label(frame, text="Excluir listas de envío", font=("Arial", 10, "bold"), anchor='w').grid(row=3, column=1, pady=5, padx=5, sticky='w')
-        # entry_excluir = tk.Entry(frame)
-        # entry_excluir.grid(row=3, column=2, pady=5, padx=5, sticky='w')
-
-        # # Botón para generar listas de envío con monto de condición de compra y listas a excluir
-        # tk.Button(frame, text="Actualizar", command=lambda: self.submit_po_envios(entry_condicion, entry_excluir)).grid(row=4, column=2, pady=10)
-
-        # # Línea horizontal
-        # separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
-        # separator.grid(row=5, column=0, columnspan=3, pady=5, sticky="we")
-
         # Entrada para seleccionar los filtros de las listas: venta antes de campaña, venta en campaña, cumple condición antes de campaña, cumple condición en campaña
         tk.Label(frame, text="1. Filtros de la Lista", font=("Arial", 12, "bold"), wraplength=150).grid(row=6, column=0, rowspan=7, pady=5, padx=10)
         
@@ -904,7 +886,7 @@ class App:
         tk.Checkbutton(frame, text="Solo Online?", variable=var_online).grid(row=12, column=1, padx=10, pady=5)
 
         # Boton para ver conteo máximo de envíos con los filtros seleccionados
-        tk.Button(frame, text="Ver Conteo", command=lambda: self.submit_filtros_listas(var_venta_antes, var_venta_actual, var_cond_antes, var_cond_actual, var_online)).grid(row=12, column=2, pady=10)
+        tk.Button(frame, text="Actualizar Conteo", command=lambda: self.submit_filtros_listas(var_venta_antes, var_venta_actual, var_cond_antes, var_cond_actual, var_online)).grid(row=12, column=2, pady=10)
 
         # Línea horizontal
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
