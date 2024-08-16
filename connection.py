@@ -40,13 +40,19 @@ class Conn:
         self.cursor.execute(query)
         print('Successfull execution')
 
-    def insert(self, query, tuple_values):
+    def insert(self, table_name, df):
        '''
-       Query must have the sinaxys of "INSERT INTO table_name VALUES %s"
+         Insert a DataFrame into a table in the database
+            Parameters:
+            table_name (str): The name of the table to insert the data
+            df (DataFrame): The DataFrame to insert into the table
        '''
+       query = f'INSERT INTO CHEDRAUI.{table_name} VALUES %s'
+       data = list(df.itertuples(index=False, name=None))
+       
        print('Inserting data...')
-       execute_values(self.cursor, query, tuple_values)
-       print(f'Successfull insert: {len(tuple_values)} rows')
+       execute_values(self.cursor, query, data)
+       print(f'Successfull insert: {len(data)} rows')
 
     def select(self, query):
         print('Selecting data...')

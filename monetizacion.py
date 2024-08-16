@@ -77,6 +77,14 @@ class Monetizacion(Conn, Productos):
         lis_df = self.camp.get_campana_info(self, nombre)
         return lis_df
     
+    def guardar_info_campana(self, nombre_campana, table_name, df):        
+        # Guardar la información de la campaña
+        self.camp.guardar_info_campana(self, nombre_campana, table_name, df)
+
+    def eliminar_info_campana(self, nombre_campana):
+        # Eliminar la información de la campaña
+        self.camp.eliminar_info_campana(self, nombre_campana)
+    
     def ejecutar_ds(self):
         # self.ds.create_analisis_ds()
         pass

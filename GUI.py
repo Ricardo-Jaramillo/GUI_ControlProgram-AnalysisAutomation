@@ -10,6 +10,8 @@ from publicos_objetivo import *
 import warnings
 from monetizacion import Monetizacion
 from pandastable import Table, TableModel
+from tkinter.simpledialog import askstring
+from datetime import datetime
 
 # Ignore SQLAlchemy warnings
 warnings.filterwarnings('ignore')
@@ -1070,8 +1072,13 @@ class App:
             if not nombre_campana:
                 return
         elif type in ['add']:
-            # Obtener la ultima campaña en la lista y borrar los datos
-            nombre_campana = self.mon.get_campanas().iloc[-1]['nombre']
+            # Obtener la ultima campaña en la lista
+            nombre_ultima_campana = self.mon.get_campanas().iloc[-1]['nombre']
+            # Obtener el año y mes actual en formato YYMM y concatenar con espacio
+            nombre_campana = f"{datetime.now().strftime('%y%m')} "
+            nombre_campana = askstring("Nueva Campaña", "Ingrese el nombre de la nueva campaña", initialvalue=nombre_campana)
+            if not nombre_campana:
+                return
 
         def edit_row(tree, row_id, headers):
             current_values = tree.item(row_id, "values")
@@ -1085,10 +1092,10 @@ class App:
                 tk.Label(edit_window, text=headers[i]).grid(row=i, column=0, padx=5, pady=5)
                 entry = tk.Entry(edit_window)
                 # Dehabilitar la edicion para el primer campo
-                if i == 0:
-                    entry.config(state='disabled')
                 entry.grid(row=i, column=1, padx=5, pady=5)
                 entry.insert(0, value)
+                if headers[i] in ('codigo_campana', 'nombre'):
+                    entry.config(state='disabled')
                 entries.append(entry)
             
             def save_changes():
@@ -1114,6 +1121,18 @@ class App:
                 tk.Label(add_window, text=header).grid(row=i, column=0, padx=5, pady=5)
                 entry = tk.Entry(add_window)
                 entry.grid(row=i, column=1, padx=5, pady=5)
+                
+                if header == 'codigo_campana':
+                    # Crear un nuevo codigo de campaña. Si es de tipo 'add', el codigo de campaña es el nombre de la campaña sustituyendo los espacios por guiones bajos
+                    codigo_campana = nombre_campana.replace(' ', '_').upper()
+                    entry.insert(0, codigo_campana)
+                    entry.config(state='disabled')
+                
+                if header == 'nombre':
+                    # Si es de tipo 'add', el nombre de la campaña es el nombre ingresado por el usuario
+                    entry.insert(0, nombre_campana)
+                    entry.config(state='disabled')
+                
                 entries.append(entry)
 
             def save_new_row():
@@ -1160,6 +1179,7 @@ class App:
             return pd.DataFrame(data, columns=headers)
 
         def compare_dataframes(df_original, df_updated):
+            # Return True if there are differences, False otherwise
             # Revisar cuál df es más largo
             if len(df_original) < len(df_updated):
                 df_original, df_updated = df_updated, df_original
@@ -1170,9 +1190,11 @@ class App:
             comparison = df_original.compare(df_updated)
             if comparison.empty:
                 print("No hay diferencias.")
+                return False
             else:
                 print("Cambios detectados:")
                 print(comparison)
+                return True
 
         # Crear la ventana principal
         frame = tk.Toplevel(self.root)
@@ -1183,9 +1205,9 @@ class App:
         notebook.pack(fill="both", expand=True)
 
         # Configurar las tablas, títulos y datos
-        lis_titles = ["Información General", "Listas", "Cupones", "Ofertas"]
+        lis_titles = ["Descripción", "Listas", "Cupones", "Ofertas"]
         # Obtener los datos de la campaña seleccionada si es de tipo 'show', si no, crear DataFrames vacíos
-        lis_df = self.mon.obtener_info_campana(nombre_campana) if type in ['show_edit'] else [pd.DataFrame(columns=df.columns) for df in self.mon.obtener_info_campana(nombre_campana)]
+        lis_df = self.mon.obtener_info_campana(nombre_campana) if type in ['show_edit'] else [pd.DataFrame(columns=df.columns) for df in self.mon.obtener_info_campana(nombre_ultima_campana)]
         lis_tree = []
 
         # Crear un tab por cada tabla
@@ -1209,12 +1231,22 @@ class App:
         # Función para extraer y comparar los datos de todas las tablas
         def on_save_and_compare_all():
             for i, (tree, df) in enumerate(zip(lis_tree, lis_df)):
-                name = lis_titles[i]
+                table_name = lis_titles[i]
                 df_new = extract_tree_data(tree, df.columns)
                 # Comparar los DataFrames
-                print(f"Comparando: {name}")
-                compare_dataframes(df, df_new)
-                # self.mon.guardar_info_campana(nombre_campana, data)
+                print(f"Comparando: {table_name}")
+                
+                # Validar que los tipos de datos de las columnas sean iguales en ambos DataFrames
+                if not df.dtypes.equals(df_new.dtypes):
+                    # Columnas con tipos de datos diferentes
+                    cols_diff = ', '.join(list(df.columns[~df.dtypes.eq(df_new.dtypes)]))
+                    print(f"Los tipos de datos de las columnas no coinciden en {table_name}: {cols_diff}")
+                    messagebox.showwarning("Advertencia", f"Los tipos de datos de las columnas: {cols_diff} en la tabla: {table_name} no coinciden.")
+                    # return
+
+                if compare_dataframes(df, df_new):
+                    # Guardar los cambios en la campaña si hay diferencias
+                    self.mon.guardar_info_campana(nombre_campana, table_name, df_new)
 
             # Salir de la ventana
             frame.destroy()
@@ -1231,15 +1263,8 @@ class App:
         # Preguntar si desea eliminar la campaña
         op = messagebox.askyesno("Advertencia", f"¿Está seguro que desea eliminar la campaña {nombre_campana}?")
         if op:
-            # self.mon.eliminar_campana(nombre_campana)
+            self.mon.eliminar_info_campana(nombre_campana)
             messagebox.showinfo("Información", f"La campaña {nombre_campana} ha sido eliminada exitosamente.")
-
-    def add_campaign(self):
-        try:
-            # campana = self.mon.camp.get_campana(seleccion)
-            messagebox.showinfo("Información", "Crear campaña")
-        except:
-            messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
     
     def update_campaign(self, list_box):
         nombre_campana = self.validate_entry_campana(list_box)
@@ -1283,7 +1308,6 @@ class App:
         list_box.insert(tk.END, *campanas.nombre)
 
         # Botones laterales para Ver, Editar, Eliminar, Crear, espacio en blanco, Actualizar, Ver Resultados y Regresar al Menú
-        # tk.Button(frame, text="Ver/Editar", width=12, command=lambda: self.show_campaign(list_box)).grid(row=3, column=1, pady=2, padx=10)
         tk.Button(frame, text="Ver/Editar", width=12, command=lambda: self.show_edit_campaign(list_box, 'show_edit')).grid(row=3, column=1, pady=2, padx=10)
         tk.Button(frame, text="Agregar", width=12, command=lambda: self.show_edit_campaign(list_box, 'add')).grid(row=4, column=1, pady=2, padx=10)
         tk.Button(frame, text="Eliminar", width=12, command=lambda: self.delete_campaign(list_box)).grid(row=5, column=1, pady=2, padx=10)
