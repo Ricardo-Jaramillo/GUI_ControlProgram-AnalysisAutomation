@@ -9,7 +9,6 @@ from PIL import ImageTk
 from publicos_objetivo import *
 import warnings
 from monetizacion import Monetizacion
-from pandasgui import show
 from pandastable import Table, TableModel
 
 # Ignore SQLAlchemy warnings
@@ -1065,58 +1064,14 @@ class App:
             messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
             return None
 
-    def show_campaign(self, list_box):
-        nombre_campana = self.validate_entry_campana(list_box)
-        
-        def create_table(frame, title, df):
-            headers = df.columns
-
-            # Agregar un título encima de la tabla
-            title_label = tk.Label(frame, text=title, font=("Arial", 12, "bold"))
-            title_label.pack(side="top", anchor="w", pady=5)
-
-            # Crear un Treeview con columnas
-            tree = ttk.Treeview(frame, columns=list(range(1, len(headers) + 1)), show="headings", height=5)
-
-            # Configurar los encabezados y el ancho de las columnas
-            for i, header in enumerate(headers, 1):
-                tree.heading(i, text=header)
-                tree.column(i, width=150)  # Aproximadamente 15 caracteres de ancho
-
-            # Insertar los datos
-            for row in df.itertuples(index=False):
-                tree.insert("", tk.END, values=row)
-
-            # Configurar scrollbars
-            vsb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
-            hsb = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
-            tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
-
-            # Empacar los widgets
-            tree.pack(side="left", fill="both", expand=True)
-            vsb.pack(side="right", fill="y")
-            hsb.pack(side="bottom", fill="x")
-
-            return tree
-
-        # Crear un frame principal
-        frame = tk.Toplevel(self.root)
-        frame.state("zoomed")
-        # frame = tk.Frame(self.content_frame)
-        # frame.pack(fill="both", expand=True)
-
-        # Configurar las tablas, títulos y datos
-        lis_titles = ["Información General", "Listas", "Cupones", "Ofertas"]
-        lis_df = self.mon.obtener_info_campana(nombre_campana)
-
-        # Crear las tablas con títulos y scrollbars
-        for title, df in zip(lis_titles, lis_df):
-            frame_table = tk.Frame(frame)
-            frame_table.pack(fill="both", expand=True, padx=10, pady=10)
-            create_table(frame_table, title, df)
-
-    def edit_campaign(self, list_box):
-        nombre_campana = self.validate_entry_campana(list_box)
+    def show_edit_campaign(self, list_box, type='show_edit'):
+        if type in ['show_edit']:
+            nombre_campana = self.validate_entry_campana(list_box)
+            if not nombre_campana:
+                return
+        elif type in ['add']:
+            # Obtener la ultima campaña en la lista y borrar los datos
+            nombre_campana = self.mon.get_campanas().iloc[-1]['nombre']
 
         def edit_row(tree, row_id, headers):
             current_values = tree.item(row_id, "values")
@@ -1129,6 +1084,9 @@ class App:
             for i, value in enumerate(current_values):
                 tk.Label(edit_window, text=headers[i]).grid(row=i, column=0, padx=5, pady=5)
                 entry = tk.Entry(edit_window)
+                # Dehabilitar la edicion para el primer campo
+                if i == 0:
+                    entry.config(state='disabled')
                 entry.grid(row=i, column=1, padx=5, pady=5)
                 entry.insert(0, value)
                 entries.append(entry)
@@ -1226,7 +1184,8 @@ class App:
 
         # Configurar las tablas, títulos y datos
         lis_titles = ["Información General", "Listas", "Cupones", "Ofertas"]
-        lis_df = self.mon.obtener_info_campana(nombre_campana)
+        # Obtener los datos de la campaña seleccionada si es de tipo 'show', si no, crear DataFrames vacíos
+        lis_df = self.mon.obtener_info_campana(nombre_campana) if type in ['show_edit'] else [pd.DataFrame(columns=df.columns) for df in self.mon.obtener_info_campana(nombre_campana)]
         lis_tree = []
 
         # Crear un tab por cada tabla
@@ -1266,6 +1225,8 @@ class App:
 
     def delete_campaign(self, list_box):
         nombre_campana = self.validate_entry_campana(list_box)
+        if not nombre_campana:
+            return
 
         # Preguntar si desea eliminar la campaña
         op = messagebox.askyesno("Advertencia", f"¿Está seguro que desea eliminar la campaña {nombre_campana}?")
@@ -1282,6 +1243,8 @@ class App:
     
     def update_campaign(self, list_box):
         nombre_campana = self.validate_entry_campana(list_box)
+        if not nombre_campana:
+            return
 
         # Preguntar si desea guardar los cambios
         op = messagebox.askyesno("Advertencia", f"¿Está seguro que desea actualizar los resultados de la campaña {nombre_campana}?")
@@ -1316,23 +1279,23 @@ class App:
 
         # Listbox para mostrar las campañas
         list_box = tk.Listbox(frame, width=70, height=15, selectmode='single')
-        list_box.grid(row=3, rowspan=7, column=0, padx=10, pady=5)
+        list_box.grid(row=3, rowspan=6, column=0, padx=10, pady=5)
         list_box.insert(tk.END, *campanas.nombre)
 
         # Botones laterales para Ver, Editar, Eliminar, Crear, espacio en blanco, Actualizar, Ver Resultados y Regresar al Menú
-        tk.Button(frame, text="Ver", width=12, command=lambda: self.show_campaign(list_box)).grid(row=3, column=1, pady=2, padx=10)
-        tk.Button(frame, text="Editar", width=12, command=lambda: self.edit_campaign(list_box)).grid(row=4, column=1, pady=2, padx=10)
-        tk.Button(frame, text="Agregar", width=12, command=self.add_campaign).grid(row=5, column=1, pady=2, padx=10)
-        tk.Button(frame, text="Eliminar", width=12, command=lambda: self.delete_campaign(list_box)).grid(row=6, column=1, pady=2, padx=10)
-        tk.Label(frame, text="").grid(row=7, column=1, pady=2, padx=10)
-        tk.Button(frame, text="Actualizar", width=12, command=lambda: self.update_campaign(list_box), bg="navy", fg="white").grid(row=8, column=1, pady=2, padx=10)
-        tk.Button(frame, text="Ver Resultados", width=12, command=lambda: self.show_results(list_box), bg="green", fg="white").grid(row=9, column=1, pady=2, padx=10)
+        # tk.Button(frame, text="Ver/Editar", width=12, command=lambda: self.show_campaign(list_box)).grid(row=3, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Ver/Editar", width=12, command=lambda: self.show_edit_campaign(list_box, 'show_edit')).grid(row=3, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Agregar", width=12, command=lambda: self.show_edit_campaign(list_box, 'add')).grid(row=4, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Eliminar", width=12, command=lambda: self.delete_campaign(list_box)).grid(row=5, column=1, pady=2, padx=10)
+        tk.Label(frame, text="").grid(row=6, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Actualizar", width=12, command=lambda: self.update_campaign(list_box), bg="navy", fg="white").grid(row=7, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Ver Resultados", width=12, command=lambda: self.show_results(list_box), bg="green", fg="white").grid(row=8, column=1, pady=2, padx=10)
         
         # Línea horizontal
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
-        separator.grid(row=10, column=0, columnspan=2, pady=5, sticky="we")
+        separator.grid(row=9, column=0, columnspan=2, pady=5, sticky="we")
         
-        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=11, column=0, columnspan=2, pady=5)
+        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=10, column=0, columnspan=2, pady=5)
 
 # root = tk.Tk()
 # app = App(root)
