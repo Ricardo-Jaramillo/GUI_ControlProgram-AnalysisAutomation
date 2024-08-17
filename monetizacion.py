@@ -85,6 +85,12 @@ class Monetizacion(Conn, Productos):
         # Eliminar la información de la campaña
         self.camp.eliminar_info_campana(self, nombre_campana)
     
+    def actualizar_resultados_campana(self, nombre_campana):
+        # Crear las variables de la campaña
+        self.camp.set_campana_variables(self, nombre_campana)
+        # Actualizar la campaña con el nombre proporcionado
+        self.camp.actualizar_resultados_campana(self)
+
     def ejecutar_ds(self):
         # self.ds.create_analisis_ds()
         pass

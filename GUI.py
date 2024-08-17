@@ -1274,7 +1274,7 @@ class App:
         # Preguntar si desea guardar los cambios
         op = messagebox.askyesno("Advertencia", f"¿Está seguro que desea actualizar los resultados de la campaña {nombre_campana}?")
         if op:
-            # self.mon.actualizar_campana(nombre_campana)
+            self.mon.actualizar_resultados_campana(nombre_campana)
             messagebox.showinfo("Información", f"Los resultados de la campaña {nombre_campana} han sido actualizados exitosamente.")
 
     def show_results(self, list_box):
