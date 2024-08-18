@@ -1067,19 +1067,6 @@ class App:
             return None
 
     def show_edit_campaign(self, list_box, type='show_edit'):
-        if type in ['show_edit']:
-            nombre_campana = self.validate_entry_campana(list_box)
-            if not nombre_campana:
-                return
-        elif type in ['add']:
-            # Obtener la ultima campaña en la lista
-            nombre_ultima_campana = self.mon.get_campanas().iloc[-1]['nombre']
-            # Obtener el año y mes actual en formato YYMM y concatenar con espacio
-            nombre_campana = f"{datetime.now().strftime('%y%m')} "
-            nombre_campana = askstring("Nueva Campaña", "Ingrese el nombre de la nueva campaña", initialvalue=nombre_campana)
-            if not nombre_campana:
-                return
-
         def edit_row(tree, row_id, headers):
             current_values = tree.item(row_id, "values")
             
@@ -1206,6 +1193,56 @@ class App:
                 print(comparison)
                 return True
 
+        def cargar_lista(tree, df, title, tipo):
+            print(f'Entramos a cargar lista {title}')
+            # Obtener el nombre de la campaña, si es de tipo 'add', el nombre de la campaña es el nombre ingresado por el usuario reemplazando los espacios por guiones bajos
+            codigo_campana = nombre_campana.replace(' ', '_').upper() if df['codigo_campana'].isnull().all() else df['codigo_campana'].iloc[0]
+            print(f"Cargando lista de {title} para la campaña: {nombre_campana}")
+            
+            # Si tipo es 'total_cadena_tiendas', cargar todas las tiendas
+            if tipo == 'total_cadena_tiendas':
+                # Obtener todas las tiendas en formato string de 4 digitos con ceros a la izquierda separadas por coma
+                lista = self.mon.obtener_total_cadena_tiendas().strip()
+            elif tipo == 'cargar_lista':
+                # Habilitar entrada para ingresar lista de tiendas o productos
+                lista = askstring(f"Lista de {title}", f"Ingrese la lista de {title} separada por coma.").strip()
+            
+            # Validar que la lista no esté vacía y que este separada por coma o si se dio cancelar
+            if not lista or not all([x.strip() for x in lista.split(',')]):
+                return
+            
+            # Detectar si se dio cancelar en la entrada de la lista
+            if lista == 'None':
+                return
+            
+            # Insertar la lista en el tree, solo en las columnas codigo_campana y store_code o product_code. Dejar vacias las columnas distintas
+            for item in lista.split(','):
+                # Obtener columnas del df
+                cols = df.columns
+                # Identificar index de las columnas codigo_campana y store_code o product_code
+                index_codigo_campana = cols.get_loc('codigo_campana')
+                index_value = cols.get_loc('store_code') if 'store_code' in cols else cols.get_loc('product_code')
+                # Crear la variable de valores a insertar en el tree, dejar vacias las columnas que no sean codigo_campana y store_code o product_code
+                values = [""] * len(cols)
+                values[index_codigo_campana] = codigo_campana
+                values[index_value] = str(item).zfill(4)
+                # Insertar en el tree solo las columnas codigo_campana y store_code
+                tree.insert("", "end", values=values)
+
+        # Validar si se seleccionó una campaña
+        if type in ['show_edit']:
+            nombre_campana = self.validate_entry_campana(list_box)
+            if not nombre_campana:
+                return
+        elif type in ['add']:
+            # Obtener la ultima campaña en la lista
+            nombre_ultima_campana = self.mon.get_campanas().iloc[-1]['nombre']
+            # Obtener el año y mes actual en formato YYMM y concatenar con espacio
+            nombre_campana = f"{datetime.now().strftime('%y%m')} "
+            nombre_campana = askstring("Nueva Campaña", "Ingrese el nombre de la nueva campaña", initialvalue=nombre_campana)
+            if not nombre_campana:
+                return
+
         # Crear la ventana principal
         frame = tk.Toplevel(self.root)
         # frame.state("zoomed")
@@ -1232,12 +1269,24 @@ class App:
             lis_df[lis_titles.index(title)] = extract_tree_data(tree, df.columns)
 
             # Botones para agregar y eliminar filas
-            add_button = tk.Button(tab, text="Agregar Fila", command=lambda t=tree, h=df.columns: add_row(t, h))
-            add_button.pack(side="top", pady=5)
+            add_button = tk.Button(tab, width=15, text="Agregar Fila", command=lambda t=tree, h=df.columns: add_row(t, h))
+            add_button.pack(side="top", pady=5, padx=5)
 
-            delete_button = tk.Button(tab, text="Eliminar Fila", command=lambda t=tree: delete_row(t))
-            delete_button.pack(side="top", pady=5)
-        
+            delete_button = tk.Button(tab, width=15, text="Eliminar Fila", command=lambda t=tree: delete_row(t))
+            delete_button.pack(side="top", pady=5, padx=5)
+
+            # Agregar botones para cargar una lista completa de tiendas o productos
+            if title in ('Tiendas'):
+                button_listas_tiendas = tk.Button(tab, width=15, text="Cargar Lista", command=lambda t=tree, d=df, title=title: cargar_lista(t, d, title, tipo='cargar_lista'))
+                button_listas_tiendas.pack(side="top", pady=5, padx=5)
+
+                button_total_cadena = tk.Button(tab, width=15, text="Total Cadena", command=lambda t=tree, d=df, title=title: cargar_lista(t, d, title, tipo='total_cadena_tiendas'))
+                button_total_cadena.pack(side="top", pady=5, padx=5)
+            
+            if title in ('Productos'):
+                button_listas_productos = tk.Button(tab, width=15, text="Cargar Lista", command=lambda t=tree, d=df, title=title: cargar_lista(t, d, title, tipo='cargar_lista'))
+                button_listas_productos.pack(side="top", pady=5, padx=5)
+
         # Función para extraer y comparar los datos de todas las tablas
         def on_save_and_compare_all():
             for i, (tree, df) in enumerate(zip(lis_tree, lis_df)):
@@ -1251,7 +1300,7 @@ class App:
                     # Columnas con tipos de datos diferentes
                     cols_diff = ', '.join(list(df.columns[~df.dtypes.eq(df_new.dtypes)]))
                     print(f"Los tipos de datos de las columnas no coinciden en {table_name}: {cols_diff}")
-                    messagebox.showwarning("Advertencia", f"Los tipos de datos de las columnas: {cols_diff} en la tabla: {table_name} no coinciden.")
+                    # messagebox.showwarning("Advertencia", f"Los tipos de datos de las columnas: {cols_diff} en la tabla: {table_name} no coinciden.")
                     # return
 
                 if compare_dataframes(df, df_new):

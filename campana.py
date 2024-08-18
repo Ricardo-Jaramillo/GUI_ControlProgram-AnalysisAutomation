@@ -19,6 +19,18 @@ class Campana():
         
     def get_table_names_campana(self):
         return list(self.dict_tablas_sql.keys())
+    
+    def get_total_cadena_tiendas(self, conn):
+        query = f'''
+            --TIENDAS TOTAL CADENA
+            SELECT DISTINCT STORE_CODE FROM FCT_SALE_LINE INNER JOIN DIM_STORE USING(STORE_CODE, STORE_KEY) WHERE INVOICE_DATE >= '2022-01-01';
+        '''
+        df_tiendas = conn.select(query)
+        
+        # Concatenar las tiendas en un stirng separado por comas
+        tiendas = ','.join([str(x) for x in df_tiendas.store_code])
+
+        return tiendas
         
     def set_campana_variables(self, conn, nombre_campana):
         # Obtener el codigo de la campaña y obtener los queries para actualizar la campaña

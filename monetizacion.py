@@ -94,6 +94,10 @@ class Monetizacion(Conn, Productos):
     def obtener_nombres_tablas_campanas(self):
         # Obtener los nombres de las tablas de las campañas
         return self.camp.get_table_names_campana()
+    
+    def obtener_total_cadena_tiendas(self):
+        # Obtener el total de la cadena de tiendas
+        return self.camp.get_total_cadena_tiendas(self)
 
     def ejecutar_ds(self):
         # self.ds.create_analisis_ds()
