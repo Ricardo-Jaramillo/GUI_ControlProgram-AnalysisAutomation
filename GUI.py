@@ -1199,16 +1199,24 @@ class App:
             codigo_campana = nombre_campana.replace(' ', '_').upper() if df['codigo_campana'].isnull().all() else df['codigo_campana'].iloc[0]
             print(f"Cargando lista de {title} para la campaña: {nombre_campana}")
             
+            lista = None
+
             # Si tipo es 'total_cadena_tiendas', cargar todas las tiendas
             if tipo == 'total_cadena_tiendas':
                 # Obtener todas las tiendas en formato string de 4 digitos con ceros a la izquierda separadas por coma
                 lista = self.mon.obtener_total_cadena_tiendas()
-            elif tipo == 'cargar_lista':
+            # Si tipo es 'productos_ingresados', cargar los productos ingresados por el usuario
+            if tipo == 'productos_ingresados':
+                # Obtener los productos del df_productos en formato string separadas por coma
+                lista = self.mon.obtener_lista_productos()
+            if tipo == 'cargar_lista':
                 # Habilitar entrada para ingresar lista de tiendas o productos
                 lista = askstring(f"Lista de {title}", f"Ingrese la lista de {title} separada por coma.")
-                print(f"Lista de {title}: {lista}")
+            
             # Validar que la lista no esté vacía y que este separada por coma o si se dio cancelar
             if not lista or not all([x.strip() for x in lista.split(',')]):
+                if tipo == 'productos_ingresados':
+                    messagebox.showwarning("Advertencia", "Para esta opción es necesario primero definir productos en el apartado de Productos.")
                 return
             
             # Insertar la lista en el tree, solo en las columnas codigo_campana y store_code o product_code. Dejar vacias las columnas distintas
@@ -1283,6 +1291,9 @@ class App:
             if title in ('Productos'):
                 button_listas_productos = tk.Button(tab, width=15, text="Cargar Lista", command=lambda t=tree, d=df, title=title: cargar_lista(t, d, title, tipo='cargar_lista'))
                 button_listas_productos.pack(side="top", pady=5, padx=5)
+
+                button_productos_ingresados = tk.Button(tab, wraplength=60, width=15, text="Usar Productos Ingresados", command=lambda t=tree, d=df, title=title: cargar_lista(t, d, title, tipo='productos_ingresados'))
+                button_productos_ingresados.pack(side="top", pady=5, padx=5)
 
         # Función para extraer y comparar los datos de todas las tablas
         def on_save_and_compare_all():

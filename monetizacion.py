@@ -98,6 +98,14 @@ class Monetizacion(Conn, Productos):
     def obtener_total_cadena_tiendas(self):
         # Obtener el total de la cadena de tiendas
         return self.camp.get_total_cadena_tiendas(self)
+    
+    def obtener_lista_productos(self):
+        # Validar que la tabla #PRODUCTOS exista y obtener los productos ingresados
+        if self.validate_if_table_exists('#PRODUCTOS'):
+            lista = self.df_productos[self.df_productos['ind_marca'] == 1]['product_code'].apply(str).str.cat(sep=',')
+        else:
+            lista = None
+        return lista
 
     def ejecutar_ds(self):
         # self.ds.create_analisis_ds()
