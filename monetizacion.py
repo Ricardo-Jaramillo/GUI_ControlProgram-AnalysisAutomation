@@ -74,8 +74,8 @@ class Monetizacion(Conn, Productos):
         self.po.separar_listas_envio()
 
     def obtener_info_campana(self, nombre):
-        lis_df = self.camp.get_campana_info(self, nombre)
-        return lis_df
+        # Obtener la información de la campaña
+        return self.camp.get_campana_info(self, nombre)
     
     def guardar_info_campana(self, nombre_campana, table_name, df):        
         # Guardar la información de la campaña
@@ -90,6 +90,10 @@ class Monetizacion(Conn, Productos):
         self.camp.set_campana_variables(self, nombre_campana)
         # Actualizar la campaña con el nombre proporcionado
         self.camp.actualizar_resultados_campana(self)
+
+    def obtener_nombres_tablas_campanas(self):
+        # Obtener los nombres de las tablas de las campañas
+        return self.camp.get_table_names_campana()
 
     def ejecutar_ds(self):
         # self.ds.create_analisis_ds()

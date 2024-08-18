@@ -1094,8 +1094,15 @@ class App:
                 # Dehabilitar la edicion para el primer campo
                 entry.grid(row=i, column=1, padx=5, pady=5)
                 entry.insert(0, value)
+                
+                # Deshabilitar la edición para los campos de codigo_campana y nombre
                 if headers[i] in ('codigo_campana', 'nombre'):
                     entry.config(state='disabled')
+                
+                # Deshabilitar la edición para los campos de las tablas producto y tienda
+                if headers[i] in ('region', 'state', 'formato_tienda', 'tienda', 'store_key', 'proveedor', 'marca', 'class_code', 'class_desc', 'subclass_code', 'subclass_desc', 'prod_type_desc', 'product_description'):
+                    entry.config(state='disabled')
+
                 entries.append(entry)
             
             def save_changes():
@@ -1131,6 +1138,9 @@ class App:
                 if header == 'nombre':
                     # Si es de tipo 'add', el nombre de la campaña es el nombre ingresado por el usuario
                     entry.insert(0, nombre_campana)
+                    entry.config(state='disabled')
+
+                if header in ('region', 'state', 'formato_tienda', 'tienda', 'store_key', 'proveedor', 'marca', 'class_code', 'class_desc', 'subclass_code', 'subclass_desc', 'prod_type_desc', 'product_description'):
                     entry.config(state='disabled')
                 
                 entries.append(entry)
@@ -1205,7 +1215,7 @@ class App:
         notebook.pack(fill="both", expand=True)
 
         # Configurar las tablas, títulos y datos
-        lis_titles = ["Descripción", "Listas", "Cupones", "Ofertas"]
+        lis_titles = self.mon.obtener_nombres_tablas_campanas()
         # Obtener los datos de la campaña seleccionada si es de tipo 'show', si no, crear DataFrames vacíos
         lis_df = self.mon.obtener_info_campana(nombre_campana) if type in ['show_edit'] else [pd.DataFrame(columns=df.columns) for df in self.mon.obtener_info_campana(nombre_ultima_campana)]
         lis_tree = []
@@ -1245,6 +1255,16 @@ class App:
                     # return
 
                 if compare_dataframes(df, df_new):
+                    # Si las tablas son producto o tienda, dejar en el dataframe solo las columnas codigo_campanaa en ambas y product_code y store_code respectivamente
+                    if table_name in ('Tiendas'):
+                        df_new = df_new[['codigo_campana', 'store_code']]
+                        # Convertir store_code a string de 4 digitos con ceros a la izquierda
+                        df_new['store_code'] = df_new['store_code'].apply(lambda x: str(x).zfill(4))
+                    if table_name in ('Productos'):
+                        df_new = df_new[['codigo_campana', 'product_code']]
+                        # Convertir product_code a string de 18 digitos con ceros a la izquierda
+                        df_new['product_code'] = df_new['product_code'].apply(lambda x: str(x).zfill(18))
+
                     # Guardar los cambios en la campaña si hay diferencias
                     self.mon.guardar_info_campana(nombre_campana, table_name, df_new)
 

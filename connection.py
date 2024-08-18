@@ -62,7 +62,7 @@ class Conn:
     def close(self):
         try:
             print('Closing connection...')
-            self.drop_temporal_tables('All')
+            # self.drop_temporal_tables('All')
             self.conn.close()
             print('Connection closed')
         except Exception as e:
