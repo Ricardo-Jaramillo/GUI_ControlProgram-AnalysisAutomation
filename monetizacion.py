@@ -79,7 +79,7 @@ class Monetizacion(Conn, Productos):
     
     def guardar_info_campana(self, nombre_campana, table_name, df):        
         # Guardar la información de la campaña
-        self.camp.guardar_info_campana(self, nombre_campana, table_name, df)
+        return self.camp.guardar_info_campana(self, nombre_campana, table_name, df)
 
     def eliminar_info_campana(self, nombre_campana):
         # Eliminar la información de la campaña

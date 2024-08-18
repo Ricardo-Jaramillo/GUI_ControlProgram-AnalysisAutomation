@@ -186,14 +186,22 @@ class Campana():
     
     def guardar_info_campana(self, conn, nombre_campana, table_name, df):
         table_name = self.dict_tablas_sql[table_name]
-        # Borrar la información de la campaña si ya existe
-        conn.execute(f"DELETE CHEDRAUI.{table_name} WHERE CODIGO_CAMPANA = (SELECT CODIGO_CAMPANA FROM CHEDRAUI.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}')")
         # Inserta la información de la campaña
-        conn.insert(table_name, df)
+        error = None
+        try:
+            # Validar si se inserta la información de la campaña. Esto es para evitar borrar  la información y fallar en la inserción
+            conn.insert(table_name, df)
+            # Si se inserta exitosamente, borrar la información de la campaña si ya existe y repetir la inserción
+            conn.execute(f"DELETE CHEDRAUI.{table_name} WHERE CODIGO_CAMPANA = (SELECT CODIGO_CAMPANA FROM CHEDRAUI.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}')")
+            conn.insert(table_name, df)
+        except Exception as e:
+            print('Error al insertar la información de la campaña')
+            error = e
+        return error
 
     def eliminar_info_campana(self, conn, nombre_campana):
         codigo_campana = conn.select(f"SELECT CODIGO_CAMPANA FROM CHEDRAUI.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}'").iloc[0,0]  
-        lis_queries = [        
+        lis_queries = [
             f"DELETE CHEDRAUI.MON_CAMP_DESC WHERE CODIGO_CAMPANA = '{codigo_campana}'"
             ,f"DELETE CHEDRAUI.MON_CAMP_LIST WHERE CODIGO_CAMPANA = '{codigo_campana}'"
             ,f"DELETE CHEDRAUI.MON_CAMP_COUPON WHERE CODIGO_CAMPANA = '{codigo_campana}'"

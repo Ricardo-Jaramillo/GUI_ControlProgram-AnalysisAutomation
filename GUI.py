@@ -1187,11 +1187,11 @@ class App:
             comparison = df_original.compare(df_updated)
             if comparison.empty:
                 print("No hay diferencias.")
-                return False
             else:
                 print("Cambios detectados:")
                 print(comparison)
-                return True
+            
+            return comparison
 
         def cargar_lista(tree, df, title, tipo):
             print(f'Entramos a cargar lista {title}')
@@ -1291,16 +1291,9 @@ class App:
                 df_new = extract_tree_data(tree, df.columns)
                 # Comparar los DataFrames
                 print(f"Comparando: {table_name}")
-                
-                # Validar que los tipos de datos de las columnas sean iguales en ambos DataFrames
-                if not df.dtypes.equals(df_new.dtypes):
-                    # Columnas con tipos de datos diferentes
-                    cols_diff = ', '.join(list(df.columns[~df.dtypes.eq(df_new.dtypes)]))
-                    print(f"Los tipos de datos de las columnas no coinciden en {table_name}: {cols_diff}")
-                    # messagebox.showwarning("Advertencia", f"Los tipos de datos de las columnas: {cols_diff} en la tabla: {table_name} no coinciden.")
-                    # return
+                df_comparison = compare_dataframes(df, df_new)
 
-                if compare_dataframes(df, df_new):
+                if not df_comparison.empty: # and validate_df_types(df_new, table_name):
                     # Si las tablas son producto o tienda, dejar en el dataframe solo las columnas codigo_campanaa en ambas y product_code y store_code respectivamente
                     if table_name in ('Tiendas'):
                         df_new = df_new[['codigo_campana', 'store_code']]
@@ -1312,10 +1305,15 @@ class App:
                         df_new['product_code'] = df_new['product_code'].apply(lambda x: str(x).zfill(18))
 
                     # Guardar los cambios en la campaña si hay diferencias
-                    self.mon.guardar_info_campana(nombre_campana, table_name, df_new)
-
-            # Mostrar mensaje de éxito
-            messagebox.showinfo("Información", "Cambios guardados exitosamente.")
+                    error = self.mon.guardar_info_campana(nombre_campana, table_name, df_new)
+                    if bool(error):
+                        # Obtener las columnas con errores a partir del df.compare() obtenido
+                        cols_error = ','.join(df_comparison.loc[:, (df_comparison != "").any()].columns.get_level_values(0).unique().tolist())
+                        messagebox.showwarning("Advertencia", f"Error en los datos ingresados.\n\nTabla: {table_name}\nColumnas: {cols_error}\nError: {repr(error)}")
+                        return
+                    else:
+                        # Mostrar mensaje de éxito
+                        messagebox.showinfo("Información", f"Cambios en la tabla {table_name} guardados exitosamente.")
             # Salir de la ventana
             frame.destroy()
 
