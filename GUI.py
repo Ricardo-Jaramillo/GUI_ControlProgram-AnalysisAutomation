@@ -1202,21 +1202,18 @@ class App:
             # Si tipo es 'total_cadena_tiendas', cargar todas las tiendas
             if tipo == 'total_cadena_tiendas':
                 # Obtener todas las tiendas en formato string de 4 digitos con ceros a la izquierda separadas por coma
-                lista = self.mon.obtener_total_cadena_tiendas().strip()
+                lista = self.mon.obtener_total_cadena_tiendas()
             elif tipo == 'cargar_lista':
                 # Habilitar entrada para ingresar lista de tiendas o productos
-                lista = askstring(f"Lista de {title}", f"Ingrese la lista de {title} separada por coma.").strip()
-            
+                lista = askstring(f"Lista de {title}", f"Ingrese la lista de {title} separada por coma.")
+                print(f"Lista de {title}: {lista}")
             # Validar que la lista no esté vacía y que este separada por coma o si se dio cancelar
             if not lista or not all([x.strip() for x in lista.split(',')]):
                 return
             
-            # Detectar si se dio cancelar en la entrada de la lista
-            if lista == 'None':
-                return
-            
             # Insertar la lista en el tree, solo en las columnas codigo_campana y store_code o product_code. Dejar vacias las columnas distintas
             for item in lista.split(','):
+                item = item.strip()
                 # Obtener columnas del df
                 cols = df.columns
                 # Identificar index de las columnas codigo_campana y store_code o product_code
@@ -1317,6 +1314,8 @@ class App:
                     # Guardar los cambios en la campaña si hay diferencias
                     self.mon.guardar_info_campana(nombre_campana, table_name, df_new)
 
+            # Mostrar mensaje de éxito
+            messagebox.showinfo("Información", "Cambios guardados exitosamente.")
             # Salir de la ventana
             frame.destroy()
 
