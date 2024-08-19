@@ -1151,7 +1151,7 @@ class App:
             
             for i, header in enumerate(headers, 1):
                 tree.heading(i, text=header)
-                tree.column(i, width=150)
+                tree.column(i, width=100)
             
             for row in df.itertuples(index=False):
                 tree.insert("", "end", values=row)
