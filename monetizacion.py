@@ -85,11 +85,11 @@ class Monetizacion(Conn, Productos):
         # Eliminar la información de la campaña
         self.camp.eliminar_info_campana(self, nombre_campana)
     
-    def actualizar_resultados_campana(self, nombre_campana):
+    def actualizar_resultados_campana(self, nombre_campana, lis_tablas):
         # Crear las variables de la campaña
         self.camp.set_campana_variables(self, nombre_campana)
         # Actualizar la campaña con el nombre proporcionado
-        self.camp.actualizar_resultados_campana(self)
+        self.camp.actualizar_resultados_campana(self, lis_tablas)
 
     def obtener_nombres_tablas_campanas(self):
         # Obtener los nombres de las tablas de las campañas
@@ -106,6 +106,21 @@ class Monetizacion(Conn, Productos):
         else:
             lista = None
         return lista
+
+    def obtener_nombres_tablas_resultados(self):
+        # Obtener los nombres de las tablas de los resultados
+        return self.camp.get_table_names_resultados()
+
+    def validate_campaign_products(self, campaign_name):
+        # Validar que la campaña tenga productos
+        skus = self.camp.get_campaign_products(self, campaign_name)
+        # Si hay lista de productos, crear la tabla de #productos a partir de la lista de skus y retornar True, si no hay productos, retornar False
+        if bool(skus):
+            print('Creando tabla de productos...')
+            self.generar_productos(skus=skus, marcas='', proveedores='', clases='', subclases='', prod_type_desc='', override=None)
+            return True
+        else:
+            return False
 
     def ejecutar_ds(self):
         # self.ds.create_analisis_ds()

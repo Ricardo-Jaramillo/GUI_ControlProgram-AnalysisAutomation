@@ -6,9 +6,12 @@ import pandas as pd
 # Create a Class to handle the Radiografia data
 class Campana():
     def __init__(self):
-        self.set_dict_tablas()
+        self.set_dict_tablas_SQL()
+        self.set_dict_tablas_resultados()
+        self.required_queries_venta = ['Resultados', 'Datos ROI', 'Datos Funnel', 'Tendencia']
+        self.required_queries_venta_evolucion = ['Evolución', 'Segmentos', 'Retención']
     
-    def set_dict_tablas(self):
+    def set_dict_tablas_SQL(self):
         self.dict_tablas_sql = {'Descripción': 'MON_CAMP_DESC',
                                 'Listas': 'MON_CAMP_LIST',
                                 'Cupones': 'MON_CAMP_COUPON',
@@ -16,6 +19,16 @@ class Campana():
                                 'Tiendas': 'MON_CAMP_STORE',
                                 'Productos': 'MON_CAMP_PRODUCT'
                                 }
+        
+    def set_dict_tablas_resultados(self):
+        self.dict_tablas_resultados = {'Resultados': None,
+                                       'Datos ROI': None,
+                                       'Datos Funnel': None,
+                                       'Tendencia': None,
+                                       'Evolución': None,
+                                       'Segmentos': None,
+                                       'Retención': None
+                                       }
         
     def get_table_names_campana(self):
         return list(self.dict_tablas_sql.keys())
@@ -213,21 +226,51 @@ class Campana():
         for query in lis_queries:
             conn.execute(query)
 
-    def actualizar_resultados_campana(self, conn):
+    def get_table_names_resultados(self):
+        return list(self.dict_tablas_resultados.keys())
+
+    def get_campaign_products(self, conn, nombre_campana):
+        # Obtener los productos de la campaña
+        query = f"SELECT PRODUCT_CODE FROM CHEDRAUI.MON_CAMP_PRODUCT WHERE CODIGO_CAMPANA = (SELECT CODIGO_CAMPANA FROM CHEDRAUI.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}')"
+        # Generar lista de productos separadas por coma si hay productos en la campaña
+        lis_products = conn.select(query)
+        products = ','.join([str(x) for x in lis_products.product_code]) if not lis_products.empty else None
+        return products
+
+    def actualizar_resultados_campana(self, conn, lis_tablas_seleccionadas):
         # Obtener las queries para actualizar la campaña
         lis_queries_venta = self.get_queries_campana_venta()
         lis_queries_resultados = self.get_queries_campana_resultados()
         lis_queries_datos_roi = self.get_queries_campana_datos_roi()
         lis_queries_datos_funnel = self.get_queries_campana_datos_funnel()
         lis_queries_tendencia = self.get_queries_campana_tendencia()
+        lis_queries_venta_evolucion = self.get_queries_campana_venta_evolucion()
         lis_queries_evolucion = self.get_queries_campana_evolucion()
         lis_queries_segmentos = self.get_queries_campana_segmentos()
         lis_queries_retencion = self.get_queries_campana_retencion()
 
-        lis_queries = lis_queries_venta + lis_queries_resultados + lis_queries_datos_roi + lis_queries_datos_funnel + lis_queries_tendencia + lis_queries_evolucion + lis_queries_segmentos + lis_queries_retencion
+        self.dict_tablas_resultados['Resultados'] = lis_queries_resultados
+        self.dict_tablas_resultados['Datos ROI'] = lis_queries_datos_roi
+        self.dict_tablas_resultados['Datos Funnel'] = lis_queries_datos_funnel
+        self.dict_tablas_resultados['Tendencia'] = lis_queries_tendencia
+        self.dict_tablas_resultados['Evolución'] = lis_queries_evolucion
+        self.dict_tablas_resultados['Segmentos'] = lis_queries_segmentos
+        self.dict_tablas_resultados['Retención'] = lis_queries_retencion
 
+        lis_exec_queries = []
+
+        # Agregar las queries de venta o venta_evolucion si la tabla es requerida. Si alguna de las tablas de lis_tablas_seleccionadas se encuentra en self.required_queries_venta, se agregan las queries de venta. Si alguna de las tablas de lis_tablas_seleccionadas se encuentra en self.required_queries_venta, se agregan las queries de venta_evolucion
+        if any(tabla in self.required_queries_venta for tabla in lis_tablas_seleccionadas):
+            lis_exec_queries += lis_queries_venta
+        if any(tabla in self.required_queries_venta_evolucion for tabla in lis_tablas_seleccionadas):
+            lis_exec_queries += lis_queries_venta_evolucion
+
+        # Agregar a lis_queries las queries de las tablas seleccionadas
+        for tabla in lis_tablas_seleccionadas:
+            lis_exec_queries += self.dict_tablas_resultados[tabla]
+            
         # Ejecutar cada query, mostrando una barra de progreso con tqdm
-        for query in tqdm(lis_queries):
+        for query in tqdm(lis_exec_queries):
             conn.execute(query)
             # pass
 
@@ -418,7 +461,7 @@ class Campana():
                 *
             FROM __DATOS_TX
             LEFT JOIN __TX_PROVEEDORES USING(INVOICE_NO, IND_MARCA)
-            {'AND IND_ONLINE = 1' if self.campana_variables['ind_online'] == 1 else ''}
+            {'WHERE IND_ONLINE = 1' if self.campana_variables['ind_online'] == 1 else ''}
             );
         '''
 
@@ -2537,7 +2580,7 @@ class Campana():
 
         return [query_dias, query_venta_diaria, query_venta_diaria_elegible, query_tendencia, query_insert]
     
-    def get_queries_campana_evolucion(self):
+    def get_queries_campana_venta_evolucion(self):
         query_meses = f'''
             --CREAR FECHAS DE MES
             DROP TABLE IF EXISTS #MESES;
@@ -2603,7 +2646,7 @@ class Campana():
         
         query_venta = f'''
             --TABLA VENTA
-            DROP TABLE IF EXISTS #VENTA;
+            DROP TABLE IF EXISTS #VENTA_EVOLUCION;
             CREATE TABLE #VENTA AS (
                 SELECT
                 1::INT IND_MC
@@ -2658,7 +2701,9 @@ class Campana():
                 GROUP BY 1,2,3,4,5,6,7,8,9
             );
             '''
-        
+        return [query_meses, query_tx, query_venta]
+
+    def get_queries_campana_evolucion(self):        
         query_venta_mensual = f'''
             --VENTA AGRUPADA POR MES
             DROP TABLE IF EXISTS #VENTA_MENSUAL;
@@ -2714,12 +2759,12 @@ class Campana():
                 ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_ELEGIBLE = 1 THEN CUSTOMER_CODE_TY END) CAT_CLIENTES_ELEGIBLES_ANO_ANTERIOR
                 ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_ELEGIBLE = 1 THEN INVOICE_NO END) CAT_TX_ELEGIBLES_ANO_ANTERIOR
 
-            FROM #VENTA A
+            FROM #VENTA_EVOLUCION A
             LEFT JOIN (SELECT MES, MES_NUMERO FROM #MESES WHERE PERIODO = 'ACTUAL') B USING(MES_NUMERO)
             GROUP BY 1,2,3,4,5
             );
 
-            -- SELECT * FROM #VENTA_MENSUAL ORDER BY 1,2,3,4,5;
+            -- SELECT * FROM #VENTA_EVOLUCION ORDER BY 1,2,3,4,5;
             '''
         
         query_insert = f'''
@@ -2727,7 +2772,7 @@ class Campana():
             INSERT INTO CHEDRAUI.MON_CAMP_EVOLUTION_SALES SELECT * FROM #VENTA_MENSUAL;
         '''
 
-        return [query_meses, query_tx, query_venta, query_venta_mensual, query_insert]
+        return [query_venta_mensual, query_insert]
 
     def get_queries_campana_segmentos(self):
         query_indicadores = f'''
@@ -2898,7 +2943,7 @@ class Campana():
                 ,COUNT(CASE WHEN IND_MES = 22 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_22
                 ,COUNT(CASE WHEN IND_MES = 23 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_23
                 ,COUNT(CASE WHEN IND_MES = 24 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_24
-            FROM #VENTA
+            FROM #VENTA_EVOLUCION
             LEFT JOIN #MESES USING(MES_NUMERO, PERIODO)
             WHERE IND_MC = 1
             GROUP BY 1,2,3
@@ -3889,7 +3934,7 @@ class Campana():
                 SELECT PROVEEDOR, MARCA, 24 IND_MES, CLIENTES_24 AS CLIENTES, VENTA_24 AS VENTA, TX_24 AS TX, PO_RECOMPRA_24 AS PO_RECOMPRA, RECOMPRA_24 AS RECOMPRA, PO_FID_24 AS PO_FID, FID_24 AS FID, PO_DOR_24 AS PO_DOR, DOR_24 AS DOR, PO_PER_24 AS PO_PER, PER_24 AS PER, PO_REC_24 AS PO_REC, REC_24 AS REC, PO_NUEVOS_24 AS PO_NUEVOS, NUEVOS_24 AS NUEVOS, PO_REPETIDORES_24 AS PO_REPETIDORES, REPETIDORES_24 AS REPETIDORES, PO_LEALES_24 AS PO_LEALES, LEALES_24 AS LEALES, VENTA_PO_RECOMPRA_24 AS VENTA_PO_RECOMPRA, VENTA_RECOMPRA_24 AS VENTA_RECOMPRA, VENTA_PO_FID_24 AS VENTA_PO_FID, VENTA_FID_24 AS VENTA_FID, VENTA_PO_DOR_24 AS VENTA_PO_DOR, VENTA_DOR_24 AS VENTA_DOR, VENTA_PO_PER_24 AS VENTA_PO_PER, VENTA_PER_24 AS VENTA_PER, VENTA_PO_REC_24 AS VENTA_PO_REC, VENTA_REC_24 AS VENTA_REC, VENTA_PO_NUEVOS_24 AS VENTA_PO_NUEVOS, VENTA_NUEVOS_24 AS VENTA_NUEVOS, VENTA_PO_REPETIDORES_24 AS VENTA_PO_REPETIDORES, VENTA_REPETIDORES_24 AS VENTA_REPETIDORES, VENTA_PO_LEALES_24 AS VENTA_PO_LEALES, VENTA_LEALES_24 AS VENTA_LEALES FROM __CLIENTES
             )
             SELECT
-                '$[CODIGO_CAMPANA]' CODIGO_CAMPANA
+                '{self.campana_variables['codigo_campana']}' CODIGO_CAMPANA
                 ,PROVEEDOR
                 ,MARCA
                 ,MES
@@ -3943,6 +3988,181 @@ class Campana():
         return [query_indicadores, query_segmentos, query_insert]
 
     def get_queries_campana_retencion(self):
+        query_indicadores = f'''
+            --SEGMENTOS
+            --INDICADORES
+            -- SELECT * FROM #INDICADORES;
+            DROP TABLE IF EXISTS #INDICADORES;
+            CREATE TABLE #INDICADORES AS (
+            SELECT
+                CUSTOMER_CODE_TY
+                ,PROVEEDOR
+                ,MARCA
+                
+                --INDICADORES DE COMPRA
+                --MARCA
+                ,MAX(CASE WHEN IND_MES = 1 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_1
+                ,MAX(CASE WHEN IND_MES = 2 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_2
+                ,MAX(CASE WHEN IND_MES = 3 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_3
+                ,MAX(CASE WHEN IND_MES = 4 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_4
+                ,MAX(CASE WHEN IND_MES = 5 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_5
+                ,MAX(CASE WHEN IND_MES = 6 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_6
+                ,MAX(CASE WHEN IND_MES = 7 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_7
+                ,MAX(CASE WHEN IND_MES = 8 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_8
+                ,MAX(CASE WHEN IND_MES = 9 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_9
+                ,MAX(CASE WHEN IND_MES = 10 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_10
+                ,MAX(CASE WHEN IND_MES = 11 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_11
+                ,MAX(CASE WHEN IND_MES = 12 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_12
+                ,MAX(CASE WHEN IND_MES = 13 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_13
+                ,MAX(CASE WHEN IND_MES = 14 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_14
+                ,MAX(CASE WHEN IND_MES = 15 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_15
+                ,MAX(CASE WHEN IND_MES = 16 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_16
+                ,MAX(CASE WHEN IND_MES = 17 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_17
+                ,MAX(CASE WHEN IND_MES = 18 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_18
+                ,MAX(CASE WHEN IND_MES = 19 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_19
+                ,MAX(CASE WHEN IND_MES = 20 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_20
+                ,MAX(CASE WHEN IND_MES = 21 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_21
+                ,MAX(CASE WHEN IND_MES = 22 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_22
+                ,MAX(CASE WHEN IND_MES = 23 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_23
+                ,MAX(CASE WHEN IND_MES = 24 AND IND_MARCA = 1 THEN 1 ELSE 0 END) IND_24
+                
+                --VENTA
+                ,SUM(CASE WHEN IND_MES = 1 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_1
+                ,SUM(CASE WHEN IND_MES = 2 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_2
+                ,SUM(CASE WHEN IND_MES = 3 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_3
+                ,SUM(CASE WHEN IND_MES = 4 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_4
+                ,SUM(CASE WHEN IND_MES = 5 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_5
+                ,SUM(CASE WHEN IND_MES = 6 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_6
+                ,SUM(CASE WHEN IND_MES = 7 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_7
+                ,SUM(CASE WHEN IND_MES = 8 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_8
+                ,SUM(CASE WHEN IND_MES = 9 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_9
+                ,SUM(CASE WHEN IND_MES = 10 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_10
+                ,SUM(CASE WHEN IND_MES = 11 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_11
+                ,SUM(CASE WHEN IND_MES = 12 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_12
+                ,SUM(CASE WHEN IND_MES = 13 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_13
+                ,SUM(CASE WHEN IND_MES = 14 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_14
+                ,SUM(CASE WHEN IND_MES = 15 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_15
+                ,SUM(CASE WHEN IND_MES = 16 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_16
+                ,SUM(CASE WHEN IND_MES = 17 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_17
+                ,SUM(CASE WHEN IND_MES = 18 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_18
+                ,SUM(CASE WHEN IND_MES = 19 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_19
+                ,SUM(CASE WHEN IND_MES = 20 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_20
+                ,SUM(CASE WHEN IND_MES = 21 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_21
+                ,SUM(CASE WHEN IND_MES = 22 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_22
+                ,SUM(CASE WHEN IND_MES = 23 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_23
+                ,SUM(CASE WHEN IND_MES = 24 AND IND_MARCA = 1 THEN VENTA ELSE 0 END) VENTA_24
+
+                --TX
+                ,COUNT(CASE WHEN IND_MES = 1 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_1
+                ,COUNT(CASE WHEN IND_MES = 2 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_2
+                ,COUNT(CASE WHEN IND_MES = 3 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_3
+                ,COUNT(CASE WHEN IND_MES = 4 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_4
+                ,COUNT(CASE WHEN IND_MES = 5 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_5
+                ,COUNT(CASE WHEN IND_MES = 6 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_6
+                ,COUNT(CASE WHEN IND_MES = 7 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_7
+                ,COUNT(CASE WHEN IND_MES = 8 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_8
+                ,COUNT(CASE WHEN IND_MES = 9 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_9
+                ,COUNT(CASE WHEN IND_MES = 10 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_10
+                ,COUNT(CASE WHEN IND_MES = 11 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_11
+                ,COUNT(CASE WHEN IND_MES = 12 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_12
+                ,COUNT(CASE WHEN IND_MES = 13 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_13
+                ,COUNT(CASE WHEN IND_MES = 14 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_14
+                ,COUNT(CASE WHEN IND_MES = 15 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_15
+                ,COUNT(CASE WHEN IND_MES = 16 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_16
+                ,COUNT(CASE WHEN IND_MES = 17 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_17
+                ,COUNT(CASE WHEN IND_MES = 18 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_18
+                ,COUNT(CASE WHEN IND_MES = 19 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_19
+                ,COUNT(CASE WHEN IND_MES = 20 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_20
+                ,COUNT(CASE WHEN IND_MES = 21 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_21
+                ,COUNT(CASE WHEN IND_MES = 22 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_22
+                ,COUNT(CASE WHEN IND_MES = 23 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_23
+                ,COUNT(CASE WHEN IND_MES = 24 AND IND_MARCA = 1 THEN INVOICE_NO END) TX_24
+                
+                --CAT
+                ,MAX(CASE WHEN IND_MES = 1 THEN 1 ELSE 0 END) CAT_IND_1
+                ,MAX(CASE WHEN IND_MES = 2 THEN 1 ELSE 0 END) CAT_IND_2
+                ,MAX(CASE WHEN IND_MES = 3 THEN 1 ELSE 0 END) CAT_IND_3
+                ,MAX(CASE WHEN IND_MES = 4 THEN 1 ELSE 0 END) CAT_IND_4
+                ,MAX(CASE WHEN IND_MES = 5 THEN 1 ELSE 0 END) CAT_IND_5
+                ,MAX(CASE WHEN IND_MES = 6 THEN 1 ELSE 0 END) CAT_IND_6
+                ,MAX(CASE WHEN IND_MES = 7 THEN 1 ELSE 0 END) CAT_IND_7
+                ,MAX(CASE WHEN IND_MES = 8 THEN 1 ELSE 0 END) CAT_IND_8
+                ,MAX(CASE WHEN IND_MES = 9 THEN 1 ELSE 0 END) CAT_IND_9
+                ,MAX(CASE WHEN IND_MES = 10 THEN 1 ELSE 0 END) CAT_IND_10
+                ,MAX(CASE WHEN IND_MES = 11 THEN 1 ELSE 0 END) CAT_IND_11
+                ,MAX(CASE WHEN IND_MES = 12 THEN 1 ELSE 0 END) CAT_IND_12
+                ,MAX(CASE WHEN IND_MES = 13 THEN 1 ELSE 0 END) CAT_IND_13
+                ,MAX(CASE WHEN IND_MES = 14 THEN 1 ELSE 0 END) CAT_IND_14
+                ,MAX(CASE WHEN IND_MES = 15 THEN 1 ELSE 0 END) CAT_IND_15
+                ,MAX(CASE WHEN IND_MES = 16 THEN 1 ELSE 0 END) CAT_IND_16
+                ,MAX(CASE WHEN IND_MES = 17 THEN 1 ELSE 0 END) CAT_IND_17
+                ,MAX(CASE WHEN IND_MES = 18 THEN 1 ELSE 0 END) CAT_IND_18
+                ,MAX(CASE WHEN IND_MES = 19 THEN 1 ELSE 0 END) CAT_IND_19
+                ,MAX(CASE WHEN IND_MES = 20 THEN 1 ELSE 0 END) CAT_IND_20
+                ,MAX(CASE WHEN IND_MES = 21 THEN 1 ELSE 0 END) CAT_IND_21
+                ,MAX(CASE WHEN IND_MES = 22 THEN 1 ELSE 0 END) CAT_IND_22
+                ,MAX(CASE WHEN IND_MES = 23 THEN 1 ELSE 0 END) CAT_IND_23
+                ,MAX(CASE WHEN IND_MES = 24 THEN 1 ELSE 0 END) CAT_IND_24
+                
+                --VENTA
+                ,SUM(CASE WHEN IND_MES = 1 THEN VENTA ELSE 0 END) CAT_VENTA_1
+                ,SUM(CASE WHEN IND_MES = 2 THEN VENTA ELSE 0 END) CAT_VENTA_2
+                ,SUM(CASE WHEN IND_MES = 3 THEN VENTA ELSE 0 END) CAT_VENTA_3
+                ,SUM(CASE WHEN IND_MES = 4 THEN VENTA ELSE 0 END) CAT_VENTA_4
+                ,SUM(CASE WHEN IND_MES = 5 THEN VENTA ELSE 0 END) CAT_VENTA_5
+                ,SUM(CASE WHEN IND_MES = 6 THEN VENTA ELSE 0 END) CAT_VENTA_6
+                ,SUM(CASE WHEN IND_MES = 7 THEN VENTA ELSE 0 END) CAT_VENTA_7
+                ,SUM(CASE WHEN IND_MES = 8 THEN VENTA ELSE 0 END) CAT_VENTA_8
+                ,SUM(CASE WHEN IND_MES = 9 THEN VENTA ELSE 0 END) CAT_VENTA_9
+                ,SUM(CASE WHEN IND_MES = 10 THEN VENTA ELSE 0 END) CAT_VENTA_10
+                ,SUM(CASE WHEN IND_MES = 11 THEN VENTA ELSE 0 END) CAT_VENTA_11
+                ,SUM(CASE WHEN IND_MES = 12 THEN VENTA ELSE 0 END) CAT_VENTA_12
+                ,SUM(CASE WHEN IND_MES = 13 THEN VENTA ELSE 0 END) CAT_VENTA_13
+                ,SUM(CASE WHEN IND_MES = 14 THEN VENTA ELSE 0 END) CAT_VENTA_14
+                ,SUM(CASE WHEN IND_MES = 15 THEN VENTA ELSE 0 END) CAT_VENTA_15
+                ,SUM(CASE WHEN IND_MES = 16 THEN VENTA ELSE 0 END) CAT_VENTA_16
+                ,SUM(CASE WHEN IND_MES = 17 THEN VENTA ELSE 0 END) CAT_VENTA_17
+                ,SUM(CASE WHEN IND_MES = 18 THEN VENTA ELSE 0 END) CAT_VENTA_18
+                ,SUM(CASE WHEN IND_MES = 19 THEN VENTA ELSE 0 END) CAT_VENTA_19
+                ,SUM(CASE WHEN IND_MES = 20 THEN VENTA ELSE 0 END) CAT_VENTA_20
+                ,SUM(CASE WHEN IND_MES = 21 THEN VENTA ELSE 0 END) CAT_VENTA_21
+                ,SUM(CASE WHEN IND_MES = 22 THEN VENTA ELSE 0 END) CAT_VENTA_22
+                ,SUM(CASE WHEN IND_MES = 23 THEN VENTA ELSE 0 END) CAT_VENTA_23
+                ,SUM(CASE WHEN IND_MES = 24 THEN VENTA ELSE 0 END) CAT_VENTA_24
+
+                --COMPETENCIA
+                --TX
+                ,COUNT(CASE WHEN IND_MES = 1 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_1
+                ,COUNT(CASE WHEN IND_MES = 2 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_2
+                ,COUNT(CASE WHEN IND_MES = 3 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_3
+                ,COUNT(CASE WHEN IND_MES = 4 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_4
+                ,COUNT(CASE WHEN IND_MES = 5 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_5
+                ,COUNT(CASE WHEN IND_MES = 6 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_6
+                ,COUNT(CASE WHEN IND_MES = 7 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_7
+                ,COUNT(CASE WHEN IND_MES = 8 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_8
+                ,COUNT(CASE WHEN IND_MES = 9 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_9
+                ,COUNT(CASE WHEN IND_MES = 10 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_10
+                ,COUNT(CASE WHEN IND_MES = 11 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_11
+                ,COUNT(CASE WHEN IND_MES = 12 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_12
+                ,COUNT(CASE WHEN IND_MES = 13 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_13
+                ,COUNT(CASE WHEN IND_MES = 14 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_14
+                ,COUNT(CASE WHEN IND_MES = 15 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_15
+                ,COUNT(CASE WHEN IND_MES = 16 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_16
+                ,COUNT(CASE WHEN IND_MES = 17 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_17
+                ,COUNT(CASE WHEN IND_MES = 18 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_18
+                ,COUNT(CASE WHEN IND_MES = 19 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_19
+                ,COUNT(CASE WHEN IND_MES = 20 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_20
+                ,COUNT(CASE WHEN IND_MES = 21 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_21
+                ,COUNT(CASE WHEN IND_MES = 22 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_22
+                ,COUNT(CASE WHEN IND_MES = 23 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_23
+                ,COUNT(CASE WHEN IND_MES = 24 AND IND_MARCA = 0 THEN INVOICE_NO END) COMP_TX_24
+            FROM #VENTA_EVOLUCION
+            LEFT JOIN #MESES USING(MES_NUMERO, PERIODO)
+            WHERE IND_MC = 1
+            GROUP BY 1,2,3
+            );
+            '''
+
         query_segmentos_retencion = f'''
             --SE REQUIERE TABLA #MESES E #INDICADORES
             --SEGMENTOS
@@ -5925,4 +6145,4 @@ class Campana():
             DELETE CHEDRAUI.MON_CAMP_EVOLUTION_RETENTION WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
             INSERT INTO CHEDRAUI.MON_CAMP_EVOLUTION_RETENTION SELECT * FROM #SEGMENTOS_RETENCION;
         '''
-        return [query_segmentos_retencion, query_insert]
+        return [query_indicadores, query_segmentos_retencion, query_insert]

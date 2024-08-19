@@ -1344,15 +1344,51 @@ class App:
             messagebox.showinfo("Información", f"La campaña {nombre_campana} ha sido eliminada exitosamente.")
     
     def update_campaign(self, list_box):
+        # Botón para confirmar la selección
+        def confirmar_seleccion():
+            lis_tablas_seleccionadas = [tabla for tabla, var in var_tablas.items() if var.get()]
+            frame.destroy()
+
+            # Preguntar si desea guardar los cambios
+            op = messagebox.askyesno("Advertencia", f"¿Está seguro que desea actualizar los resultados de la campaña {nombre_campana}?")
+            if op:
+                # Validar que la campaña seleccionada tiene productos en la tabla MON_CAMP_PRODUCTOS
+                if not campaign_products_exists(nombre_campana):
+                    messagebox.showwarning("Advertencia", "No hay productos definidos para esta campaña.\nPor favor ingrese productos antes de actualizar los resultados.")
+                    return
+                # Actualizar los resultados de la campaña
+                self.mon.actualizar_resultados_campana(nombre_campana, lis_tablas_seleccionadas)
+                messagebox.showinfo("Información", f"Los resultados de la campaña {nombre_campana} han sido actualizados exitosamente.")
+
+        def campaign_products_exists(nombre_campana):
+            return self.mon.validate_campaign_products(nombre_campana)
+
         nombre_campana = self.validate_entry_campana(list_box)
         if not nombre_campana:
             return
+        
+        lis_tablas = self.mon.obtener_nombres_tablas_resultados()
+            
+        # Mostrar ventana emergente para seleccionar las tablas de resultados
+        frame = tk.Toplevel(self.root)
+        frame.resizable(0, 0)
 
-        # Preguntar si desea guardar los cambios
-        op = messagebox.askyesno("Advertencia", f"¿Está seguro que desea actualizar los resultados de la campaña {nombre_campana}?")
-        if op:
-            self.mon.actualizar_resultados_campana(nombre_campana)
-            messagebox.showinfo("Información", f"Los resultados de la campaña {nombre_campana} han sido actualizados exitosamente.")
+        label_titulo = tk.Label(frame, text="Selección de Tablas", font=("Arial", 12, "bold"))
+        label_titulo.grid(row=0, column=0, pady=10, padx=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=0, pady=5, padx=10, sticky="we")
+
+        # Crear una casilla de verificación por cada tabla de resultados
+        var_tablas = {}
+        for i, tabla in enumerate(lis_tablas, start=2):
+            var_tablas[tabla] = tk.IntVar()
+            check = tk.Checkbutton(frame, text=tabla, variable=var_tablas[tabla])
+            check.grid(row=i, column=0, pady=5, padx=5, sticky='w')
+        
+        button_confirmar = tk.Button(frame, text="Confirmar", command=confirmar_seleccion)
+        button_confirmar.grid(row=len(lis_tablas) + 2, column=0, pady=10)
 
     def show_results(self, list_box):
         nombre_campana = self.validate_entry_campana(list_box)
