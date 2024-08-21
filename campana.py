@@ -175,10 +175,6 @@ class Campana():
                                     'date_dash_evo': date_dash_evo,
                                     'date_dash_evo_ano_anterior': date_dash_evo_ano_anterior
                                     }
-        
-        print('Variables de la campaña asignadas')
-        print(date_dash_evo)
-        print(date_dash_evo_ano_anterior)
 
     def get_campana_info(self, conn, nombre):
         codigo_campana = conn.select(f"SELECT CODIGO_CAMPANA FROM CHEDRAUI.MON_CAMP_DESC WHERE NOMBRE = '{nombre}'").iloc[0,0]  
@@ -2044,7 +2040,8 @@ class Campana():
                 ,COUNT(DISTINCT INVOICE_NO) TX
                 FROM FCT_SALE_LINE A
                 INNER JOIN #PRODUCTOS B USING(PRODUCT_CODE)
-            --     LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER) H ON A.INVOICE_NO = H.INVOICE_NO
+                INNER JOIN CHEDRAUI.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
+                LEFT JOIN (SELECT DISTINCT INVOICE_NO, 1::INT AS IND_ONLINE FROM FCT_SALE_HEADER WHERE CHANNEL_TYPE IN ('WEB','APP','CC HY')) USING(INVOICE_NO)
                 WHERE SALE_NET_VAL > 0
                 AND BUSINESS_TYPE = 'R'
                 AND (INVOICE_DATE BETWEEN {self.campana_variables['date_dash']}
@@ -2054,8 +2051,7 @@ class Campana():
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_acum']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_acum_ano_anterior']}
                 )
-            --     AND STORE_CODE IN $[TIENDAS]
-            --     AND IND_ONLINE = 1
+                {'AND IND_ONLINE = 1' if self.campana_variables['ind_online'] == 1 else ''}
                 GROUP BY 1,2,3,4,5
                 
             UNION
@@ -2079,7 +2075,8 @@ class Campana():
                 ,COUNT(DISTINCT INVOICE_NO) TX
                 FROM FCT_SALE_LINE_NM A
                 INNER JOIN #PRODUCTOS B USING(PRODUCT_CODE)
-            --     LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER) H ON A.INVOICE_NO = H.INVOICE_NO
+                INNER JOIN CHEDRAUI.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
+                LEFT JOIN (SELECT DISTINCT INVOICE_NO, 1::INT AS IND_ONLINE FROM FCT_SALE_HEADER WHERE CHANNEL_TYPE IN ('WEB','APP','CC HY')) USING(INVOICE_NO)
                 WHERE SALE_NET_VAL > 0
                 AND BUSINESS_TYPE = 'R'
                 AND (INVOICE_DATE BETWEEN {self.campana_variables['date_dash']}
@@ -2089,8 +2086,7 @@ class Campana():
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_acum']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_acum_ano_anterior']}
                 )
-            --     AND STORE_CODE IN $[TIENDAS]
-            --     AND IND_ONLINE = 1
+                {'AND IND_ONLINE = 1' if self.campana_variables['ind_online'] == 1 else ''}
                 GROUP BY 1,2,3,4,5
             );
             '''
@@ -2581,6 +2577,103 @@ class Campana():
         return [query_dias, query_venta_diaria, query_venta_diaria_elegible, query_tendencia, query_insert]
     
     def get_queries_campana_venta_evolucion(self):
+        
+        query_tx = f'''
+            -- CREAR TABLA DE TX
+            DROP TABLE IF EXISTS #TX;
+            CREATE TABLE #TX AS (
+            SELECT
+                INVOICE_NO
+                ,IND_MARCA
+                ,MARCA
+                ,IND_ONLINE
+                ,CASE WHEN SUM(SALE_NET_VAL) >= '{self.campana_variables['condicion_compra']}' THEN 1 ELSE 0 END AS IND_ELEGIBLE
+            FROM FCT_SALE_LINE A
+            INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
+            INNER JOIN CHEDRAUI.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
+            LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER) F USING(INVOICE_NO)
+            WHERE (INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']})
+            AND BUSINESS_TYPE = 'R'
+            AND SALE_NET_VAL > 0
+            {'AND IND_ONLINE = 1' if self.campana_variables['ind_online'] == 1 else ''}
+            GROUP BY 1,2,3,4
+
+            UNION
+            
+            SELECT
+                INVOICE_NO
+                ,IND_MARCA
+                ,MARCA
+                ,IND_ONLINE
+                ,CASE WHEN SUM(SALE_NET_VAL) >= '{self.campana_variables['condicion_compra']}' THEN 1 ELSE 0 END AS IND_ELEGIBLE
+            FROM FCT_SALE_LINE_NM A
+            INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
+            INNER JOIN CHEDRAUI.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
+            LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER_NM) F USING(INVOICE_NO)
+            WHERE (INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']})
+            AND BUSINESS_TYPE = 'R'
+            AND SALE_NET_VAL > 0
+            {'AND IND_ONLINE = 1' if self.campana_variables['ind_online'] == 1 else ''}
+            GROUP BY 1,2,3,4
+            );
+            '''
+        
+        query_venta = f'''
+            --TABLA VENTA
+            DROP TABLE IF EXISTS #VENTA_EVOLUCION;
+            CREATE TABLE #VENTA_EVOLUCION AS (
+                SELECT
+                1::INT IND_MC
+                ,CUSTOMER_CODE_TY
+                ,EXTRACT(MONTH FROM INVOICE_DATE) MES_NUMERO
+                ,CASE
+                    WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']} THEN 'ACTUAL'
+                    WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']} THEN 'ANO_ANTERIOR'
+                END AS PERIODO
+                ,A.INVOICE_NO
+                ,IND_ELEGIBLE
+                ,PROVEEDOR
+                ,B.MARCA
+                ,B.IND_MARCA
+                ,SUM(SALE_TOT_QTY) UNIDADES
+                ,SUM(SALE_NET_VAL) VENTA
+                FROM FCT_SALE_LINE A
+                INNER JOIN #PRODUCTOS B USING(PRODUCT_CODE)
+                INNER JOIN #TX USING(INVOICE_NO, IND_MARCA, MARCA)
+                WHERE SALE_NET_VAL > 0
+                AND BUSINESS_TYPE = 'R'
+                GROUP BY 1,2,3,4,5,6,7,8,9
+                
+            UNION
+            
+                SELECT
+                0::INT IND_MC
+                ,NULL CUSTOMER_CODE_TY
+                ,EXTRACT(MONTH FROM INVOICE_DATE) MES_NUMERO
+                ,CASE
+                    WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']} THEN 'ACTUAL'
+                    WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']} THEN 'ANO_ANTERIOR'
+                END AS PERIODO
+                ,A.INVOICE_NO
+                ,IND_ELEGIBLE
+                ,PROVEEDOR
+                ,B.MARCA
+                ,B.IND_MARCA
+                ,SUM(SALE_TOT_QTY) UNIDADES
+                ,SUM(SALE_NET_VAL) VENTA
+                FROM FCT_SALE_LINE_NM A
+                INNER JOIN #PRODUCTOS B USING(PRODUCT_CODE)
+                INNER JOIN #TX USING(INVOICE_NO, IND_MARCA, MARCA)
+                WHERE SALE_NET_VAL > 0
+                AND BUSINESS_TYPE = 'R'
+                GROUP BY 1,2,3,4,5,6,7,8,9
+            );
+            '''
+        return [query_tx, query_venta]
+
+    def get_queries_campana_evolucion(self):        
         query_meses = f'''
             --CREAR FECHAS DE MES
             DROP TABLE IF EXISTS #MESES;
@@ -2605,105 +2698,7 @@ class Campana():
 
             -- SELECT * FROM #MESES ORDER BY 1;
             '''
-        
-        query_tx = f'''
-            -- CREAR TABLA DE TX
-            DROP TABLE IF EXISTS #TX;
-            CREATE TABLE #TX AS (
-            SELECT
-                INVOICE_NO
-                ,IND_MARCA
-                ,MARCA
-                ,IND_ONLINE
-                ,CASE WHEN SUM(SALE_NET_VAL) >= '{self.campana_variables['condicion_compra']}' THEN 1 ELSE 0 END AS IND_ELEGIBLE
-            FROM FCT_SALE_LINE
-            INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
-            LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER) F USING(INVOICE_NO)
-            WHERE (INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']}
-                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']})
-            AND BUSINESS_TYPE = 'R'
-            AND SALE_NET_VAL > 0
-            GROUP BY 1,2,3,4
 
-            UNION
-            
-            SELECT
-                INVOICE_NO
-                ,IND_MARCA
-                ,MARCA
-                ,IND_ONLINE
-                ,CASE WHEN SUM(SALE_NET_VAL) >= '{self.campana_variables['condicion_compra']}' THEN 1 ELSE 0 END AS IND_ELEGIBLE
-            FROM FCT_SALE_LINE_NM A
-            INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
-            LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER_NM) F USING(INVOICE_NO)
-            WHERE (INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']}
-                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']})
-            AND BUSINESS_TYPE = 'R'
-            AND SALE_NET_VAL > 0
-            GROUP BY 1,2,3,4
-            );
-            '''
-        
-        query_venta = f'''
-            --TABLA VENTA
-            DROP TABLE IF EXISTS #VENTA_EVOLUCION;
-            CREATE TABLE #VENTA AS (
-                SELECT
-                1::INT IND_MC
-                ,CUSTOMER_CODE_TY
-                ,EXTRACT(MONTH FROM INVOICE_DATE) MES_NUMERO
-                ,CASE
-                    WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']} THEN 'ACTUAL'
-                    WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']} THEN 'ANO_ANTERIOR'
-                END AS PERIODO
-                ,A.INVOICE_NO
-                ,IND_ELEGIBLE
-                ,PROVEEDOR
-                ,B.MARCA
-                ,B.IND_MARCA
-                ,SUM(SALE_TOT_QTY) UNIDADES
-                ,SUM(SALE_NET_VAL) VENTA
-                FROM FCT_SALE_LINE A
-                INNER JOIN #PRODUCTOS B USING(PRODUCT_CODE)
-                LEFT JOIN #TX C ON A.INVOICE_NO = C.INVOICE_NO AND B.IND_MARCA = C.IND_MARCA AND B.MARCA = C.MARCA
-                WHERE (INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']}
-                    OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']})
-                AND SALE_NET_VAL > 0
-            --     AND STORE_CODE IN $[TIENDAS]
-            --     AND IND_ONLINE = 1
-                GROUP BY 1,2,3,4,5,6,7,8,9
-                
-            UNION
-            
-                SELECT
-                0::INT IND_MC
-                ,NULL CUSTOMER_CODE_TY
-                ,EXTRACT(MONTH FROM INVOICE_DATE) MES_NUMERO
-                ,CASE
-                    WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']} THEN 'ACTUAL'
-                    WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']} THEN 'ANO_ANTERIOR'
-                END AS PERIODO
-                ,A.INVOICE_NO
-                ,IND_ELEGIBLE
-                ,PROVEEDOR
-                ,B.MARCA
-                ,B.IND_MARCA
-                ,SUM(SALE_TOT_QTY) UNIDADES
-                ,SUM(SALE_NET_VAL) VENTA
-                FROM FCT_SALE_LINE_NM A
-                INNER JOIN #PRODUCTOS B USING(PRODUCT_CODE)
-                LEFT JOIN #TX C ON A.INVOICE_NO = C.INVOICE_NO AND B.IND_MARCA = C.IND_MARCA AND B.MARCA = C.MARCA
-                WHERE (INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']}
-                    OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']})
-                AND SALE_NET_VAL > 0
-            --     AND STORE_CODE IN $[TIENDAS]
-            --     AND IND_ONLINE = 1
-                GROUP BY 1,2,3,4,5,6,7,8,9
-            );
-            '''
-        return [query_meses, query_tx, query_venta]
-
-    def get_queries_campana_evolucion(self):        
         query_venta_mensual = f'''
             --VENTA AGRUPADA POR MES
             DROP TABLE IF EXISTS #VENTA_MENSUAL;
@@ -2772,9 +2767,34 @@ class Campana():
             INSERT INTO CHEDRAUI.MON_CAMP_EVOLUTION_SALES SELECT * FROM #VENTA_MENSUAL;
         '''
 
-        return [query_venta_mensual, query_insert]
+        return [query_meses, query_venta_mensual, query_insert]
 
     def get_queries_campana_segmentos(self):
+        query_meses = f'''
+            --CREAR FECHAS DE MES
+            DROP TABLE IF EXISTS #MESES;
+            CREATE TABLE #MESES AS (
+            WITH __MESES AS (
+            SELECT DISTINCT
+                LEFT(INVOICE_DATE, 7) MES
+                ,EXTRACT(MONTH FROM INVOICE_DATE) MES_NUMERO
+                ,CASE
+                WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']} THEN 'ACTUAL'
+                WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']} THEN 'ANO_ANTERIOR'
+                END AS PERIODO
+            FROM FCT_SALE_HEADER
+            WHERE INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']}
+            )
+            SELECT
+            *
+            ,ROW_NUMBER() OVER(ORDER BY MES) IND_MES
+            FROM __MESES
+            );
+
+            -- SELECT * FROM #MESES ORDER BY 1;
+            '''
+
         query_indicadores = f'''
             --SEGMENTOS
             --INDICADORES
@@ -3985,9 +4005,34 @@ class Campana():
             INSERT INTO CHEDRAUI.MON_CAMP_EVOLUTION_SEGMENTS SELECT * FROM #SEGMENTOS;
         '''
 
-        return [query_indicadores, query_segmentos, query_insert]
+        return [query_meses, query_indicadores, query_segmentos, query_insert]
 
     def get_queries_campana_retencion(self):
+        query_meses = f'''
+            --CREAR FECHAS DE MES
+            DROP TABLE IF EXISTS #MESES;
+            CREATE TABLE #MESES AS (
+            WITH __MESES AS (
+            SELECT DISTINCT
+                LEFT(INVOICE_DATE, 7) MES
+                ,EXTRACT(MONTH FROM INVOICE_DATE) MES_NUMERO
+                ,CASE
+                WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']} THEN 'ACTUAL'
+                WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']} THEN 'ANO_ANTERIOR'
+                END AS PERIODO
+            FROM FCT_SALE_HEADER
+            WHERE INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']}
+            )
+            SELECT
+            *
+            ,ROW_NUMBER() OVER(ORDER BY MES) IND_MES
+            FROM __MESES
+            );
+
+            -- SELECT * FROM #MESES ORDER BY 1;
+            '''
+        
         query_indicadores = f'''
             --SEGMENTOS
             --INDICADORES
@@ -6145,4 +6190,4 @@ class Campana():
             DELETE CHEDRAUI.MON_CAMP_EVOLUTION_RETENTION WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
             INSERT INTO CHEDRAUI.MON_CAMP_EVOLUTION_RETENTION SELECT * FROM #SEGMENTOS_RETENCION;
         '''
-        return [query_indicadores, query_segmentos_retencion, query_insert]
+        return [query_meses, query_indicadores, query_segmentos_retencion, query_insert]

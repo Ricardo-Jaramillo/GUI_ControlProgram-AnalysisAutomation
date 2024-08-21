@@ -116,6 +116,10 @@ class Monetizacion(Conn, Productos):
         skus = self.camp.get_campaign_products(self, campaign_name)
         # Si hay lista de productos, crear la tabla de #productos a partir de la lista de skus y retornar True, si no hay productos, retornar False
         if bool(skus):
+            # Dropear tabla de productos si existe
+            self.drop_temporal_tables(['#PRODUCTOS'])
+
+            # Crear tabla de productos
             print('Creando tabla de productos...')
             self.generar_productos(skus=skus, marcas='', proveedores='', clases='', subclases='', prod_type_desc='', override=None)
             return True
