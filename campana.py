@@ -198,10 +198,10 @@ class Campana():
         # Inserta la información de la campaña
         error = None
         try:
-            # Validar si se inserta la información de la campaña. Esto es para evitar borrar  la información y fallar en la inserción
+            # Validar si se inserta la información de la campaña. Esto es para evitar borrar la información y fallar en la inserción
             conn.insert(table_name, df)
             # Si se inserta exitosamente, borrar la información de la campaña si ya existe y repetir la inserción
-            conn.execute(f"DELETE CHEDRAUI.{table_name} WHERE CODIGO_CAMPANA = (SELECT CODIGO_CAMPANA FROM CHEDRAUI.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}')")
+            conn.execute(f"DELETE CHEDRAUI.{table_name} WHERE CODIGO_CAMPANA = (SELECT DISTINCT CODIGO_CAMPANA FROM CHEDRAUI.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}')")
             conn.insert(table_name, df)
         except Exception as e:
             print('Error al insertar la información de la campaña')
@@ -368,6 +368,7 @@ class Campana():
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_ano_anterior']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_precampana_a']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_postcampana_a']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_mes_anterior']}
                     )
                 AND SALE_NET_VAL > 0
                 AND BUSINESS_TYPE = 'R'
@@ -388,6 +389,7 @@ class Campana():
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_ano_anterior']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_precampana_a']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_postcampana_a']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_mes_anterior']}
                     )
                 AND SALE_NET_VAL > 0
                 AND BUSINESS_TYPE = 'R'
@@ -417,6 +419,7 @@ class Campana():
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_ano_anterior']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_precampana_a']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_postcampana_a']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_mes_anterior']}
                     )
                 AND SALE_NET_VAL > 0
                 AND BUSINESS_TYPE = 'R'
@@ -447,6 +450,7 @@ class Campana():
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_ano_anterior']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_precampana_a']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_postcampana_a']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_mes_anterior']}
                     )
                 AND SALE_NET_VAL > 0
                 AND BUSINESS_TYPE = 'R'
@@ -593,31 +597,31 @@ class Campana():
             CREATE TABLE #INDICADORES_CLIENTES AS (
             WITH __BASE_CONTACTACION AS (
                 SELECT
-                GRUPO
-                ,CUSTOMER_CODE_TY
-                --BASE
-                ,MAX(CASE WHEN BASE > 0 THEN 1 ELSE 0 END) IND_BASE
-                ,MAX(CASE WHEN BASE > 0 AND CANAL = 'MAIL' THEN 1 ELSE 0 END) IND_BASE_MAIL
-                ,MAX(CASE WHEN BASE > 0 AND CANAL = 'SMS' THEN 1 ELSE 0 END) IND_BASE_SMS
-                ,MAX(CASE WHEN BASE > 0 AND CANAL = 'WA' THEN 1 ELSE 0 END) IND_BASE_WA
-                ,0::INT /*MAX(CASE WHEN BASE > 0 AND CANAL = 'WIFI' THEN 1 ELSE 0 END)*/ IND_BASE_WIFI
-                ,MAX(CASE WHEN BASE > 0 AND CANAL = 'CUPON' THEN 1 ELSE 0 END) IND_BASE_CUPON
+                    GRUPO
+                    ,CUSTOMER_CODE_TY
+                    --BASE
+                    ,MAX(CASE WHEN BASE > 0 THEN 1 ELSE 0 END) IND_BASE
+                    ,MAX(CASE WHEN BASE > 0 AND CANAL = 'MAIL' THEN 1 ELSE 0 END) IND_BASE_MAIL
+                    ,MAX(CASE WHEN BASE > 0 AND CANAL = 'SMS' THEN 1 ELSE 0 END) IND_BASE_SMS
+                    ,MAX(CASE WHEN BASE > 0 AND CANAL = 'WA' THEN 1 ELSE 0 END) IND_BASE_WA
+                    ,0::INT /*MAX(CASE WHEN BASE > 0 AND CANAL = 'WIFI' THEN 1 ELSE 0 END)*/ IND_BASE_WIFI
+                    ,MAX(CASE WHEN BASE > 0 AND CANAL = 'CUPON' THEN 1 ELSE 0 END) IND_BASE_CUPON
 
-                --ENVIOS
-                ,MAX(CASE WHEN ENVIOS > 0 THEN 1 ELSE 0 END) IND_ENVIOS
-                ,MAX(CASE WHEN ENVIOS > 0 AND CANAL = 'MAIL' THEN 1 ELSE 0 END) IND_ENVIOS_MAIL
-                ,MAX(CASE WHEN ENVIOS > 0 AND CANAL = 'SMS' THEN 1 ELSE 0 END) IND_ENVIOS_SMS
-                ,MAX(CASE WHEN ENVIOS > 0 AND CANAL = 'WA' THEN 1 ELSE 0 END) IND_ENVIOS_WA
-                ,0::INT /*MAX(CASE WHEN ENVIOS > 0 AND CANAL = 'WIFI' THEN 1 ELSE 0 END)*/ IND_ENVIOS_WIFI
-                ,MAX(CASE WHEN ENVIOS > 0 AND CANAL = 'CUPON' THEN 1 ELSE 0 END) IND_ENVIOS_CUPON
-                
-                --ABIERTOS
-                ,MAX(CASE WHEN ABIERTOS > 0 THEN 1 ELSE 0 END) IND_ABIERTOS
-                ,MAX(CASE WHEN ABIERTOS > 0 AND CANAL = 'MAIL' THEN 1 ELSE 0 END) IND_ABIERTOS_MAIL
-                ,MAX(CASE WHEN ABIERTOS > 0 AND CANAL = 'SMS' THEN 1 ELSE 0 END) IND_ABIERTOS_SMS
-                ,MAX(CASE WHEN ABIERTOS > 0 AND CANAL = 'WA' THEN 1 ELSE 0 END) IND_ABIERTOS_WA
-                ,0::INT /*MAX(CASE WHEN ABIERTOS > 0 AND CANAL = 'WIFI' THEN 1 ELSE 0 END)*/ IND_ABIERTOS_WIFI
-                ,MAX(CASE WHEN ABIERTOS > 0 AND CANAL = 'CUPON' THEN 1 ELSE 0 END) IND_ABIERTOS_CUPON
+                    --ENVIOS
+                    ,MAX(CASE WHEN ENVIOS > 0 THEN 1 ELSE 0 END) IND_ENVIOS
+                    ,MAX(CASE WHEN ENVIOS > 0 AND CANAL = 'MAIL' THEN 1 ELSE 0 END) IND_ENVIOS_MAIL
+                    ,MAX(CASE WHEN ENVIOS > 0 AND CANAL = 'SMS' THEN 1 ELSE 0 END) IND_ENVIOS_SMS
+                    ,MAX(CASE WHEN ENVIOS > 0 AND CANAL = 'WA' THEN 1 ELSE 0 END) IND_ENVIOS_WA
+                    ,0::INT /*MAX(CASE WHEN ENVIOS > 0 AND CANAL = 'WIFI' THEN 1 ELSE 0 END)*/ IND_ENVIOS_WIFI
+                    ,MAX(CASE WHEN ENVIOS > 0 AND CANAL = 'CUPON' THEN 1 ELSE 0 END) IND_ENVIOS_CUPON
+                    
+                    --ABIERTOS
+                    ,MAX(CASE WHEN ABIERTOS > 0 THEN 1 ELSE 0 END) IND_ABIERTOS
+                    ,MAX(CASE WHEN ABIERTOS > 0 AND CANAL = 'MAIL' THEN 1 ELSE 0 END) IND_ABIERTOS_MAIL
+                    ,MAX(CASE WHEN ABIERTOS > 0 AND CANAL = 'SMS' THEN 1 ELSE 0 END) IND_ABIERTOS_SMS
+                    ,MAX(CASE WHEN ABIERTOS > 0 AND CANAL = 'WA' THEN 1 ELSE 0 END) IND_ABIERTOS_WA
+                    ,0::INT /*MAX(CASE WHEN ABIERTOS > 0 AND CANAL = 'WIFI' THEN 1 ELSE 0 END)*/ IND_ABIERTOS_WIFI
+                    ,MAX(CASE WHEN ABIERTOS > 0 AND CANAL = 'CUPON' THEN 1 ELSE 0 END) IND_ABIERTOS_CUPON
                 
                 FROM #BASE_CLIENTES
                 GROUP BY 1,2
@@ -627,67 +631,96 @@ class Campana():
                 UNION
                 SELECT * FROM __BASE_CONTACTACION WHERE GRUPO = 'GC' AND CUSTOMER_CODE_TY NOT IN (SELECT DISTINCT CUSTOMER_CODE_TY FROM #BASE_CLIENTES WHERE GRUPO = 'GT')
             )
+            ,__IND_CLIENTES AS (
+                SELECT
+                    CUSTOMER_CODE_TY
+                    ,1::INT AS IND_MARCA
+                    ,PROVEEDOR
+                    --,MARCA
+
+                    --INDICADORES DE TX
+                    ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} AND IND_REGISTRO = 1 THEN 1 ELSE 0 END) IND_CLIENTE_REGISTRO
+                    ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} AND IND_ELEGIBLE = 1 THEN 1 ELSE 0 END) IND_CLIENTE_ELEGIBLE
+                    ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} AND IND_REGISTRO_ELEGIBLE = 1 THEN 1 ELSE 0 END) IND_CLIENTE_REGISTRO_ELEGIBLE
+
+                    --INDICADORES DE PERIODO
+                    ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} THEN 1 ELSE 0 END) IND_CLIENTE_CAMPANA
+                    ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash_mes_anterior']} THEN 1 ELSE 0 END) IND_CLIENTE_MES_ANTERIOR
+                    ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash_ano_anterior']} THEN 1 ELSE 0 END) IND_CLIENTE_ANO_ANTERIOR
+                    
+                    --INDICADORES_SEGMENTO LEAL REPETIDOR DORMIDO Y PERDIDO
+                    ,COUNT(DISTINCT CASE WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} AND IND_MARCA = 1 THEN INVOICE_NO END) TX_MARCA
+                    ,COUNT(DISTINCT CASE WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} AND IND_MARCA = 0 THEN INVOICE_NO END) TX_COMPETENCIA
+
+                    ,CASE WHEN TX_MARCA = 1 THEN 1 ELSE 0 END AS IND_COMPRA_UNA_VEZ
+                    ,CASE WHEN TX_MARCA > 1 THEN 1 ELSE 0 END AS IND_REPETIDOR
+                    ,CASE WHEN TX_MARCA = 1 AND TX_COMPETENCIA = 0 THEN 1 ELSE 0 END AS IND_COMPRA_SOLO_MARCA_UNA_VEZ  
+                    ,CASE WHEN TX_MARCA > 1 AND TX_COMPETENCIA = 0 THEN 1 ELSE 0 END AS IND_LEAL
+                        
+                    ,COUNT(DISTINCT CASE WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_ano_anterior']} AND IND_MARCA = 1 THEN INVOICE_NO END) TX_MARCA_AA
+                    ,COUNT(DISTINCT CASE WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_ano_anterior']} AND IND_MARCA = 0 THEN INVOICE_NO END) TX_COMPETENCIA_AA
+
+                    ,CASE WHEN TX_MARCA_AA = 1 THEN 1 ELSE 0 END AS IND_COMPRA_UNA_VEZ_AA
+                    ,CASE WHEN TX_MARCA_AA > 1 THEN 1 ELSE 0 END AS IND_REPETIDOR_AA
+                    ,CASE WHEN TX_MARCA_AA = 1 AND TX_COMPETENCIA_AA = 0 THEN 1 ELSE 0 END AS IND_COMPRA_SOLO_MARCA_UNA_VEZ_AA
+                    ,CASE WHEN TX_MARCA_AA > 1 AND TX_COMPETENCIA_AA = 0 THEN 1 ELSE 0 END AS IND_LEAL_AA
+                    
+                FROM #INDICADORES_TX
+                GROUP BY 1,2,3--,4
+                HAVING IND_CLIENTE_CAMPANA = 1
+                    OR IND_CLIENTE_MES_ANTERIOR = 1
+                    OR IND_CLIENTE_ANO_ANTERIOR = 1
+            )
+
             ,__IND_CLIENTES_SEGMENTOS AS (
             SELECT
                 CUSTOMER_CODE_TY
                 ,IND_MARCA
                 ,PROVEEDOR
-            --     ,MARCA
+                --,MARCA
 
-                --INDICADORES DE TX
-                ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} AND IND_REGISTRO = 1 THEN 1 ELSE 0 END) IND_CLIENTE_REGISTRO
-                ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} AND IND_ELEGIBLE = 1 THEN 1 ELSE 0 END) IND_CLIENTE_ELEGIBLE
-                ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} AND IND_REGISTRO_ELEGIBLE = 1 THEN 1 ELSE 0 END) IND_CLIENTE_REGISTRO_ELEGIBLE
-
-                --INDICADORES DE PERIODO
-                ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} THEN 1 ELSE 0 END) IND_CLIENTE_CAMPANA
-                ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash_mes_anterior']} THEN 1 ELSE 0 END) IND_CLIENTE_MES_ANTERIOR
-                ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash_ano_anterior']} THEN 1 ELSE 0 END) IND_CLIENTE_ANO_ANTERIOR
-                
                 --INIDICADORES DE SEGMENTO DE CLIENTES
-                ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} THEN 1 ELSE 0 END) IND_CAMPANA
-            --     ,MAX(CASE WHEN IND_MARCA = 1 AND B.IND_COMPRA_PREVIA IS NOT NULL THEN 1 ELSE 0 END) IND_ANTES_CAMPANA
-                ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash_3']} THEN 1 ELSE 0 END) IND_3
-                ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash_6']} THEN 1 ELSE 0 END) IND_6
-                ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash_12']} THEN 1 ELSE 0 END) IND_12
+                ,MAX(CASE WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} THEN 1 ELSE 0 END) IND_CAMPANA
+                ,MAX(CASE WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_3']} THEN 1 ELSE 0 END) IND_3
+                ,MAX(CASE WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_6']} THEN 1 ELSE 0 END) IND_6
+                ,MAX(CASE WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_12']} THEN 1 ELSE 0 END) IND_12
                 
-                ,COUNT(DISTINCT CASE WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} AND IND_MARCA = 1 THEN INVOICE_NO END) TX_MARCA
-                ,COUNT(DISTINCT CASE WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash']} AND IND_MARCA = 0 THEN INVOICE_NO END) TX_COMPETENCIA
-
                 --INDICADORES_SEGMENTOS
                 ,CASE WHEN IND_CAMPANA = 1 AND IND_3 = 1 THEN 1 ELSE 0 END AS IND_FID_3
                 ,CASE WHEN IND_CAMPANA = 1 AND IND_6 = 1 AND IND_3 = 0 THEN 1 ELSE 0 END AS IND_REC_DOR
                 ,CASE WHEN IND_CAMPANA = 1 AND IND_12 = 1 AND IND_6 = 0 AND IND_3 = 0 THEN 1 ELSE 0 END AS IND_REC_PER  
                 ,CASE WHEN IND_CAMPANA = 1 AND IND_REC_DOR = 1 OR IND_REC_PER = 1 THEN 1 ELSE 0 END IND_REC
                 ,CASE WHEN IND_CAMPANA = 1 AND IND_FID_3 = 0 AND IND_REC = 0 THEN 1 ELSE 0 END AS IND_NUEVO
-                ,CASE WHEN TX_MARCA = 1 THEN 1 ELSE 0 END AS IND_COMPRA_UNA_VEZ
-                ,CASE WHEN TX_MARCA > 1 THEN 1 ELSE 0 END AS IND_REPETIDOR
-                ,CASE WHEN TX_MARCA = 1 AND TX_COMPETENCIA = 0 THEN 1 ELSE 0 END AS IND_COMPRA_SOLO_MARCA_UNA_VEZ  
-                ,CASE WHEN TX_MARCA > 1 AND TX_COMPETENCIA = 0 THEN 1 ELSE 0 END AS IND_LEAL
                 
                 --AÑO ANTERIOR - INIDICADORES DE SEGMENTO DE CLIENTES
                 ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash_ano_anterior']} THEN 1 ELSE 0 END) IND_CAMPANA_AA
-            --     ,MAX(CASE WHEN IND_MARCA = 1 AND B.IND_COMPRA_PREVIA IS NOT NULL THEN 1 ELSE 0 END) IND_ANTES_CAMPANA
                 ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash_3_ano_anterior']} THEN 1 ELSE 0 END) IND_3_AA
                 ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash_6_ano_anterior']} THEN 1 ELSE 0 END) IND_6_AA
                 ,MAX(CASE WHEN IND_MARCA = 1 AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash_12_ano_anterior']} THEN 1 ELSE 0 END) IND_12_AA
                 
-                ,COUNT(DISTINCT CASE WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_ano_anterior']} AND IND_MARCA = 1 THEN INVOICE_NO END) TX_MARCA_AA
-                ,COUNT(DISTINCT CASE WHEN INVOICE_DATE BETWEEN {self.campana_variables['date_dash_ano_anterior']} AND IND_MARCA = 0 THEN INVOICE_NO END) TX_COMPETENCIA_AA
-
                 --INDICADORES_SEGMENTOS
                 ,CASE WHEN IND_CAMPANA_AA = 1 AND IND_3_AA = 1 THEN 1 ELSE 0 END AS IND_FID_3_AA
                 ,CASE WHEN IND_CAMPANA_AA = 1 AND IND_6_AA = 1 AND IND_3_AA = 0 THEN 1 ELSE 0 END AS IND_REC_DOR_AA
                 ,CASE WHEN IND_CAMPANA_AA = 1 AND IND_12_AA = 1 AND IND_6_AA = 0 AND IND_3_AA = 0 THEN 1 ELSE 0 END AS IND_REC_PER_AA
                 ,CASE WHEN IND_CAMPANA_AA = 1 AND IND_REC_DOR_AA = 1 OR IND_REC_PER_AA = 1 THEN 1 ELSE 0 END IND_REC_AA
                 ,CASE WHEN IND_CAMPANA_AA = 1 AND IND_FID_3_AA = 0 AND IND_REC_AA = 0 THEN 1 ELSE 0 END AS IND_NUEVO_AA
-                ,CASE WHEN TX_MARCA_AA = 1 THEN 1 ELSE 0 END AS IND_COMPRA_UNA_VEZ_AA
-                ,CASE WHEN TX_MARCA_AA > 1 THEN 1 ELSE 0 END AS IND_REPETIDOR_AA
-                ,CASE WHEN TX_MARCA_AA = 1 AND TX_COMPETENCIA_AA = 0 THEN 1 ELSE 0 END AS IND_COMPRA_SOLO_MARCA_UNA_VEZ_AA
-                ,CASE WHEN TX_MARCA_AA > 1 AND TX_COMPETENCIA_AA = 0 THEN 1 ELSE 0 END AS IND_LEAL_AA
                 
-            FROM #INDICADORES_TX A
+            FROM FCT_SALE_LINE A
+            INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
+            INNER JOIN CHEDRAUI.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
+            WHERE (
+                INVOICE_DATE BETWEEN {self.campana_variables['date_dash']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_3']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_6']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_12']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_ano_anterior']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_3_ano_anterior']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_6_ano_anterior']}
+                OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_12_ano_anterior']}
+                )
+                AND IND_MARCA = 1
             GROUP BY 1,2,3--,4
+            HAVING IND_CAMPANA = 1 OR IND_CAMPANA_AA = 1
             )
             SELECT
                 CUSTOMER_CODE_TY
@@ -717,30 +750,31 @@ class Campana():
                 ,COALESCE(IND_ABIERTOS_WIFI, 0) IND_ABIERTOS_WIFI
                 ,COALESCE(IND_ABIERTOS_CUPON, 0) IND_ABIERTOS_CUPON
                 --INDICADORES
-                ,IND_CLIENTE_REGISTRO
-                ,IND_CLIENTE_ELEGIBLE
-                ,IND_CLIENTE_REGISTRO_ELEGIBLE
+                ,COALESCE(IND_CLIENTE_REGISTRO, 0) IND_CLIENTE_REGISTRO
+                ,COALESCE(IND_CLIENTE_ELEGIBLE, 0) IND_CLIENTE_ELEGIBLE
+                ,COALESCE(IND_CLIENTE_REGISTRO_ELEGIBLE, 0) IND_CLIENTE_REGISTRO_ELEGIBLE
 
-                ,IND_CLIENTE_CAMPANA
-                ,IND_CLIENTE_MES_ANTERIOR
-                ,IND_CLIENTE_ANO_ANTERIOR
+                ,COALESCE(IND_CLIENTE_CAMPANA, 0) IND_CLIENTE_CAMPANA
+                ,COALESCE(IND_CLIENTE_MES_ANTERIOR, 0) IND_CLIENTE_MES_ANTERIOR
+                ,COALESCE(IND_CLIENTE_ANO_ANTERIOR, 0) IND_CLIENTE_ANO_ANTERIOR
 
-                ,IND_NUEVO AS IND_CLIENTE_NUEVO
-                ,IND_FID_3 AS IND_CLIENTE_FID
-                ,IND_REC AS IND_CLIENTE_REC
-                ,IND_REC_DOR AS IND_CLIENTE_REC_DORMIDO
-                ,IND_REC_PER AS IND_CLIENTE_REC_PERDIDO
+                ,COALESCE(IND_NUEVO, 0) AS IND_CLIENTE_NUEVO
+                ,COALESCE(IND_FID_3, 0) AS IND_CLIENTE_FID
+                ,COALESCE(IND_REC, 0) AS IND_CLIENTE_REC
+                ,COALESCE(IND_REC_DOR, 0) AS IND_CLIENTE_REC_DORMIDO
+                ,COALESCE(IND_REC_PER, 0) AS IND_CLIENTE_REC_PERDIDO
 
-                ,IND_COMPRA_UNA_VEZ AS IND_CLIENTE_COMPRA_UNA_VEZ
-                ,IND_REPETIDOR AS IND_CLIENTE_REPETIDOR
-                ,IND_COMPRA_SOLO_MARCA_UNA_VEZ AS IND_CLIENTE_COMPRA_SOLO_MARCA_UNA_VEZ
-                ,IND_LEAL AS IND_CLIENTE_LEAL
+                ,COALESCE(IND_COMPRA_UNA_VEZ, 0) AS IND_CLIENTE_COMPRA_UNA_VEZ
+                ,COALESCE(IND_REPETIDOR, 0) AS IND_CLIENTE_REPETIDOR
+                ,COALESCE(IND_COMPRA_SOLO_MARCA_UNA_VEZ, 0) AS IND_CLIENTE_COMPRA_SOLO_MARCA_UNA_VEZ
+                ,COALESCE(IND_LEAL, 0) AS IND_CLIENTE_LEAL
 
-                ,IND_NUEVO_AA AS IND_CLIENTE_NUEVO_ANO_ANTERIOR
-                ,IND_FID_3_AA AS IND_CLIENTE_FID_ANO_ANTERIOR
-                ,IND_REC_AA AS IND_CLIENTE_REC_ANO_ANTERIOR
-            FROM __IND_CLIENTES_SEGMENTOS
-            LEFT JOIN __IND_CLIENTES_ENVIOS USING(CUSTOMER_CODE_TY)
+                ,COALESCE(IND_NUEVO_AA, 0) AS IND_CLIENTE_NUEVO_ANO_ANTERIOR
+                ,COALESCE(IND_FID_3_AA, 0) AS IND_CLIENTE_FID_ANO_ANTERIOR
+                ,COALESCE(IND_REC_AA, 0) AS IND_CLIENTE_REC_ANO_ANTERIOR
+            FROM __IND_CLIENTES
+            FULL JOIN __IND_CLIENTES_ENVIOS USING(CUSTOMER_CODE_TY)
+            FULL JOIN __IND_CLIENTES_SEGMENTOS USING(CUSTOMER_CODE_TY, IND_MARCA, PROVEEDOR)
             );
         '''
 
@@ -817,28 +851,28 @@ class Campana():
                 ,IND_ABIERTOS_WIFI
                 ,IND_ABIERTOS_CUPON
 
-                ,IND_CLIENTE_REGISTRO
-                ,IND_CLIENTE_ELEGIBLE
-                ,IND_CLIENTE_REGISTRO_ELEGIBLE
+                ,COALESCE(IND_CLIENTE_REGISTRO, 0) AS IND_CLIENTE_REGISTRO
+                ,COALESCE(IND_CLIENTE_ELEGIBLE, 0) AS IND_CLIENTE_ELEGIBLE
+                ,COALESCE(IND_CLIENTE_REGISTRO_ELEGIBLE, 0) AS IND_CLIENTE_REGISTRO_ELEGIBLE
 
-                ,IND_CLIENTE_CAMPANA
-                ,IND_CLIENTE_MES_ANTERIOR
-                ,IND_CLIENTE_ANO_ANTERIOR
+                ,COALESCE(IND_CLIENTE_CAMPANA, 0) AS IND_CLIENTE_CAMPANA
+                ,COALESCE(IND_CLIENTE_MES_ANTERIOR, 0) AS IND_CLIENTE_MES_ANTERIOR
+                ,COALESCE(IND_CLIENTE_ANO_ANTERIOR, 0) AS IND_CLIENTE_ANO_ANTERIOR
 
-                ,IND_CLIENTE_NUEVO
-                ,IND_CLIENTE_FID
-                ,IND_CLIENTE_REC
-                ,IND_CLIENTE_REC_DORMIDO
-                ,IND_CLIENTE_REC_PERDIDO
+                ,COALESCE(IND_CLIENTE_NUEVO, 0) AS IND_CLIENTE_NUEVO
+                ,COALESCE(IND_CLIENTE_FID, 0) AS IND_CLIENTE_FID
+                ,COALESCE(IND_CLIENTE_REC, 0) AS IND_CLIENTE_REC
+                ,COALESCE(IND_CLIENTE_REC_DORMIDO, 0) AS IND_CLIENTE_REC_DORMIDO
+                ,COALESCE(IND_CLIENTE_REC_PERDIDO, 0) AS IND_CLIENTE_REC_PERDIDO
 
-                ,IND_CLIENTE_COMPRA_UNA_VEZ
-                ,IND_CLIENTE_REPETIDOR
-                ,IND_CLIENTE_COMPRA_SOLO_MARCA_UNA_VEZ
-                ,IND_CLIENTE_LEAL
+                ,COALESCE(IND_CLIENTE_COMPRA_UNA_VEZ, 0) AS IND_CLIENTE_COMPRA_UNA_VEZ
+                ,COALESCE(IND_CLIENTE_REPETIDOR, 0) AS IND_CLIENTE_REPETIDOR
+                ,COALESCE(IND_CLIENTE_COMPRA_SOLO_MARCA_UNA_VEZ, 0) AS IND_CLIENTE_COMPRA_SOLO_MARCA_UNA_VEZ
+                ,COALESCE(IND_CLIENTE_LEAL, 0) AS IND_CLIENTE_LEAL
 
-                ,IND_CLIENTE_NUEVO_ANO_ANTERIOR
-                ,IND_CLIENTE_FID_ANO_ANTERIOR
-                ,IND_CLIENTE_REC_ANO_ANTERIOR
+                ,COALESCE(IND_CLIENTE_NUEVO_ANO_ANTERIOR, 0) AS IND_CLIENTE_NUEVO_ANO_ANTERIOR
+                ,COALESCE(IND_CLIENTE_FID_ANO_ANTERIOR, 0) AS IND_CLIENTE_FID_ANO_ANTERIOR
+                ,COALESCE(IND_CLIENTE_REC_ANO_ANTERIOR, 0) AS IND_CLIENTE_REC_ANO_ANTERIOR
 
                 ,SUM(UNIDADES_PROMOCIONADAS) UNIDADES_PROMOCIONADAS
                 ,SUM(COSTO_PROMOCIONADO) COSTO_PROMOCIONADO
@@ -2232,7 +2266,7 @@ class Campana():
                 SELECT
                 CUSTOMER_CODE
                 ,CONCAT(RIGHT(EXTRACT(YEAR FROM INVOICE_DATE), 2), CONCAT('-W', TO_CHAR(EXTRACT(WEEK FROM INVOICE_DATE), 'FM00'))) "WEEK"
-                ,IND_CLIENTE_ELEGIBLE
+                ,MAX(CASE WHEN IND_CLIENTE_ELEGIBLE > 0 THEN 1 ELSE 0 END) AS IND_CLIENTE_ELEGIBLE
                 ,SUM(VENTA) VENTA
                 ,COUNT(DISTINCT INVOICE_NO) TX
                 ,SUM(CASE WHEN IND_ELEGIBLE = 1 THEN VENTA ELSE 0 END) VENTA_ELEGIBLE

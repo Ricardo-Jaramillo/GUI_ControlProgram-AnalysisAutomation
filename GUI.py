@@ -12,13 +12,72 @@ from monetizacion import Monetizacion
 from pandastable import Table, TableModel
 from tkinter.simpledialog import askstring
 from datetime import datetime
+import threading
+import time
 
 # Ignore SQLAlchemy warnings
 warnings.filterwarnings('ignore')
 
 
+class LoadingWindow:
+    def __init__(self, root):
+        self.root = root
+        self.window = None
+
+    def show(self):
+        # Crear una nueva ventana de carga
+        self.window = tk.Toplevel(self.root)
+        self.window.title("Cargando...")
+        self.window.geometry("300x200")
+        self.window.resizable(False, False)
+
+        label_cargando = tk.Label(self.window, text="Procesando...", font=("Arial", 12))
+        label_cargando.pack(pady=5)
+
+        label_tiempo = tk.Label(self.window, text="Tiempo: 0 s", font=("Arial", 10))
+        label_tiempo.pack(pady=5)
+
+        frames = self.load_gif("images/cargando.gif", size=(75, 75))
+
+        label_imagen = tk.Label(self.window)
+        label_imagen.pack(pady=10)
+        self.animate_gif(label_imagen, frames, 0)
+
+        self.start_time = time.time()
+        self.update_window(label_tiempo)
+
+    def load_gif(self, gif_path, size):
+        gif = Image.open(gif_path)
+        frames = []
+        try:
+            while True:
+                frame = gif.copy().resize(size)
+                frames.append(ImageTk.PhotoImage(frame))
+                gif.seek(len(frames))
+        except EOFError:
+            pass
+        return frames
+
+    def animate_gif(self, label_imagen, frames, current_frame):
+        frame = frames[current_frame]
+        label_imagen.configure(image=frame)
+        next_frame = (current_frame + 1) % len(frames)
+        self.window.after(100, self.animate_gif, label_imagen, frames, next_frame)
+
+    def update_window(self, label_tiempo):
+        elapsed_time = time.time() - self.start_time
+        label_tiempo.config(text=f"Tiempo: {int(elapsed_time)} s")
+        self.window.after(1000, self.update_window, label_tiempo)
+
+    def close(self):
+        if self.window is not None:
+            self.window.destroy()
+            self.window = None
+
+
 class App:
     def __init__(self, root):
+        self.loading_window = LoadingWindow(root)
         self.mon = Monetizacion()
         self.clases = ''
         self.subclases = ''
@@ -29,6 +88,12 @@ class App:
         self.create_main_layout()
         self.create_menu()
         self.root.resizable(0, 0)
+
+    def show_loading_window(self):
+        self.loading_window.show()
+
+    def close_loading_window(self):
+        self.loading_window.close()
 
     # Query para obtener los datos entre comillas simples y separados por coma
     @staticmethod
@@ -120,6 +185,10 @@ class App:
 
     # Función para agregar productos a DB
     def submit_productos(self, entry_skus, entry_marcas, entry_proveedores):
+        # def generar_productos():
+        #     self.mon.generar_productos(skus=skus, marcas=marcas, proveedores=proveedores, clases=self.clases, subclases=self.subclases, prod_type_desc=self.prod_types, override=override)
+            # self.close_loading_window()
+
         if self.validate_entries_productos(entry_skus, entry_marcas, entry_proveedores):
             # Extraer los datos de los campos de productos
             skus = entry_skus.get().strip().replace(', ', ',')
@@ -130,10 +199,8 @@ class App:
 
             # Preguntar si se desea filtrar los productos
             op = messagebox.askyesno("Advertencia", "¿Desea filtrar por Categorías?")
-            print('Filtrar productos:', op)
-            print('Printing Clases Antes...', self.clases, self.subclases, self.prod_types)
+
             if op:
-                print('Printing Clases Durante...', self.clases, self.subclases, self.prod_types)
                 ventana = tk.Toplevel(self.root)
                 self.filtrar_productos(ventana, df)
                 ventana.wait_window(ventana)
@@ -148,8 +215,10 @@ class App:
             else:
                 override = None
                 
+            self.show_loading_window()
             self.mon.generar_productos(skus=skus, marcas=marcas, proveedores=proveedores, clases=self.clases, subclases=self.subclases, prod_type_desc=self.prod_types, override=override)
-            self.show_dataframe(self.mon.get_productos_agg(), "Productos")
+            self.close_loading_window()
+            # self.show_dataframe(self.mon.get_productos_agg(), "Productos")
 
     def filtrar_productos(self, ventana, df):
         
