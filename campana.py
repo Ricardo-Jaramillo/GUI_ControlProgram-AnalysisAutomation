@@ -2279,7 +2279,7 @@ class Campana():
                 AND PERIODO = 'CAMPANA'
                 AND IND_MC = 1
             --     AND IND_ABIERTOS = 1
-                GROUP BY 1,2,3
+                GROUP BY 1,2
             );
 
             -- SELECT * FROM #VENTA_CLIENTE_SEMANAL;
