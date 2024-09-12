@@ -722,6 +722,13 @@ class App:
             dataframe.to_csv(file_path, index=False)
             messagebox.showinfo("Información", title + " guardado exitosamente.")
 
+    # Función para mostrar el analisis de BusinessCase
+    def analisis_bc(self):
+        # Validar si hay datos para BusinessCase
+        if not self.mon.validate_if_table_exists('#BC'):
+            messagebox.showwarning("Advertencia", "No hay datos para BusinessCase. Por favor genere los datos.")
+            return
+
     # Validar los campos para el BusinessCase
     def validate_entries_bc(self, inicio_campana, fin_campana, fin_analisis, condicion):
         # Si hay condicion, verificar que sea numérica
@@ -804,11 +811,15 @@ class App:
         frame.pack(pady=10, padx=10)
 
         # Label
-        tk.Label(frame, text="Business Case", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
+        tk.Label(frame, text="Business Case", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=4, pady=10)
 
         # Línea horizontal
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
-        separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="we")
+        separator.grid(row=1, column=0, columnspan=4, pady=5, sticky="we")
+
+        # Línea vertical
+        separator = tk.Frame(frame, width=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=2, rowspan=6, pady=5, padx=10, sticky="ns")
 
         # Ingresar fecha de inicio y fecha termino de campaña
         tk.Label(frame, text="Datos para Business Case", font=("Arial", 10, "bold")).grid(row=2, column=0, columnspan=2, pady=10)
@@ -820,23 +831,26 @@ class App:
         entry_fin_campana.grid(row=4, column=1, pady=5)
 
         # Ingresar fecha del fin del análisis
-        tk.Label(frame, text="Fecha de Fin de Análisis").grid(row=5, column=0, pady=10, sticky='e')
+        tk.Label(frame, text="Mes Fin del Análisis:").grid(row=5, column=0, pady=10, sticky='e')
         entry_fin_analisis = DateEntry(frame, date_pattern='yyyy-mm-dd')
         entry_fin_analisis.grid(row=5, column=1, pady=5)
         
         # Ingresar Condición de Compra
-        tk.Label(frame, text="Condición de Compra").grid(row=6, column=0, pady=10)
-        entry_condicion = tk.Entry(frame)
+        tk.Label(frame, text="Condición de Compra:").grid(row=6, column=0, pady=10)
+        entry_condicion = tk.Entry(frame, width=15)
         entry_condicion.grid(row=6, column=1, pady=5)
 
         # Label para Presupuesto, valor numérico
-        tk.Button(frame, text="Calcular BC", command=lambda: self.submit_businesscase(entry_inicio_campana, entry_fin_campana, entry_fin_analisis, entry_condicion)).grid(row=7, column=0, pady=10)
+        tk.Button(frame, width=14, text="Calcular BC", command=lambda: self.submit_businesscase(entry_inicio_campana, entry_fin_campana, entry_fin_analisis, entry_condicion)).grid(row=2, column=3, pady=5)
 
         # Botón para guardar el BusinessCase
-        tk.Button(frame, text="Ver datos BC", command=show_bc).grid(row=7, column=1, pady=10)
+        tk.Button(frame, width=14, text="Ver datos BC", command=show_bc).grid(row=3, column=3, pady=5)
+
+        # Boton para ver análisis de BC
+        tk.Button(frame, width=14, text="Ver Análisis BC", command=self.analisis_bc).grid(row=4, column=3, pady=5)
 
         # Bot
-        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=8, column=0, pady=10)
+        tk.Button(frame, width=14, text="Regresar al Menú", command=self.show_menu).grid(row=6, column=3, pady=5)
 
         # # Label para Presupuesto, valor numérico
         # tk.Label(frame, text="Presupuesto", font=("Arial", 10, "bold")).pack(pady=5)
