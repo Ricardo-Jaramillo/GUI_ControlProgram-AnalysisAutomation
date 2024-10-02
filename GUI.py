@@ -728,6 +728,16 @@ class App:
         if not self.mon.validate_if_table_exists('#BC'):
             messagebox.showwarning("Advertencia", "No hay datos para BusinessCase. Por favor genere los datos.")
             return
+        
+        # Crear un Top Level para mostrar el análisis de BusinessCase
+        top = tk.Toplevel(self.root)
+        top.title("Análisis de BusinessCase")
+        top.geometry("800x600")
+
+        # Mostrar los datos del BusinessCase con df_bc:
+        df_bc = self.mon.get_bc_data()
+
+        
 
     # Validar los campos para el BusinessCase
     def validate_entries_bc(self, inicio_campana, fin_campana, fin_analisis, condicion):
@@ -737,11 +747,11 @@ class App:
             return False
         return True
     
-    def submit_businesscase(self, entry_inicio_campana, entry_fin_campana, entry_fin_analisis, entry_condicion):
+    def submit_businesscase(self, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion):
         # Extraer los campos de BC
-        inicio_campana, fin_campana, fin_analisis, condicion = entry_inicio_campana.get(), entry_fin_campana.get(), entry_fin_analisis.get(), entry_condicion.get()
+        inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion = entry_inicio_campana.get(), entry_fin_campana.get(), entry_inicio_analisis.get(), entry_fin_analisis.get(), entry_condicion.get()
 
-        if self.validate_entries_bc(inicio_campana, fin_campana, fin_analisis, condicion):
+        if self.validate_entries_bc(inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion):
             # Preguntar si ya existe la tabla PRODUCTOS
             if not self.mon.validate_if_table_exists('#PRODUCTOS'):
                 messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar BusinessCase.")
@@ -751,12 +761,12 @@ class App:
             override = None
             if self.mon.validate_if_table_exists('#BC'):
                 override = messagebox.askyesno("Advertencia", "Ya hay datos para BC, ¿Desea sobreescribirlos?")
-
+            
             # Print para verificar que los datos se están pasando correctamente
             # print(presupuesto, sms, mail, cupon, wa, wa_ratio)
 
             # Extraer datos para el BusinessCase
-            self.mon.generar_datos_bc(inicio_campana, fin_campana, fin_analisis, condicion, override)
+            self.mon.generar_datos_bc(inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, override)
 
             # Mensaje de éxito
             messagebox.showinfo("Información", "BusinessCase generado exitosamente.")
@@ -823,34 +833,39 @@ class App:
 
         # Ingresar fecha de inicio y fecha termino de campaña
         tk.Label(frame, text="Datos para Business Case", font=("Arial", 10, "bold")).grid(row=2, column=0, columnspan=2, pady=10)
-        tk.Label(frame, text="Mes Inicio:").grid(row=3, column=0, pady=5, sticky='e')
-        tk.Label(frame, text="Mes Término:").grid(row=4, column=0, pady=5, sticky='e')
+        tk.Label(frame, text="Mes Inicio de Campaña:").grid(row=3, column=0, pady=5, sticky='e')
+        tk.Label(frame, text="Mes Fin de Campaña:").grid(row=4, column=0, pady=5, sticky='e')
         entry_inicio_campana = DateEntry(frame, date_pattern='yyyy-mm-dd')
         entry_fin_campana = DateEntry(frame, date_pattern='yyyy-mm-dd')
         entry_inicio_campana.grid(row=3, column=1, pady=5)
         entry_fin_campana.grid(row=4, column=1, pady=5)
 
-        # Ingresar fecha del fin del análisis
-        tk.Label(frame, text="Mes Fin del Análisis:").grid(row=5, column=0, pady=10, sticky='e')
-        entry_fin_analisis = DateEntry(frame, date_pattern='yyyy-mm-dd')
-        entry_fin_analisis.grid(row=5, column=1, pady=5)
+        # Ingresar fecha del inicio del análisis
+        tk.Label(frame, text="Mes Inicio del Análisis:").grid(row=5, column=0, pady=10, sticky='e')
+        entry_inicio_analisis = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_inicio_analisis.grid(row=5, column=1, pady=5)
         
+        # Ingresar fecha del fin del análisis
+        tk.Label(frame, text="Mes Fin del Análisis:").grid(row=6, column=0, pady=10, sticky='e')
+        entry_fin_analisis = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_fin_analisis.grid(row=6, column=1, pady=5)
+
         # Ingresar Condición de Compra
-        tk.Label(frame, text="Condición de Compra:").grid(row=6, column=0, pady=10)
+        tk.Label(frame, text="Condición de Compra:").grid(row=7, column=0, pady=10)
         entry_condicion = tk.Entry(frame, width=15)
-        entry_condicion.grid(row=6, column=1, pady=5)
+        entry_condicion.grid(row=7, column=1, pady=5)
 
         # Label para Presupuesto, valor numérico
-        tk.Button(frame, width=14, text="Calcular BC", command=lambda: self.submit_businesscase(entry_inicio_campana, entry_fin_campana, entry_fin_analisis, entry_condicion)).grid(row=2, column=3, pady=5)
+        tk.Button(frame, width=14, text="Generar Datos", command=lambda: self.submit_businesscase(entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion)).grid(row=2, column=3, pady=5)
 
         # Botón para guardar el BusinessCase
-        tk.Button(frame, width=14, text="Ver datos BC", command=show_bc).grid(row=3, column=3, pady=5)
+        tk.Button(frame, width=14, text="Ver BC", command=show_bc).grid(row=3, column=3, pady=5)
 
         # Boton para ver análisis de BC
-        tk.Button(frame, width=14, text="Ver Análisis BC", command=self.analisis_bc).grid(row=4, column=3, pady=5)
+        tk.Button(frame, width=14, text="Ver Análisis", command=self.analisis_bc).grid(row=4, column=3, pady=5)
 
         # Bot
-        tk.Button(frame, width=14, text="Regresar al Menú", command=self.show_menu).grid(row=6, column=3, pady=5)
+        tk.Button(frame, width=14, text="Regresar al Menú", command=self.show_menu).grid(row=7, column=3, pady=5)
 
         # # Label para Presupuesto, valor numérico
         # tk.Label(frame, text="Presupuesto", font=("Arial", 10, "bold")).pack(pady=5)

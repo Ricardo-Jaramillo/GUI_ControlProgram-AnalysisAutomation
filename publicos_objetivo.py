@@ -27,15 +27,15 @@ class PublicosObjetivo():
         self.cond_camp = cond_camp
         self.online = online
 
-    def set_bc_variables(self, fec_ini_campana, fec_fin_campana, fec_fin_analisis, condicion):
+    def set_bc_variables(self, fec_ini_campana, fec_fin_campana, fec_ini_analisis, fec_fin_analisis, condicion):
         # Seleccionar las fechas y offsets
 
         ini_campana = fec_ini_campana[:7]
         fin_campana = fec_fin_campana[:7]
+        ini_analisis = fec_ini_analisis[:7]
         fin_analisis = fec_fin_analisis[:7]
-        ini_analisis = (pd.to_datetime(fec_fin_analisis) - pd.DateOffset(months=11)).strftime('%Y-%m-%d')[:7]
         fin_analisis_aa = (pd.to_datetime(fec_fin_analisis) - pd.DateOffset(months=12)).strftime('%Y-%m-%d')[:7]
-        ini_analisis_aa = (pd.to_datetime(fec_fin_analisis) - pd.DateOffset(months=23)).strftime('%Y-%m-%d')[:7]
+        ini_analisis_aa = (pd.to_datetime(fec_ini_analisis) - pd.DateOffset(months=12)).strftime('%Y-%m-%d')[:7]
 
         self.dict_bc_var = {
             'mes_ini_campana': ini_campana
