@@ -75,7 +75,7 @@ class Productos():
         # Resta un mes a la fecha actual y luego usa MonthEnd para obtener el último día de ese mes
         # Resta 12 meses a la fecha final para obtener la fecha inicial más 1 día
         val_end = (datetime.now() - pd.DateOffset(months=1) + MonthEnd(1)).strftime('%Y-%m-%d')
-        val_ini = (pd.to_datetime(val_end) - pd.DateOffset(months=12) + pd.DateOffset(days=1)).strftime('%Y-%m-%d')
+        val_ini = (pd.to_datetime(val_end) - pd.DateOffset(months=24) + pd.DateOffset(days=1)).strftime('%Y-%m-%d')
         val_dash = f"'{val_ini}' AND '{val_end}'"
 
         query_productos_temporal = \
@@ -169,3 +169,16 @@ class Productos():
         '''
         return query_productos_temporal
     
+    def get_df_categorias(self, skus, marcas, proveedores):
+        query = f'''
+            SELECT DISTINCT
+                CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+            FROM DIM_PRODUCT A
+            INNER JOIN CHEDRAUI.MON_CRM_SKU_RAZONSOCIAL B ON A.PRODUCT_CODE = B.PRODUCT_CODE
+            {f'AND A.PRODUCT_CODE::BIGINT IN ({skus})' if skus else ''}
+            {f'AND B.MARCA IN ({marcas})' if marcas else ''}
+            {f'AND B.PROVEEDOR = ({proveedores})' if proveedores else ''}
+        '''
+        return self.select(query)

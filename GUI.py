@@ -9,22 +9,91 @@ from PIL import ImageTk
 from publicos_objetivo import *
 import warnings
 from monetizacion import Monetizacion
-from pandasgui import show
 from pandastable import Table, TableModel
+from tkinter.simpledialog import askstring
+from datetime import datetime
+import threading
+import time
 
 # Ignore SQLAlchemy warnings
 warnings.filterwarnings('ignore')
 
 
+class LoadingWindow:
+    def __init__(self, root):
+        self.root = root
+        self.window = None
+
+    def show(self):
+        # Crear una nueva ventana de carga
+        self.window = tk.Toplevel(self.root)
+        self.window.title("Cargando...")
+        self.window.geometry("300x200")
+        self.window.resizable(False, False)
+
+        label_cargando = tk.Label(self.window, text="Procesando...", font=("Arial", 12))
+        label_cargando.pack(pady=5)
+
+        label_tiempo = tk.Label(self.window, text="Tiempo: 0 s", font=("Arial", 10))
+        label_tiempo.pack(pady=5)
+
+        frames = self.load_gif("images/cargando.gif", size=(75, 75))
+
+        label_imagen = tk.Label(self.window)
+        label_imagen.pack(pady=10)
+        self.animate_gif(label_imagen, frames, 0)
+
+        self.start_time = time.time()
+        self.update_window(label_tiempo)
+
+    def load_gif(self, gif_path, size):
+        gif = Image.open(gif_path)
+        frames = []
+        try:
+            while True:
+                frame = gif.copy().resize(size)
+                frames.append(ImageTk.PhotoImage(frame))
+                gif.seek(len(frames))
+        except EOFError:
+            pass
+        return frames
+
+    def animate_gif(self, label_imagen, frames, current_frame):
+        frame = frames[current_frame]
+        label_imagen.configure(image=frame)
+        next_frame = (current_frame + 1) % len(frames)
+        self.window.after(100, self.animate_gif, label_imagen, frames, next_frame)
+
+    def update_window(self, label_tiempo):
+        elapsed_time = time.time() - self.start_time
+        label_tiempo.config(text=f"Tiempo: {int(elapsed_time)} s")
+        self.window.after(1000, self.update_window, label_tiempo)
+
+    def close(self):
+        if self.window is not None:
+            self.window.destroy()
+            self.window = None
+
+
 class App:
     def __init__(self, root):
+        self.loading_window = LoadingWindow(root)
         self.mon = Monetizacion()
+        self.clases = ''
+        self.subclases = ''
+        self.prod_types = ''
         self.root = root
         self.root.title("Cognodata Monetización - Data Science")
         self.set_icon(".\images\icono_cogno_resized.png")
         self.create_main_layout()
         self.create_menu()
         self.root.resizable(0, 0)
+
+    def show_loading_window(self):
+        self.loading_window.show()
+
+    def close_loading_window(self):
+        self.loading_window.close()
 
     # Query para obtener los datos entre comillas simples y separados por coma
     @staticmethod
@@ -75,11 +144,12 @@ class App:
 
         buttons = [
             ("1. Ingresar Productos", self.ingresar_productos),
-            ("2. Generar Públicos Objetivos", self.generar_publicos_objetivos),
-            ("3. Generar BusinessCase", self.generar_bc),
+            ("2. Generar BusinessCase", self.generar_bc),
+            ("3. Generar Públicos Objetivos", self.generar_publicos_objetivos),
             ("4. Generar Listas de envío", self.generar_listas),
             ("5. Generar Radiografía", self.generar_rad),
-            ("6. Ver/Guardar Datos", self.ver_guardar_datos),
+            ("6. Resultados de Campañas", self.generar_resultados),
+            ("7. Ver/Guardar Datos", self.ver_guardar_datos),
             ("Salir", self.end_program)
         ]
 
@@ -113,119 +183,355 @@ class App:
             return False
         return True
 
-    # Función para limpiar los campos de productos
-    def clear_entries_productos(self, entry_skus, entry_marcas, entry_proveedores, entry_clases, entry_subclases, entry_prod_types):
-        skus = entry_skus.get().strip().replace(', ', ',')
-        marcas = self.add_quotes(entry_marcas.get().strip().replace(', ', ','))
-        proveedores = self.add_quotes(entry_proveedores.get().strip().replace(', ', ','))
-        clases = self.add_quotes((',').join([option for option, var in entry_clases.items() if var.get()]))
-        subclases = self.add_quotes((',').join([option for option, var in entry_subclases.items() if var.get()]))
-        prod_types = self.add_quotes((',').join([option for option, var in entry_prod_types.items() if var.get()]))
-        
-        return skus, marcas, proveedores, clases, subclases, prod_types
-
     # Función para agregar productos a DB
-    def submit_productos(self, entry_skus, entry_marcas, entry_proveedores, entry_clases, entry_subclases, entry_prod_types):
-        if self.validate_entries_productos(entry_marcas, entry_proveedores, entry_skus):
-            # Limpiar los campos de productos
-            skus, marcas, proveedores, clases, subclases, prod_types = self.clear_entries_productos(entry_skus, entry_marcas, entry_proveedores, entry_clases, entry_subclases, entry_prod_types)
+    def submit_productos(self, entry_skus, entry_marcas, entry_proveedores):
+        # def generar_productos():
+        #     self.mon.generar_productos(skus=skus, marcas=marcas, proveedores=proveedores, clases=self.clases, subclases=self.subclases, prod_type_desc=self.prod_types, override=override)
+            # self.close_loading_window()
 
+        if self.validate_entries_productos(entry_skus, entry_marcas, entry_proveedores):
+            # Extraer los datos de los campos de productos
+            skus = entry_skus.get().strip().replace(', ', ',')
+            marcas = self.add_quotes(entry_marcas.get().strip().replace(', ', ','))
+            proveedores = self.add_quotes(entry_proveedores.get().strip().replace(', ', ','))
+
+            df = self.mon.get_df_categorias(skus=skus, marcas=marcas, proveedores=proveedores)
+
+            # Preguntar si se desea filtrar los productos
+            op = messagebox.askyesno("Advertencia", "¿Desea filtrar por Categorías?")
+
+            if op:
+                ventana = tk.Toplevel(self.root)
+                self.filtrar_productos(ventana, df)
+                ventana.wait_window(ventana)
+                # self.wait_window(self.ventana)
+            # else:
+            #     self.clases, subclases, prod_types = '', '', ''
+
+            print('Printing Clases Después...', self.clases, self.subclases, self.prod_types)
             # Preguntar si la tabla ya existe
             if self.mon.validate_if_table_exists('#PRODUCTOS'):
                 override = messagebox.askyesno("Advertencia", "Ya hay productos ingresados, ¿Desea sobreescribirlos?")
             else:
                 override = None
                 
-            self.mon.generar_productos(skus=skus, marcas=marcas, proveedores=proveedores, clases=clases, subclases=subclases, prod_type_desc=prod_types, override=override)
-            self.show_dataframe(self.mon.get_productos_agg(), "Productos")
+            self.show_loading_window()
+            self.mon.generar_productos(skus=skus, marcas=marcas, proveedores=proveedores, clases=self.clases, subclases=self.subclases, prod_type_desc=self.prod_types, override=override)
+            self.close_loading_window()
+            # self.show_dataframe(self.mon.get_productos_agg(), "Productos")
 
-    def productos_layout(self, clases, subclases, prod_types):
-        self.menu_frame.pack_forget()
-        self.clear_content_frame()
-        self.content_frame.pack(padx=100)
-
-        # Crear frames para las dos columnas
-        left_frame = tk.Frame(self.content_frame)
-        right_frame = tk.Frame(self.content_frame)
-        left_frame.pack(side=tk.LEFT, padx=10, pady=10)
-        right_frame.pack(side=tk.RIGHT, padx=10, pady=10)
-
-        # Crear los campos para ingresar productos
-        tk.Label(left_frame, text="Ingresar Productos separados por coma", font=('Arial', 10, 'bold')).pack(pady=5)
-
-        # Ingresar productos en la columna izquierda
-        tk.Label(left_frame, text="SKUs:").pack()
-        entry_skus = tk.Entry(left_frame)
-        entry_skus.pack()
+    def filtrar_productos(self, ventana, df):
         
-        tk.Label(left_frame, text="Marcas:").pack()
-        entry_marcas = tk.Entry(left_frame)
-        entry_marcas.pack()
-        
-        tk.Label(left_frame, text="Proveedor(es):").pack()
-        entry_proveedores = tk.Entry(left_frame)
-        entry_proveedores.pack()
+        categorias = df['class_desc'].unique()
+        subcategorias = df['subclass_desc'].unique()
+        prod_types = df['prod_type_desc'].unique()
 
-        # Filtrar por categorías de productos en la columna derecha
-        tk.Label(right_frame, text="Filtrar por Clase, Sub-Clase y Tipo (opcional).", font=('Arial', 10, 'bold')).pack(pady=5)
-        # Diccionario de opciones seleccionadas
-        selected_options_clases = {}
-        selected_options_subclases = {}
-        selected_options_prod_types = {}
-        
-        tk.Label(right_frame, text="Clase:").pack()
-        entry_clases = tk.Menubutton(right_frame, text="Select Clase", relief=tk.RAISED, bg="light gray", activebackground="gray")
-        entry_clases.menu = tk.Menu(entry_clases, tearoff=0)
-        entry_clases["menu"] = entry_clases.menu
-        for clase in clases:
-            selected_options_clases[clase] = tk.BooleanVar()
-            entry_clases.menu.add_checkbutton(label=clase, variable=selected_options_clases[clase])
-        entry_clases.pack()
+        self.categoria_global = []
+        self.subcategoria_global = []
+        self.prod_type_global = []
 
-        tk.Label(right_frame, text="Sub-clase:").pack()
-        entry_subclases = tk.Menubutton(right_frame, text="Select Sub-clase", relief=tk.RAISED, bg="light gray", activebackground="gray")
-        entry_subclases.menu = tk.Menu(entry_subclases, tearoff=0)
-        entry_subclases["menu"] = entry_subclases.menu
-        for subclase in subclases:
-            selected_options_subclases[subclase] = tk.BooleanVar()
-            entry_subclases.menu.add_checkbutton(label=subclase, variable=selected_options_subclases[subclase])
-        entry_subclases.pack()
+        def actualizar_categoria(event):
+            categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
+            subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
+            prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
+            print('Seleccionados:', categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
+            print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
 
-        tk.Label(right_frame, text="Tipo de producto:").pack()
-        entry_prod_types = tk.Menubutton(right_frame, text="Select Tipo de producto", relief=tk.RAISED, bg="light gray", activebackground="gray")
-        entry_prod_types.menu = tk.Menu(entry_prod_types, tearoff=0)
-        entry_prod_types["menu"] = entry_prod_types.menu
-        for prod_type in prod_types:
-            selected_options_prod_types[prod_type] = tk.BooleanVar()
-            entry_prod_types.menu.add_checkbutton(label=prod_type, variable=selected_options_prod_types[prod_type])
-        entry_prod_types.pack()
+            if categoria_seleccionada:
+                if not self.subcategoria_global:
+                    subcategoria_seleccionada = subcategorias
+                else:
+                    subcategoria_seleccionada = self.subcategoria_global
+                if not self.prod_type_global:
+                    prod_type_seleccionado = prod_types
+                else:
+                    prod_type_seleccionado = self.prod_type_global
 
-        # Verificar si hay productos ingresados, si es así, botón para ver productos
-        if not self.mon.df_productos.empty:
-            # Buton para ver productos agrupados
-            tk.Label(right_frame, text="Productos Ingresados", font=("Arial", 10, "bold")).pack(pady=5)
-            tk.Button(right_frame, text="Ver Productos Ingresados", command=lambda: self.show_dataframe(self.mon.get_productos_agg(), 'Productos')).pack(pady=5)
+                listbox_subcategoria.delete(0, tk.END)
+                listbox_subcategoria.insert(tk.END, *df[df['class_desc'].isin(categoria_seleccionada) & df['subclass_desc'].isin(subcategoria_seleccionada) & df['prod_type_desc'].isin(prod_type_seleccionado)]['subclass_desc'].unique())
 
-        # Botón para ingresar productos
-        tk.Button(left_frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus, entry_marcas, entry_proveedores, selected_options_clases, selected_options_subclases, selected_options_prod_types)).pack(pady=10)
-        tk.Button(left_frame, text="Regresar al Menú", command=self.show_menu).pack()
+                listbox_prod_type.delete(0, tk.END)
+                listbox_prod_type.insert(tk.END, *df[df['class_desc'].isin(categoria_seleccionada) & df['subclass_desc'].isin(subcategoria_seleccionada) & df['prod_type_desc'].isin(prod_type_seleccionado)]['prod_type_desc'].unique())
+            
+
+        def actualizar_subcategoria(event):
+            categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
+            subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
+            prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
+            print('Seleccionados:', categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
+            print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
+
+            if subcategoria_seleccionada:
+                if not self.categoria_global:
+                    categoria_seleccionada = categorias
+                else:
+                    categoria_seleccionada = self.categoria_global
+                if not self.prod_type_global:
+                    prod_type_seleccionado = prod_types
+                else:
+                    prod_type_seleccionado = self.prod_type_global
+
+                listbox_categoria.delete(0, tk.END)
+                listbox_categoria.insert(tk.END, *df[df['subclass_desc'].isin(subcategoria_seleccionada) & df['class_desc'].isin(categoria_seleccionada) & df['prod_type_desc'].isin(prod_type_seleccionado)]['class_desc'].unique())
+                
+                listbox_prod_type.delete(0, tk.END)
+                listbox_prod_type.insert(tk.END, *df[df['subclass_desc'].isin(subcategoria_seleccionada) & df['class_desc'].isin(categoria_seleccionada) & df['prod_type_desc'].isin(prod_type_seleccionado)]['prod_type_desc'].unique())
+
+        def actualizar_prod_type(event):
+            categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
+            subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
+            prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
+            print('Seleccionados:', categoria_seleccionada, subcategoria_seleccionada, prod_type_seleccionado)
+            print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
+
+            if prod_type_seleccionado:
+                if not self.categoria_global:
+                    categoria_seleccionada = categorias
+                else:
+                    categoria_seleccionada = self.categoria_global
+                if not self.subcategoria_global:
+                    subcategoria_seleccionada = subcategorias
+                else:
+                    subcategoria_seleccionada = self.subcategoria_global
+
+                listbox_categoria.delete(0, tk.END)
+                listbox_categoria.insert(tk.END, *df[df['prod_type_desc'].isin(prod_type_seleccionado) & df['class_desc'].isin(categoria_seleccionada) & df['subclass_desc'].isin(subcategoria_seleccionada)]['class_desc'].unique())
+                
+                listbox_subcategoria.delete(0, tk.END)
+                listbox_subcategoria.insert(tk.END, *df[df['prod_type_desc'].isin(prod_type_seleccionado) & df['class_desc'].isin(categoria_seleccionada) & df['subclass_desc'].isin(subcategoria_seleccionada)]['subclass_desc'].unique())
+                
+        def seleccionar_categoria():
+            # global categoria_global
+            categoria_seleccionada = [listbox_categoria.get(i) for i in listbox_categoria.curselection()]
+            print('Seleccionados:', categoria_seleccionada)
+            print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
+            if categoria_seleccionada:
+                # Actualizar los valores de los listbox
+                listbox_categoria.delete(0, tk.END)
+                listbox_categoria.insert(tk.END, *categoria_seleccionada)
+
+                # Desactivar edicion de los listbox
+                listbox_categoria.config(state=tk.DISABLED)
+
+                # Deshabilitar boton de seleccionar categoria y oscurecerlo
+                boton_categoria.config(state=tk.DISABLED)
+                boton_categoria.config(style='Dark.TButton')
+
+                # Guardar la categoria seleccionada
+                self.categoria_global = categoria_seleccionada
+                print('Asignado a global:', self.categoria_global)
+                print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
+
+        def seleccionar_subcategoria():
+            # global subcategoria_global
+            subcategoria_seleccionada = [listbox_subcategoria.get(i) for i in listbox_subcategoria.curselection()]
+            print('Seleccionados:', subcategoria_seleccionada)
+            print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
+            if subcategoria_seleccionada:
+                # Actualizar los valores de los listbox
+                listbox_subcategoria.delete(0, tk.END)
+                listbox_subcategoria.insert(tk.END, *subcategoria_seleccionada)
+
+                # Desactivar edicion de los listbox
+                listbox_subcategoria.config(state=tk.DISABLED)
+                
+                # Deshabilitar boton de seleccionar subcategoria y oscurecerlo
+                boton_subcategoria.config(state=tk.DISABLED)
+                boton_subcategoria.config(style='Dark.TButton')
+
+                # Guardar la subcategoria seleccionada
+                self.subcategoria_global = subcategoria_seleccionada
+                print('Asignado a global:', self.subcategoria_global)
+                print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
+
+        def seleccionar_prod_type():
+            # global prod_type_global
+            prod_type_seleccionado = [listbox_prod_type.get(i) for i in listbox_prod_type.curselection()]
+            print('Seleccionados:', prod_type_seleccionado)
+            print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
+            if prod_type_seleccionado:
+                # Actualizar los valores de los listbox
+                listbox_prod_type.delete(0, tk.END)
+                listbox_prod_type.insert(tk.END, *prod_type_seleccionado)
+                
+                # Desactivar edicion de los listbox
+                listbox_prod_type.config(state=tk.DISABLED)
+
+                # Deshabilitar boton de seleccionar prod_type y oscurecerlo
+                boton_prod_type.config(state=tk.DISABLED)
+                boton_prod_type.config(style='Dark.TButton')
+
+                # Guardar el prod_type seleccionado
+                self.prod_type_global = prod_type_seleccionado
+                print('Asignado a global:', self.prod_type_global)
+                print('Globales', self.categoria_global, self.subcategoria_global, self.prod_type_global)
+
+        def reiniciar_selecciones():
+            # global categoria_global
+            # global subcategoria_global
+            # global prod_type_global
+            # Activar edicion de los listbox
+            listbox_categoria.config(state=tk.NORMAL)
+            listbox_subcategoria.config(state=tk.NORMAL)
+            listbox_prod_type.config(state=tk.NORMAL)
+            # Habilitar botones de seleccionar y aclararlos
+            boton_categoria.config(state=tk.NORMAL)
+            boton_categoria.config(style='TButton')
+            boton_subcategoria.config(state=tk.NORMAL)
+            boton_subcategoria.config(style='TButton')
+            boton_prod_type.config(state=tk.NORMAL)
+            boton_prod_type.config(style='TButton')
+            # Borrar las selecciones
+            listbox_categoria.delete(0, tk.END)
+            listbox_subcategoria.delete(0, tk.END)
+            listbox_prod_type.delete(0, tk.END)
+            # Insertar los valores originales
+            listbox_categoria.insert(tk.END, *categorias)
+            listbox_subcategoria.insert(tk.END, *subcategorias)
+            listbox_prod_type.insert(tk.END, *prod_types)
+            # Reiniciar las variables globales
+            self.categoria_global = []
+            self.subcategoria_global = []
+            self.prod_type_global = []
+            
+        def aplicar_filtros():
+            # global categoria_global
+            # global subcategoria_global
+            # global prod_type_global
+
+            categoria_seleccionada = (', ').join([item for item in listbox_categoria.get(0, tk.END)])
+            subcategoria_seleccionada = (', ').join([item for item in listbox_subcategoria.get(0, tk.END)])
+            prod_type_seleccionado = (', ').join([item for item in listbox_prod_type.get(0, tk.END)])
+
+            print(f"Categoría: {categoria_seleccionada}")
+            print(f"Subcategoría: {subcategoria_seleccionada}")
+            print(f"Prod Type: {prod_type_seleccionado}")
+
+            # Mostrar en un messagebox que los filtros se aplicaron correctamente
+            messagebox.showinfo("Filtros Aplicados", f"Categoría: {categoria_seleccionada}\nSubcategoría: {subcategoria_seleccionada}\nProd Type: {prod_type_seleccionado}")
+            # categoria_global = categoria_seleccionada
+            # subcategoria_global = subcategoria_seleccionada
+            # prod_type_global = prod_type_seleccionado
+            
+            self.clases = self.add_quotes(categoria_seleccionada.replace(', ', ','))
+            self.subclases = self.add_quotes(subcategoria_seleccionada.replace(', ', ','))
+            self.prod_types = self.add_quotes(prod_type_seleccionado.replace(', ', ','))
+            ventana.destroy()
+
+        # Crear la ventana principal
+
+        ventana.title("Selección de Productos")
+
+        # Crear los widgets
+        label_categoria = ttk.Label(ventana, text="Categoría:")
+        listbox_categoria = tk.Listbox(ventana, selectmode=tk.EXTENDED, width=25)
+        listbox_categoria.insert(tk.END, *categorias)
+        listbox_categoria.bind("<<ListboxSelect>>", actualizar_categoria)
+
+        label_subcategoria = ttk.Label(ventana, text="Subcategoría:")
+        listbox_subcategoria = tk.Listbox(ventana, selectmode=tk.EXTENDED, width=25)
+        listbox_subcategoria.insert(tk.END, *subcategorias)
+        listbox_subcategoria.bind("<<ListboxSelect>>", actualizar_subcategoria)
+
+        label_prod_type = ttk.Label(ventana, text="Prod Type:")
+        listbox_prod_type = tk.Listbox(ventana, selectmode=tk.EXTENDED, width=25)
+        listbox_prod_type.insert(tk.END, *prod_types)
+        listbox_prod_type.bind("<<ListboxSelect>>", actualizar_prod_type)
+
+        # Boton para seleccionar cada uno de los elementos
+        boton_categoria = ttk.Button(ventana, text="Seleccionar Categoría", command=seleccionar_categoria)
+        boton_subcategoria = ttk.Button(ventana, text="Seleccionar Subcategoría", command=seleccionar_subcategoria)
+        boton_prod_type = ttk.Button(ventana, text="Seleccionar Prod Type", command=seleccionar_prod_type)
+
+        # Boton para reiniciar las selecciones
+        boton_reiniciar = ttk.Button(ventana, text="Reiniciar Selecciones", command=reiniciar_selecciones)
+
+        # Boton para aplicar los filtros
+        boton_aplicar = ttk.Button(ventana, text="Aplicar Filtros", command=aplicar_filtros)
+
+        # Posicionar los widgets en la ventana utilizando el sistema de gestión de geometría grid
+        label_categoria.grid(row=0, column=0, padx=5)
+        label_subcategoria.grid(row=0, column=1, padx=5)
+        label_prod_type.grid(row=0, column=2, padx=5)
+
+        listbox_categoria.grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        listbox_subcategoria.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+        listbox_prod_type.grid(row=1, column=2, sticky="w", padx=5, pady=5)
+
+        boton_categoria.grid(row=2, column=0, padx=5, pady=5)
+        boton_subcategoria.grid(row=2, column=1, padx=5, pady=5)
+        boton_prod_type.grid(row=2, column=2, padx=5, pady=5)
+
+        boton_reiniciar.grid(row=4, column=0, padx=5, pady=5)
+        boton_aplicar.grid(row=4, column=2, padx=5, pady=5)
+
+        # Configurar el tamaño de las columnas
+        ventana.grid_columnconfigure(0, weight=1)
+        ventana.grid_columnconfigure(1, weight=1)
+
+        # return categoria_global, subcategoria_global, prod_type_global
+
+        # Iniciar el bucle de eventos
+        # ventana.mainloop()
 
     def ingresar_productos(self):
         # Verificar si hay productos ingresados, si es así, mostrar advertencia
         if not self.mon.df_productos.empty:
-            # Extraer las categorías de productos
-            clases = self.mon.df_productos['class_desc'].unique()
-            subclases = self.mon.df_productos['subclass_desc'].unique()
-            prod_types = self.mon.df_productos['prod_type_desc'].unique()
-            # Mostrar advertencia y botón para ver productos
             messagebox.showinfo("Información", "Ya hay productos ingresados.")
-        else:
-            clases, subclases, prod_types = '', '', ''
 
-        self.productos_layout(clases, subclases, prod_types)
+        self.menu_frame.pack_forget()
+        self.clear_content_frame()
+        # self.content_frame.pack(padx=100)
+
+        marcas, proveedores = self.mon.get_marcas_proveedores()
+
+        frame = tk.Frame(self.content_frame)
+        frame.pack(pady=10, padx=10)
+
+        # Crear Labels y entradas para los productos
+        tk.Label(frame, text="Seleccionar Productos", font=('Arial', 14, 'bold')).grid(row=0, column=0, columnspan=2, pady=10)
+        
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="we")
+
+        # Definir los productos
+        tk.Label(frame, text="SKUS").grid(row=2, column=0, pady=5)
+        entry_skus = tk.Entry(frame, width=25)
+        entry_skus.grid(row=2, column=1, pady=5)
+        
+        # Definir marcas
+        tk.Label(frame, text="Marca(s):").grid(row=3, column=0, pady=5)
+        entry_marcas = tk.StringVar()
+        dropdown_marcas = ttk.Combobox(frame, textvariable=entry_marcas, values=marcas, state='normal', width=22)
+        dropdown_marcas.grid(row=3, column=1, pady=5)
+        
+        # Definir proveedores
+        tk.Label(frame, text="Proveedor(es):").grid(row=4, column=0, pady=5)
+        entry_proveedores = tk.StringVar()
+        dropdown_proveedores = ttk.Combobox(frame, textvariable=entry_proveedores, values=proveedores, state='normal', width=22)
+        dropdown_proveedores.grid(row=4, column=1, pady=5)
+
+        # Label para advertencia. Datos separados por coma
+        tk.Label(frame, text="Nota: Ingresar datos separados por coma.", font=('Arial', 10, 'bold')).grid(row=5, column=0, columnspan=2, pady=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=6, column=0, columnspan=2, pady=5, sticky="we")
+
+        # Verificar si hay productos ingresados, si es así, botón para ver productos
+        if not self.mon.df_productos.empty:
+            # Buton para ver productos ya ingresados
+            tk.Button(frame, text="Ver Productos", command=lambda: self.show_dataframe(self.mon.get_productos_agg(), 'Productos')).grid(row=7, column=0, columnspan=2, pady=10, sticky='we')
+        
+        # Ingresar productos
+        tk.Button(frame, text="Ingresar", command=lambda: self.submit_productos(entry_skus, entry_marcas, entry_proveedores)).grid(row=8, column=0, pady=10)
+
+        # Botón para ingresar productos
+        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=8, column=1, pady=10)
 
     # Función para validar los campos de PO
-    def validate_entries_po(self, entry_tiendas, entry_is_online, entry_condicion, entry_inicio, entry_termino):
+    def validate_entries_po(self, entry_tiendas, entry_excluir, entry_is_online, entry_condicion, entry_inicio, entry_termino):
 
         # Validar que inicio es fecha en formato YYYY-MM-DD
         try:
@@ -251,24 +557,30 @@ class App:
             if not all(len(x) == 4 for x in entry_tiendas.get().strip().split(',')):
                 messagebox.showwarning("Advertencia", "Por favor ingrese tiendas de 4 dígitos separadas por coma.")
                 return False
-        
+            
+        # validar que excluir numerico separadas por coma
+        if entry_excluir.get().strip() and not all(x.isdigit() for x in entry_excluir.get().strip().split(',')):
+            messagebox.showwarning("Advertencia", "Por favor ingrese listas numéricas separadas por coma.")
+            return False        
+
         return True
     
     # Funcion para limpiar los campos de PO
-    def clear_entries_po(self, entry_tiendas, entry_is_online, entry_condicion, entry_inicio, entry_termino):
+    def clear_entries_po(self, entry_tiendas, entry_excluir, entry_is_online, entry_condicion, entry_inicio, entry_termino):
         tiendas = self.add_quotes(entry_tiendas.get().replace(', ', ','))
+        excluir = self.add_quotes(entry_excluir.get().replace(', ', ','))
         is_online = entry_is_online.get()
         condicion = entry_condicion.get()
         inicio = entry_inicio.get()
         termino = entry_termino.get()
         
-        return tiendas, is_online, condicion, inicio, termino
+        return tiendas, excluir, is_online, condicion, inicio, termino
 
     # Función para agregar POs a DB
-    def submit_publicos(self, entry_tiendas, var, entry_condicion, entry_inicio, entry_termino):
-        if self.validate_entries_po(entry_tiendas=entry_tiendas, entry_is_online=var, entry_condicion=entry_condicion, entry_inicio=entry_inicio, entry_termino=entry_termino):
+    def submit_publicos(self, entry_tiendas, entry_excluir, var, entry_condicion, entry_inicio, entry_termino):
+        if self.validate_entries_po(entry_tiendas=entry_tiendas, entry_excluir=entry_excluir, entry_is_online=var, entry_condicion=entry_condicion, entry_inicio=entry_inicio, entry_termino=entry_termino):
             # Limpiar los campos de PO
-            tiendas, is_online, condicion, inicio, termino = self.clear_entries_po(entry_tiendas, var, entry_condicion, entry_inicio, entry_termino)
+            tiendas, excluir, is_online, condicion, inicio, termino = self.clear_entries_po(entry_tiendas, entry_excluir, var, entry_condicion, entry_inicio, entry_termino)
 
             # Preguntar si ya existe la tabla PRODUCTOS
             if not self.mon.validate_if_table_exists('#PRODUCTOS'):
@@ -281,206 +593,323 @@ class App:
             else:
                 override = None
             
-            self.mon.generar_po(tiendas=tiendas, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino, override=override)
+            self.mon.generar_po(tiendas=tiendas, excluir=excluir, is_online=is_online, condicion=condicion, inicio=inicio, termino=termino, override=override)
             self.show_dataframe(self.mon.po.df_pos_agg, "Públicos Objetivos")
 
     def generar_publicos_objetivos(self):
         self.menu_frame.pack_forget()
         self.clear_content_frame()
-
-        tk.Label(self.content_frame, text="Públicos Objetivos", font=("Arial", 14, "bold")).pack(pady=10)
-        # Periodo de la campaña
-        tk.Label(self.content_frame, text="Periodo del PO", font=("Arial", 10, "bold")).pack(pady=10)
-        tk.Label(self.content_frame, text="Inicio:").pack()
-        entry_inicio = DateEntry(self.content_frame, date_pattern='yyyy-mm-dd')
-        entry_inicio.pack()
         
-        tk.Label(self.content_frame, text="Termino:").pack()
-        entry_termino = DateEntry(self.content_frame, date_pattern='yyyy-mm-dd')
-        entry_termino.pack()
+        # Crear un frame
+        frame = tk.Frame(self.content_frame)
+        frame.pack(pady=10, padx=10)
+
+        tk.Label(frame, text="Públicos Objetivos", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="we")
+
+        # Periodo de la campaña
+        tk.Label(frame, text="Periodo del PO", font=("Arial", 10, "bold")).grid(row=2, column=0, pady=10)
+        tk.Label(frame, text="Inicio (mes):").grid(row=3, column=0, pady=5, padx=5)
+        entry_inicio = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_inicio.grid(row=4, column=0, pady=5, padx=5)
+        
+        tk.Label(frame, text="Termino (mes):").grid(row=3, column=1, pady=5, padx=5)
+        entry_termino = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_termino.grid(row=4, column=1, pady=5, padx=5)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=5, column=0, columnspan=2, pady=5, sticky="we")
 
         # Datos de la campaña
-        tk.Label(self.content_frame, text="Filtros de la campaña (opcional)", font=("Arial", 10, "bold")).pack(pady=10)
-        tk.Label(self.content_frame, text="Tiendas (store_code, separados por coma):").pack()
-        entry_tiendas = tk.Entry(self.content_frame)
-        entry_tiendas.pack()
+        tk.Label(frame, text="Filtros (opcional)", font=("Arial", 10, "bold")).grid(row=6, column=0, columnspan=2, pady=10)
+        tk.Label(frame, text="Tiendas (store_code):").grid(row=7, column=0, pady=5, padx=5, sticky='e')
+        entry_tiendas = tk.Entry(frame)
+        entry_tiendas.grid(row=7, column=1, pady=5, padx=5)
+        
+        # Entrada para excluir listas de envío
+        tk.Label(frame, text="Excluir listas de envío:").grid(row=8, column=0, pady=5, padx=5, sticky='e')
+        entry_excluir = tk.Entry(frame)
+        entry_excluir.grid(row=8, column=1, pady=5, padx=5, sticky='w')
+
+        tk.Label(frame, text="Condición de Compra:").grid(row=9, column=0, pady=5, padx=5, sticky='e')
+        entry_condicion = tk.Entry(frame)
+        entry_condicion.grid(row=9, column=1, pady=5, padx=5)
         
         var = tk.IntVar()
-        entry_is_online = tk.Checkbutton(self.content_frame, text="Venta Online?", variable=var)
-        entry_is_online.pack()
+        entry_is_online = tk.Checkbutton(frame, text="Venta Online?", variable=var)
+        entry_is_online.grid(row=10, column=0, columnspan=2)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=11, column=0, columnspan=2, pady=5, sticky="we")
         
-        tk.Label(self.content_frame, text="Condición de Compra (Monto):").pack()
-        entry_condicion = tk.Entry(self.content_frame)
-        entry_condicion.pack()
-        
-        tk.Button(self.content_frame, text="Calcular Públicos Objetivo", command=lambda: self.submit_publicos(entry_tiendas, var, entry_condicion, entry_inicio, entry_termino)).pack(pady=10)
-        tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack()
+        tk.Button(frame, text="Calcular PO", command=lambda: self.submit_publicos(entry_tiendas, entry_excluir, var, entry_condicion, entry_inicio, entry_termino)).grid(row=12, column=0, pady=5)
+        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=12, column=1, columnspan=2, pady=5)
 
     def ver_guardar_datos(self):
         self.menu_frame.pack_forget()
         self.clear_content_frame()
 
-        # Crear un frame izquierdo y derecho para los botones
-        tk.Label(self.content_frame, text="Datos Ingresados", font=("Arial", 12, "bold")).pack(pady=10)
-
-        left_frame = tk.Frame(self.content_frame)
-        right_frame = tk.Frame(self.content_frame)
-        left_frame.pack(side=tk.LEFT, padx=10, pady=10)
-        right_frame.pack(side=tk.RIGHT, padx=10, pady=10)
+        # Crear un frame para los botones
+        frame = tk.Frame(self.content_frame)
+        frame.pack(pady=10, padx=10)
         
-        options = ['Productos', 'Públicos Objetivos', 'BusinessCase']
-        for option in options:
-            tk.Button(left_frame, width=30, text=f"Ver {option}", command=lambda opt=option: self.map_title_to_dataframe(opt, type='show')).pack(pady=5)
-            tk.Button(right_frame, width=30, text=f"Guardar {option}", command=lambda opt=option: self.map_title_to_dataframe(opt, type='save')).pack(pady=5)
-        tk.Button(self.content_frame, text="Regresar al Menú", command=self.show_menu).pack(pady=5, side=tk.BOTTOM)
+        # Label de Titulo
+        tk.Label(frame, text="Ver/Guardar Datos generados", font=("Arial", 12, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
+        
+        options = ['Productos', 'Públicos Objetivos', 'BusinessCase', 'Listas']
+        for row, option in enumerate(options, start=1):
+            tk.Button(frame, width=30, text=f"Ver {option}", command=lambda opt=option: self.get_dataframe(opt, type='show')).grid(row=row, column=0, pady=5, padx=5)
+            tk.Button(frame, width=30, text=f"Guardar {option}", command=lambda opt=option: self.get_dataframe(opt, type='save')).grid(row=row, column=1, pady=5, padx=5)
+        
+        # Botón para regresar al menú
+        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=0, columnspan=2, pady=10)
 
-    def map_title_to_dataframe(self, title, type=None):
-        # Dictionary to map the title to the dataframe
+    def get_dataframe(self, title, type=None):
+        # Extraer datos de listas
+        if self.mon.po.dict_listas_envios:
+            lis_df_listas = list(self.mon.po.dict_listas_envios.values())
+            lis_title_listas = list(self.mon.po.dict_listas_envios.keys())
+        else:
+            lis_df_listas = pd.DataFrame()
+            lis_title_listas = 'Listas de Envío'
+        
+        # Dictionary to map the dataframe
         dic = {
             'Productos': (self.mon.df_productos, 'Productos'),
             'Públicos Objetivos': (self.mon.po.df_pos_agg, 'Públicos Objetivos'),
-            'BusinessCase': ([self.mon.po.df_bc_tx, self.mon.po.df_bc_unidades, self.mon.po.df_bc_tx_medio],
-                             ['BusinessCase - Número de Tickets', 'BusinessCase - Número de Unidades', 'BusinessCase - Ticket Medio']),
-            'Listas de Envío': ([self.mon.po.df_listas_envio], ['Listas de Envío']),
+            'BusinessCase': (self.mon.po.df_bc, 'BusinessCase'),
+            'Listas': (lis_df_listas, lis_title_listas),
         }
-        if type == 'save':
-            self.save_dataframe(dic[title][0], dic[title][1])
-        elif type == 'show':
-            self.show_dataframe(dic[title][0], dic[title][1])
 
-    def show_dataframe(self, lis_dataframe: list, lis_title: list):
-        
-        if not isinstance(lis_dataframe, list):
-            lis_dataframe = [lis_dataframe]
-            lis_title = [lis_title]
-
-        for dataframe, title in zip(lis_dataframe, lis_title):
-            if dataframe.empty:
-                messagebox.showwarning("Advertencia", f"No hay {title} ingresados. Por favor genere los datos en la sección correspondiente.")
-                return
-        
-            top = tk.Toplevel(self.root)
-            top.title(title)
-            
-            # Definir el tamaño de la ventana a 800x600
-            top.geometry("800x600")
-
-            frame = tk.Frame(top)
-            frame.pack(fill='both', expand=True)
-
-            table = Table(frame, dataframe=dataframe, showtoolbar=False, showstatusbar=False)
-            table.show()
-
-    def save_dataframe(self, lis_dataframe: list, lis_title: list):
+        lis_dataframe = dic[title][0]
+        lis_title = dic[title][1]
 
         if not isinstance(lis_dataframe, list):
             lis_dataframe = [lis_dataframe]
             lis_title = [lis_title]
 
         for dataframe, title in zip(lis_dataframe, lis_title):
+            print(dataframe, title)
             if dataframe.empty:
                 messagebox.showwarning("Advertencia", f"No hay {title} ingresados. Por favor genere los datos en la sección correspondiente.")
-                return
-    
-            if dataframe.empty:
-                messagebox.showwarning("Advertencia", f"No hay {title} para guardar.")
-                return
+            else:
+                if type == 'save':
+                    self.save_dataframe(dataframe, title)
+                elif type == 'show':
+                    self.show_dataframe(dataframe, title)
 
-            file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
-            if file_path:
-                self.mon.df_productos.to_csv(file_path, index=False)
-                messagebox.showinfo("Información", title + " guardado exitosamente.")
+    def show_dataframe(self, dataframe, title):
+        top = tk.Toplevel(self.root)
+        top.title(title)
+        
+        # Definir el tamaño de la ventana a 800x600
+        top.geometry("800x600")
+
+        frame = tk.Frame(top)
+        frame.pack(fill='both', expand=True)
+
+        table = Table(frame, dataframe=dataframe, showtoolbar=False, showstatusbar=False)
+        table.show()
+
+    def save_dataframe(self, dataframe, title):
+        file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv"), ("All files", "*.*")], initialfile=title+'.csv')
+        if file_path:
+            dataframe.to_csv(file_path, index=False)
+            messagebox.showinfo("Información", title + " guardado exitosamente.")
+
+    # Función para mostrar el analisis de BusinessCase
+    def analisis_bc(self):
+        # Validar si hay datos para BusinessCase
+        if not self.mon.validate_if_table_exists('#BC'):
+            messagebox.showwarning("Advertencia", "No hay datos para BusinessCase. Por favor genere los datos.")
+            return
+        
+        # Crear un Top Level para mostrar el análisis de BusinessCase
+        top = tk.Toplevel(self.root)
+        top.title("Análisis de BusinessCase")
+        top.geometry("800x600")
+
+        # Mostrar los datos del BusinessCase con df_bc:
+        df_bc = self.mon.get_bc_data()
+
+        
 
     # Validar los campos para el BusinessCase
-    def validate_entries_bc(self, presupuesto='', sms=0, mail=0, cupon=0, wa=0, wa_ratio=0):
-        if not presupuesto or not presupuesto.isdigit():
-            messagebox.showwarning("Advertencia", "Por favor ingrese un presupuesto válido.")
+    def validate_entries_bc(self, inicio_campana, fin_campana, fin_analisis, condicion):
+        # Si hay condicion, verificar que sea numérica
+        if bool(condicion) and not condicion.isdigit():
+            messagebox.showwarning("Advertencia", "Por favor ingrese un valor numérico para Condición de Compra.")
             return False
-        if not any([sms, mail, cupon, wa]):
-            messagebox.showwarning("Advertencia", "Por favor seleccione al menos un canal.")
-            return False
-        if wa and not (wa_ratio or wa_ratio.isdigit()):
-            messagebox.showwarning("Advertencia", "Por favor ingrese un porcentaje para WA.")
-            return False
-        
         return True
     
-    # Función para limpiar los campos de BC
-    def clear_entries_bc(self, entry_presupuesto, var_sms, var_mail, var_cupon, var_wa, var_wa_ratio):
-        presupuesto = entry_presupuesto.get().strip()
-        sms = var_sms.get()
-        mail = var_mail.get()
-        cupon = var_cupon.get()
-        wa = var_wa.get()
-        wa_ratio = var_wa_ratio.get().strip()
+    def submit_businesscase(self, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion):
+        def confirmar_seleccion_bc(): # REVISAR FUNCION
+            # Crear un Top Level para preguntar al usuario las tablas a seleccionar
+            top = tk.Toplevel(self.root)
+
+            # Obtener las posibles opciones
+            lis_tablas = self.mon.obtener_obtener_lista_opciones('BusinessCase')
+
+            # Mostrar las opciones con checkboxes y guardar las opciones seleccionadas
+            lis_seleccion_tablas_bc = []
+
+            for i, tabla in enumerate(lis_tablas):
+                var = tk.IntVar()
+                tk.Checkbutton(top, text=tabla, variable=var).grid(row=i, column=0)
+                lis_seleccion_tablas_bc.append((tabla, var))
+
+            # Botón para confirmar la selección
+            tk.Button(top, text="Confirmar", command=top.destroy).grid(row=i+1, column=0)
+
+            return lis_seleccion_tablas_bc
         
-        return presupuesto, sms, mail, cupon, wa, wa_ratio
+        # Extraer los campos de BC
+        inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion = entry_inicio_campana.get(), entry_fin_campana.get(), entry_inicio_analisis.get(), entry_fin_analisis.get(), entry_condicion.get()
 
-    def submit_businesscase(self, entry_presupuesto, var_sms, var_mail, var_cupon, var_wa, var_wa_ratio):
-        # Limpia los campos de BC
-        presupuesto, sms, mail, cupon, wa, wa_ratio = self.clear_entries_bc(entry_presupuesto, var_sms, var_mail, var_cupon, var_wa, var_wa_ratio)
-
-        if self.validate_entries_bc(presupuesto, var_sms, var_mail, var_cupon, var_wa, var_wa_ratio):
+        if self.validate_entries_bc(inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion):
             # Preguntar si ya existe la tabla PRODUCTOS
             if not self.mon.validate_if_table_exists('#PRODUCTOS'):
                 messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar BusinessCase.")
                 return
             
-            # Preguntar si ya existe la tabla PO
-            if not self.mon.validate_if_table_exists('#PO'):
-                messagebox.showwarning("Advertencia", "Por favor Genere los Públicos Objetivos antes de generar BusinessCase.")
-                return
-
-            # Verificar si se generó TX_MEDIO
-            if self.mon.validate_if_table_exists('#TX_MEDIO'):
+            # Verificar si se generó #BC
+            override = None
+            if self.mon.validate_if_table_exists('#BC'):
                 override = messagebox.askyesno("Advertencia", "Ya hay datos para BC, ¿Desea sobreescribirlos?")
-            else:
-                override = None
-
-            # Print para verificar que los datos se están pasando correctamente
-            # print(presupuesto, sms, mail, cupon, wa, wa_ratio)
+            
+            lis_seleccion_tablas_bc = confirmar_seleccion_bc() # REVISAR
 
             # Extraer datos para el BusinessCase
-            self.mon.generar_datos_bc(override=override)
-            self.map_title_to_dataframe('BusinessCase', type='show')
+            self.mon.generar_datos_bc(inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, override)
+
+            # Mensaje de éxito
+            messagebox.showinfo("Información", "BusinessCase generado exitosamente.")
+            # self.get_dataframe('BusinessCase', type='show')
 
     def generar_bc(self):
         # Crear layout para el BusinessCase
         self.menu_frame.pack_forget()
         self.clear_content_frame()
+        
+        # Función para mostrar el BusinessCase
+        def show_bc():
+            # Extraer datos para el BusinessCase
+            df_bc = self.mon.get_bc_data()
 
-        # Crear un frame izquierdo y derecho para los botones
-        tk.Label(self.content_frame, text="BusinessCase", font=("Arial", 14, "bold")).pack(pady=10)
+            if df_bc.empty:
+                messagebox.showwarning("Advertencia", "No hay datos para BusinessCase. Por favor genere los datos.")
+                return
 
-        left_frame = tk.Frame(self.content_frame)
-        right_frame = tk.Frame(self.content_frame)
-        left_frame.pack(side=tk.LEFT, padx=10, pady=10)
-        right_frame.pack(side=tk.RIGHT, padx=10, pady=10)
+            # Crear un Top Level para mostrar el BusinessCase
+            top = tk.Toplevel(self.root)
+            top.title("BusinessCase")
+            top.geometry("800x600")
+
+            # Mostrar los datos del BusinessCase con df_bc:
+            tree = ttk.Treeview(top)
+
+            # Definir las columnas
+            tree["columns"] = list(df_bc.columns)
+            tree["show"] = "headings"
+
+            # Definir las columnas y encabezados
+            for col in tree["columns"]:
+                tree.heading(col, text=col)
+                tree.column(col, width=75)
+
+            # Insertar los datos
+            for index, row in df_bc.iterrows():
+                tree.insert("", tk.END, values=list(row))
+            
+            # Label para el BusinessCase
+            tk.Label(top, text="BusinessCase", font=("Arial", 14, "bold")).grid(row=0, column=0, pady=10, padx=10)
+            
+            # Posicionar el treeview
+            tree.grid(row=1, column=0, pady=10, padx=10)
+
+            # Botón para guardar el BusinessCase
+            tk.Button(top, text="Guardar BC", command=lambda: self.save_dataframe(df_bc, 'BusinessCase')).grid(row=2, column=0, pady=10, padx=10)
+
+        # Cear un frame para la sección
+        frame = tk.Frame(self.content_frame)
+        frame.pack(pady=10, padx=10)
+
+        # Label
+        tk.Label(frame, text="Business Case", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=4, pady=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=0, columnspan=4, pady=5, sticky="we")
+
+        # Línea vertical
+        separator = tk.Frame(frame, width=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=2, rowspan=6, pady=5, padx=10, sticky="ns")
+
+        # Ingresar fecha de inicio y fecha termino de campaña
+        tk.Label(frame, text="Datos para Business Case", font=("Arial", 10, "bold")).grid(row=2, column=0, columnspan=2, pady=10)
+        tk.Label(frame, text="Mes Inicio de Campaña:").grid(row=3, column=0, pady=5, sticky='e')
+        tk.Label(frame, text="Mes Fin de Campaña:").grid(row=4, column=0, pady=5, sticky='e')
+        entry_inicio_campana = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_fin_campana = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_inicio_campana.grid(row=3, column=1, pady=5)
+        entry_fin_campana.grid(row=4, column=1, pady=5)
+
+        # Ingresar fecha del inicio del análisis
+        tk.Label(frame, text="Mes Inicio del Análisis:").grid(row=5, column=0, pady=10, sticky='e')
+        entry_inicio_analisis = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_inicio_analisis.grid(row=5, column=1, pady=5)
+        
+        # Ingresar fecha del fin del análisis
+        tk.Label(frame, text="Mes Fin del Análisis:").grid(row=6, column=0, pady=10, sticky='e')
+        entry_fin_analisis = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_fin_analisis.grid(row=6, column=1, pady=5)
+
+        # Ingresar Condición de Compra
+        tk.Label(frame, text="Condición de Compra:").grid(row=7, column=0, pady=10)
+        entry_condicion = tk.Entry(frame, width=15)
+        entry_condicion.grid(row=7, column=1, pady=5)
 
         # Label para Presupuesto, valor numérico
-        tk.Label(left_frame, text="Presupuesto", font=("Arial", 10, "bold")).pack(pady=5)
-        entry_presupuesto = tk.Entry(left_frame)
-        entry_presupuesto.pack()
+        tk.Button(frame, width=14, text="Generar Datos", command=lambda: self.submit_businesscase(entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion)).grid(row=2, column=3, pady=5)
 
-        # Entrada para para el porcentaje de WA
-        tk.Label(left_frame, text="Porcentaje para WA", font=("Arial", 10, "bold")).pack(pady=5)
-        var_wa_ratio = tk.Entry(left_frame)
-        var_wa_ratio.pack()
+        # Botón para guardar el BusinessCase
+        tk.Button(frame, width=14, text="Ver BC", command=show_bc).grid(row=3, column=3, pady=5)
 
-        # Label para Canal
-        tk.Label(left_frame, text="Canal", font=("Arial", 10, "bold")).pack(pady=5)
-        # Casilla de verificación para canal SMS, Mail, Cupón y WA
-        var_sms = tk.IntVar()
-        var_mail = tk.IntVar()
-        var_cupon = tk.IntVar()
-        var_wa = tk.IntVar()
-        tk.Checkbutton(left_frame, text="SMS", variable=var_sms).pack(side=tk.LEFT, padx=5)
-        tk.Checkbutton(left_frame, text="Mail", variable=var_mail).pack(side=tk.LEFT, padx=5)
-        tk.Checkbutton(left_frame, text="Cupón", variable=var_cupon).pack(side=tk.LEFT, padx=5)
-        tk.Checkbutton(left_frame, text="WA", variable=var_wa).pack(side=tk.LEFT, padx=5)
+        # Boton para ver análisis de BC
+        tk.Button(frame, width=14, text="Ver Análisis", command=self.analisis_bc).grid(row=4, column=3, pady=5)
 
-        tk.Button(right_frame, text="Calcular Datos para BC", command=lambda: self.submit_businesscase(entry_presupuesto, var_sms, var_mail, var_cupon, var_wa, var_wa_ratio)).pack(pady=10)
-        tk.Button(right_frame, text="Regresar al Menú", command=self.show_menu).pack(pady=5, side=tk.BOTTOM)
+        # Bot
+        tk.Button(frame, width=14, text="Regresar al Menú", command=self.show_menu).grid(row=7, column=3, pady=5)
+
+        # # Label para Presupuesto, valor numérico
+        # tk.Label(frame, text="Presupuesto", font=("Arial", 10, "bold")).pack(pady=5)
+        # entry_presupuesto = tk.Entry(frame)
+        # entry_presupuesto.pack()
+
+        # # Entrada para para el porcentaje de WA
+        # tk.Label(left_frame, text="Porcentaje para WA", font=("Arial", 10, "bold")).pack(pady=5)
+        # var_wa_ratio = tk.Entry(left_frame)
+        # var_wa_ratio.pack()
+
+        # # Label para Canal
+        # tk.Label(left_frame, text="Canal", font=("Arial", 10, "bold")).pack(pady=5)
+        # # Casilla de verificación para canal SMS, Mail, Cupón y WA
+        # var_sms = tk.IntVar()
+        # var_mail = tk.IntVar()
+        # var_cupon = tk.IntVar()
+        # var_wa = tk.IntVar()
+        # tk.Checkbutton(left_frame, text="SMS", variable=var_sms).pack(side=tk.LEFT, padx=5)
+        # tk.Checkbutton(left_frame, text="Mail", variable=var_mail).pack(side=tk.LEFT, padx=5)
+        # tk.Checkbutton(left_frame, text="Cupón", variable=var_cupon).pack(side=tk.LEFT, padx=5)
+        # tk.Checkbutton(left_frame, text="WA", variable=var_wa).pack(side=tk.LEFT, padx=5)
+
+        # tk.Button(right_frame, text="Calcular Datos para BC", command=lambda: self.submit_businesscase(entry_presupuesto, var_sms, var_mail, var_cupon, var_wa, var_wa_ratio)).pack(pady=10)
+        # tk.Button(right_frame, text="Regresar al Menú", command=self.show_menu).pack(pady=5, side=tk.BOTTOM)
 
     # Función para validar entradas de listas
     def validate_entries_po_envios(self, entry_condicion, entry_excluir):
@@ -507,69 +936,70 @@ class App:
                 return False
         return True
 
-    def submit_po_envios(self, entry_condicion, entry_excluir):
-        # Validar las entradas
-        if self.validate_entries_po_envios(entry_condicion, entry_excluir):
-            # Limpiar los campos de listas
-            condicion = entry_condicion.get().strip()
-            excluir = self.add_quotes(entry_excluir.get().replace(', ', ','))
+    # def submit_po_envios(self, entry_condicion, entry_excluir):
+    #     # Validar las entradas
+    #     if self.validate_entries_po_envios(entry_condicion, entry_excluir):
+    #         # Limpiar los campos de listas
+    #         condicion = entry_condicion.get().strip()
+    #         excluir = self.add_quotes(entry_excluir.get().replace(', ', ','))
 
-            # Preguntar si ya existe la tabla PRODUCTOS
-            if not self.mon.validate_if_table_exists('#PRODUCTOS'):
-                messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar Listas de Envío.")
-                return
+    #         # Preguntar si ya existe la tabla PRODUCTOS
+    #         if not self.mon.validate_if_table_exists('#PRODUCTOS'):
+    #             messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar Listas de Envío.")
+    #             return
             
-            # Preguntar si ya existe la tabla PO
-            if not self.mon.validate_if_table_exists('#PO'):
-                messagebox.showwarning("Advertencia", "Por favor Genere los Públicos Objetivos antes de generar Listas de Envío.")
-                return
+    #         # Preguntar si ya existe la tabla PO
+    #         if not self.mon.validate_if_table_exists('#PO'):
+    #             messagebox.showwarning("Advertencia", "Por favor Genere los Públicos Objetivos antes de generar Listas de Envío.")
+    #             return
 
-            # Preguntar si ya existe la tabla PO envíos
-            if self.mon.validate_if_table_exists('#PO_ENVIOS'):
-                override = messagebox.askyesno("Advertencia", "Ya se ha generado un Público Objetivo para Envíos, ¿Desea sobreescribirlo?")
-            else:
-                override = None
+    #         # Preguntar si ya existe la tabla PO envíos
+    #         if self.mon.validate_if_table_exists('#PO_ENVIOS'):
+    #             override = messagebox.askyesno("Advertencia", "Ya se ha generado un Público Objetivo para Envíos, ¿Desea sobreescribirlo?")
+    #         else:
+    #             override = None
 
-            self.mon.generar_po_envios(condicion=condicion, excluir=excluir, override=override)
-            messagebox.showinfo("Información", "Públicos Objetivos de Envíos generados exitosamente.")
+    #         self.mon.generar_po_envios(condicion=condicion, excluir=excluir, override=override)
+    #         messagebox.showinfo("Información", "Públicos Objetivos de Envíos generados exitosamente.")
 
-    def submit_po_filtros(self, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp):
+    def submit_filtros_listas(self, var_venta_antes, var_venta_camp, var_cond_antes, var_cond_camp, var_online):
         # Todas las entradas son opcionales
         venta_antes = var_venta_antes.get()
         venta_camp = var_venta_camp.get()
         cond_antes = var_cond_antes.get()
         cond_camp = var_cond_camp.get()
+        online = var_online.get()
 
         # Preguntar si ya existe la tabla PO
         if not self.mon.validate_if_table_exists('#PO'):
             messagebox.showwarning("Advertencia", "Por favor Genere los Públicos Objetivos antes de generar Listas de Envío.")
             return
         
-        # Preguntar si ya existe la tabla PO envíos, si no, generarla con los filtros cada vez
-        if not self.mon.validate_if_table_exists('#PO_ENVIOS'):
-            messagebox.showwarning("Advertencia", "No hay Públicos Objetivo de Envíos generados.")
-        else:
-            self.mon.generar_po_envios_conteo(venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp)
-            self.show_dataframe(self.mon.po.df_po_conteo, f"Conteo de Clientes (Venta antes: {venta_antes} - Venta en: {venta_camp} - Condición antes: {cond_antes} - Condición en: {cond_camp}")
+        self.mon.generar_po_envios_conteo(venta_antes=venta_antes, venta_camp=venta_camp, cond_antes=cond_antes, cond_camp=cond_camp, online=online)
+        messagebox.showinfo("Información", f"Públicos Objetivos de Envíos generados exitosamente:\n\nFiltros aplicados:\nVenta antes: {venta_antes}\nVenta en: {venta_camp}\nCondición antes: {cond_antes}\nCondición en: {cond_camp}\nOnline: {online}")
+        self.show_dataframe(self.mon.po.df_po_conteo, 'Conteo para Listas')
 
-    def submit_canales(self, entries_canales:dict, var_grupo_control):
+    def submit_canales(self, entries_canales:dict, var_grupo_control, var_prioridad_online):
         # Validar las entradas de canales
         if self.validate_entries_filtros(entries_canales):
             # Limpiar los campos de canales
             canales = {canal: int(entry.get().strip()) if entry.get().strip() else 0 for canal, entry in entries_canales.items()}
             grupo_control = var_grupo_control.get()
+            prioridad_online = var_prioridad_online.get()
             
             # Preguntar si ya existe la tabla PO
             if not self.mon.validate_if_table_exists('#PO'):
                 messagebox.showwarning("Advertencia", "Por favor Genere los Públicos Objetivos antes de generar Listas de Envío.")
                 return
+            
+            self.mon.generar_listas_envio(canales=canales, grupo_control=grupo_control, prioridad_online=prioridad_online)
+            
+            # Preguntar si desea separar las listas de envío
+            op = messagebox.askyesno("Información", "Listas de Envío generadas exitosamente.\n¿Desea separarlas por segmento?")
+            if op:
+                self.mon.separar_listas_envio()
 
-            # Preguntar si ya existe la tabla PO envíos
-            if not self.mon.validate_if_table_exists('#PO_ENVIOS'):
-                messagebox.showwarning("Advertencia", "No hay Públicos Objetivo de Envíos generados.")
-            else:
-                self.mon.generar_listas_envio(canales=canales, grupo_control=grupo_control)
-                self.show_dataframe(self.mon.po.df_listas_envio, "Listas de Envío")
+            self.get_dataframe('Listas', type='show')
 
     def generar_listas(self):
         # Crear layout para listas de envío
@@ -587,26 +1017,8 @@ class App:
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
         separator.grid(row=1, column=0, columnspan=3, pady=5, sticky="we")
 
-        # Generar el úblico objetivo de envíos
-        tk.Label(frame, text="1. Generar Público Objetivo de Envíos", font=("Arial", 12, "bold"), wraplength=150).grid(row=2, column=0, rowspan=3, pady=5, padx=10, sticky='w')
-        # Entrada para Definir las condición de compra
-        tk.Label(frame, text="Condición de compra", font=("Arial", 10, "bold"), anchor='w').grid(row=2, column=1, pady=5, padx=5, sticky='w')
-        entry_condicion = tk.Entry(frame)
-        entry_condicion.grid(row=2, column=2, pady=5, padx=5, sticky='w')
-        # Entrada para excluir listas de envío
-        tk.Label(frame, text="Excluir listas de envío", font=("Arial", 10, "bold"), anchor='w').grid(row=3, column=1, pady=5, padx=5, sticky='w')
-        entry_excluir = tk.Entry(frame)
-        entry_excluir.grid(row=3, column=2, pady=5, padx=5, sticky='w')
-
-        # Botón para generar listas de envío con monto de condición de compra y listas a excluir
-        tk.Button(frame, text="Actualizar", command=lambda: self.submit_po_envios(entry_condicion, entry_excluir)).grid(row=4, column=2, pady=10)
-
-        # Línea horizontal
-        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
-        separator.grid(row=5, column=0, columnspan=3, pady=5, sticky="we")
-
         # Entrada para seleccionar los filtros de las listas: venta antes de campaña, venta en campaña, cumple condición antes de campaña, cumple condición en campaña
-        tk.Label(frame, text="2. Filtros de la campaña", font=("Arial", 12, "bold"), wraplength=150).grid(row=6, column=0, rowspan=7, pady=5, padx=10)
+        tk.Label(frame, text="1. Filtros de la Lista", font=("Arial", 12, "bold"), wraplength=150).grid(row=6, column=0, rowspan=7, pady=5, padx=10)
         
         var_venta_antes = tk.StringVar()
         var_venta_actual = tk.StringVar()
@@ -633,8 +1045,12 @@ class App:
         tk.Label(frame, text="En campaña", font=("Arial", 10), anchor='w').grid(row=11, column=1, pady=5, padx=5, sticky='w')
         ttk.Combobox(frame, textvariable=var_cond_actual, values=options, state='readonly').grid(row=11, column=2, pady=5, padx=5, sticky='w')
 
+        # Casilla para filtrar solo Online
+        var_online = tk.IntVar()
+        tk.Checkbutton(frame, text="Solo Online?", variable=var_online).grid(row=12, column=1, padx=10, pady=5)
+
         # Boton para ver conteo máximo de envíos con los filtros seleccionados
-        tk.Button(frame, text="Ver Conteo", command=lambda: self.submit_po_filtros(var_venta_antes, var_venta_actual, var_cond_antes, var_cond_actual)).grid(row=12, column=2, pady=10)
+        tk.Button(frame, text="Actualizar Conteo", command=lambda: self.submit_filtros_listas(var_venta_antes, var_venta_actual, var_cond_antes, var_cond_actual, var_online)).grid(row=12, column=2, pady=10)
 
         # Línea horizontal
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
@@ -645,7 +1061,7 @@ class App:
         frame_2.pack()
 
         # Label para Extraer Lista de envío
-        tk.Label(frame_2, text="3. Generar Lista de Envío", font=("Arial", 12, "bold"), wraplength=150).grid(row=0, column=0, rowspan=10, pady=5, padx=10)
+        tk.Label(frame_2, text="2. Generar Lista de Envío", font=("Arial", 12, "bold"), wraplength=150).grid(row=0, column=0, rowspan=10, pady=5, padx=10)
         
         # Diccionario para almacenar las entradas
         entries_canal = {}
@@ -653,28 +1069,36 @@ class App:
         # Etiquetas de encabezado
         headers = ["Canal", "Fid", "Rec", "Cap"]
         for col, header in enumerate(headers, start=1):
-            label = tk.Label(frame_2, text=header, font=("Arial", 10, "bold"), width=10)
-            label.grid(row=1, column=col, padx=5, pady=10)
+            label = tk.Label(frame_2, text=header, font=("Arial", 10, "bold"))
+            label.grid(row=1, column=col, padx=0, pady=10)
 
         # Filas de datos
-        canales = ["SMS", "Mail", "SMS&Mail"]
+        canales = ["01 SMS", "02 MAIL", "03 MAIL & SMS"]
         for row, canal in enumerate(canales, start=2):
-            label = tk.Label(frame_2, text=canal, borderwidth=1, width=10)
+            label = tk.Label(frame_2, text=canal)
             label.grid(row=row, column=1, padx=5, pady=5)
             for col, header in enumerate(headers[1:], start=2):
                 entry_name = f"entry_{header.lower()}_{canal.lower()}"
-                entry = tk.Entry(frame_2, width=10)
-                entry.grid(row=row, column=col, padx=4, pady=5)
+                entry = tk.Entry(frame_2, width=14)
+                entry.grid(row=row, column=col, padx=5, pady=5)
                 entries_canal[entry_name] = entry
         
         # entries_canal
 
         # Entrada para seleccionar si se quiere Grupo Control
         var_grupo_control = tk.IntVar()
-        tk.Checkbutton(frame_2, text="Grupo Control?", variable=var_grupo_control).grid(row=6, column=1, padx=10, pady=5)
+        tk.Checkbutton(frame_2, text="Grupo Control", variable=var_grupo_control).grid(row=6, column=1, padx=10, pady=5)
+
+        # Casilla para dar prioridad a Online
+        var_prioridad_online = tk.IntVar()
+        tk.Checkbutton(frame_2, text="Prioridad Online", variable=var_prioridad_online).grid(row=6, column=2, padx=10, pady=5)
 
         # Botón para generar listas de envío con canales seleccionados
-        tk.Button(frame_2, text="Generar Listas", command=lambda: self.submit_canales(entries_canal, var_grupo_control)).grid(row=6, column=4, pady=5, padx=10)
+        tk.Button(frame_2, text="Generar Listas", command=lambda: self.submit_canales(entries_canal, var_grupo_control, var_prioridad_online)).grid(row=6, column=3, columnspan=2, pady=5, padx=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame_2, height=2, bd=1, relief="sunken")
+        separator.grid(row=7, column=0, columnspan=5, pady=5, sticky="we")
 
         tk.Button(frame_2, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=2, pady=10)
 
@@ -754,7 +1178,7 @@ class App:
 
         # Crear un Frame para los botones
         frame = tk.Frame(self.content_frame)
-        frame.pack(side="left", padx=10, pady=10)
+        frame.pack(padx=10, pady=10)
 
         # Titulo de la sección
         tk.Label(frame, text="Radiografía", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
@@ -763,39 +1187,415 @@ class App:
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
         separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="we")
 
-        # Boton para ver radiografias existentes
-        tk.Button(frame, text="Ver Radiografías existentes", command=self.rad_existentes).grid(row=3, column=0, columnspan=2, pady=10)
-
-        # Línea horizontal
-        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
-        separator.grid(row=4, column=0, columnspan=2, pady=5, sticky="we")
-
         # Label para Generar Radiografía
-        tk.Label(frame, text="Generar Radiografía", font=("Arial", 12, "bold")).grid(row=5, column=0, columnspan=2, pady=5, padx=10)
+        tk.Label(frame, text="Generar Radiografía", font=("Arial", 12, "bold")).grid(row=2, column=0, columnspan=2, pady=5, padx=10)
 
         # Ingresar nombre de la Radiografía
 
-        tk.Label(frame, text="Nombre", font=("Arial", 10, "bold")).grid(row=6, column=0, pady=5, padx=10, sticky='w')
+        tk.Label(frame, text="Nombre", font=("Arial", 10, "bold")).grid(row=3, column=0, pady=5, padx=10, sticky='w')
         entry_nombre = tk.Entry(frame)
-        entry_nombre.grid(row=6, column=1, pady=5, padx=10)
+        entry_nombre.grid(row=3, column=1, pady=5, padx=10)
 
         # Seleccionar fechas para la radiografía
-        tk.Label(frame, text="Periodo de la radiografía", font=("Arial", 10, "bold")).grid(row=7, column=0, columnspan=2, pady=5, padx=10)
+        tk.Label(frame, text="Periodo de la radiografía", font=("Arial", 10, "bold")).grid(row=4, column=0, columnspan=2, pady=5, padx=10)
 
         # Entrada para Definir las fechas de inicio y término
         # Periodo de la campaña
-        tk.Label(frame, text="Inicio:").grid(row=8, column=0, pady=5, padx=5, sticky='w')
+        tk.Label(frame, text="Inicio:").grid(row=5, column=0, pady=5, padx=5, sticky='w')
         entry_inicio = DateEntry(frame, date_pattern='yyyy-mm-dd')
-        entry_inicio.grid(row=8, column=1, pady=5, padx=5, sticky='w')
+        entry_inicio.grid(row=5, column=1, pady=5, padx=5, sticky='w')
         
-        tk.Label(frame, text="Termino:").grid(row=9, column=0, pady=5, padx=5, sticky='w')
+        tk.Label(frame, text="Termino:").grid(row=6, column=0, pady=5, padx=5, sticky='w')
         entry_termino = DateEntry(frame, date_pattern='yyyy-mm-dd')
-        entry_termino.grid(row=9, column=1, pady=5, padx=5, sticky='w')
+        entry_termino.grid(row=6, column=1, pady=5, padx=5, sticky='w')
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=7, column=0, columnspan=2, pady=5, sticky="we")
+
+        # Boton para ver radiografias existentes
+        tk.Button(frame, text="Ver Radiografías existentes", command=self.rad_existentes).grid(row=8, column=0, columnspan=2, pady=10, sticky='we')
 
         # Botón para generar listas de envío con canales seleccionados
-        tk.Button(frame, text="Generar Radiografía", command=lambda: self.submit_datos_rad(entry_inicio, entry_termino, entry_nombre)).grid(row=10, column=0, columnspan=2, pady=5, padx=10)
+        tk.Button(frame, text="Generar Radiografía", command=lambda: self.submit_datos_rad(entry_inicio, entry_termino, entry_nombre)).grid(row=9, column=0, pady=5, padx=10)
 
-        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=100, column=0, columnspan=2, pady=10)
+        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=9, column=1, pady=10)
+
+    def validate_entry_campana(self, list_box):
+        try:
+            seleccion = list_box.get(list_box.curselection())
+            return seleccion
+        except:
+            messagebox.showwarning("Advertencia", "Por favor seleccione una campaña.")
+            return None
+
+    def show_edit_campaign(self, list_box, type='show_edit'):
+        def edit_row(tree, row_id, headers):
+            current_values = tree.item(row_id, "values")
+            
+            edit_window = tk.Toplevel()
+            edit_window.title("Editar Fila")
+            
+            entries = []
+            
+            for i, value in enumerate(current_values):
+                tk.Label(edit_window, text=headers[i]).grid(row=i, column=0, padx=5, pady=5)
+                entry = tk.Entry(edit_window)
+                # Dehabilitar la edicion para el primer campo
+                entry.grid(row=i, column=1, padx=5, pady=5)
+                entry.insert(0, value)
+                
+                # Deshabilitar la edición para los campos de codigo_campana y nombre
+                if headers[i] in ('codigo_campana', 'nombre'):
+                    entry.config(state='disabled')
+                
+                # Deshabilitar la edición para los campos de las tablas producto y tienda
+                if headers[i] in ('region', 'state', 'formato_tienda', 'tienda', 'store_key', 'proveedor', 'marca', 'class_code', 'class_desc', 'subclass_code', 'subclass_desc', 'prod_type_desc', 'product_description'):
+                    entry.config(state='disabled')
+
+                entries.append(entry)
+            
+            def save_changes():
+                new_values = [entry.get() for entry in entries]
+                tree.item(row_id, values=new_values)
+                edit_window.destroy()
+            
+            save_button = tk.Button(edit_window, text="Guardar Cambios", command=save_changes)
+            save_button.grid(row=len(entries), column=0, columnspan=2, pady=10)
+
+        def delete_row(tree):
+            selected_item = tree.selection()
+            if selected_item:
+                tree.delete(selected_item)
+
+        def add_row(tree, headers):
+            add_window = tk.Toplevel()
+            add_window.title("Agregar Nueva Fila")
+            
+            entries = []
+            
+            for i, header in enumerate(headers):
+                tk.Label(add_window, text=header).grid(row=i, column=0, padx=5, pady=5)
+                entry = tk.Entry(add_window)
+                entry.grid(row=i, column=1, padx=5, pady=5)
+                
+                if header == 'codigo_campana':
+                    # Crear un nuevo codigo de campaña. Si es de tipo 'add', el codigo de campaña es el nombre de la campaña sustituyendo los espacios por guiones bajos
+                    codigo_campana = nombre_campana.replace(' ', '_').upper()
+                    entry.insert(0, codigo_campana)
+                    entry.config(state='disabled')
+                
+                if header == 'nombre':
+                    # Si es de tipo 'add', el nombre de la campaña es el nombre ingresado por el usuario
+                    entry.insert(0, nombre_campana)
+                    entry.config(state='disabled')
+
+                if header in ('region', 'state', 'formato_tienda', 'tienda', 'store_key', 'proveedor', 'marca', 'class_code', 'class_desc', 'subclass_code', 'subclass_desc', 'prod_type_desc', 'product_description'):
+                    entry.config(state='disabled')
+                
+                entries.append(entry)
+
+            def save_new_row():
+                new_values = [entry.get() for entry in entries]
+                tree.insert("", "end", values=new_values)
+                add_window.destroy()
+            
+            save_button = tk.Button(add_window, text="Agregar Fila", command=save_new_row)
+            save_button.grid(row=len(entries), column=0, columnspan=2, pady=10)
+
+        def on_double_click(event, headers):
+            item = event.widget.identify('item', event.x, event.y)
+            if item:
+                edit_row(event.widget, item, headers)
+
+        def create_table(frame, df):
+            headers = df.columns
+            tree = ttk.Treeview(frame, columns=list(range(1, len(headers) + 1)), show="headings", height=8)
+            
+            for i, header in enumerate(headers, 1):
+                tree.heading(i, text=header)
+                tree.column(i, width=100)
+            
+            for row in df.itertuples(index=False):
+                tree.insert("", "end", values=row)
+            
+            vsb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+            hsb = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
+            tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+            
+            tree.pack(side="left", fill="both", expand=True)
+            vsb.pack(side="right", fill="y")
+            hsb.pack(side="bottom", fill="x")
+            
+            tree.bind("<Double-1>", lambda event: on_double_click(event, headers))
+            
+            return tree
+
+        def extract_tree_data(tree, headers):
+            rows = tree.get_children()
+            data = []
+            for row in rows:
+                data.append(tree.item(row)['values'])
+            return pd.DataFrame(data, columns=headers)
+
+        def compare_dataframes(df_original, df_updated):
+            # Return True if there are differences, False otherwise
+            # Revisar cuál df es más largo
+            if len(df_original) < len(df_updated):
+                df_original, df_updated = df_updated, df_original
+            
+            # Reindexar df_updated para que coincida con df_original
+            df_updated = df_updated.reindex_like(df_original)
+
+            comparison = df_original.compare(df_updated)
+            if comparison.empty:
+                print("No hay diferencias.")
+            else:
+                print("Cambios detectados:")
+                print(comparison)
+            
+            return comparison
+
+        def cargar_lista(tree, df, title, tipo):
+            print(f'Entramos a cargar lista {title}')
+            # Obtener el nombre de la campaña, si es de tipo 'add', el nombre de la campaña es el nombre ingresado por el usuario reemplazando los espacios por guiones bajos
+            codigo_campana = nombre_campana.replace(' ', '_').upper() if df['codigo_campana'].isnull().all() else df['codigo_campana'].iloc[0]
+            print(f"Cargando lista de {title} para la campaña: {nombre_campana}")
+            
+            lista = None
+
+            # Si tipo es 'total_cadena_tiendas', cargar todas las tiendas
+            if tipo == 'total_cadena_tiendas':
+                # Obtener todas las tiendas en formato string de 4 digitos con ceros a la izquierda separadas por coma
+                lista = self.mon.obtener_total_cadena_tiendas()
+            # Si tipo es 'productos_ingresados', cargar los productos ingresados por el usuario
+            if tipo == 'productos_ingresados':
+                # Obtener los productos del df_productos en formato string separadas por coma
+                lista = self.mon.obtener_lista_productos()
+            if tipo == 'cargar_lista':
+                # Habilitar entrada para ingresar lista de tiendas o productos
+                lista = askstring(f"Lista de {title}", f"Ingrese la lista de {title} separada por coma.")
+            
+            # Validar que la lista no esté vacía y que este separada por coma o si se dio cancelar
+            if not lista or not all([x.strip() for x in lista.split(',')]):
+                if tipo == 'productos_ingresados':
+                    messagebox.showwarning("Advertencia", "Para esta opción es necesario primero definir productos en el apartado de Productos.")
+                return
+            
+            # Insertar la lista en el tree, solo en las columnas codigo_campana y store_code o product_code. Dejar vacias las columnas distintas
+            for item in lista.split(','):
+                item = item.strip()
+                # Obtener columnas del df
+                cols = df.columns
+                # Identificar index de las columnas codigo_campana y store_code o product_code
+                index_codigo_campana = cols.get_loc('codigo_campana')
+                index_value = cols.get_loc('store_code') if 'store_code' in cols else cols.get_loc('product_code')
+                # Crear la variable de valores a insertar en el tree, dejar vacias las columnas que no sean codigo_campana y store_code o product_code
+                values = [""] * len(cols)
+                values[index_codigo_campana] = codigo_campana
+                values[index_value] = str(item).zfill(4)
+                # Insertar en el tree solo las columnas codigo_campana y store_code
+                tree.insert("", "end", values=values)
+
+        # Validar si se seleccionó una campaña
+        if type in ['show_edit']:
+            nombre_campana = self.validate_entry_campana(list_box)
+            if not nombre_campana:
+                return
+        elif type in ['add']:
+            # Obtener la ultima campaña en la lista
+            nombre_ultima_campana = self.mon.get_campanas().iloc[-1]['nombre']
+            # Obtener el año y mes actual en formato YYMM y concatenar con espacio
+            nombre_campana = f"{datetime.now().strftime('%y%m')} "
+            nombre_campana = askstring("Nueva Campaña", "Ingrese el nombre de la nueva campaña", initialvalue=nombre_campana)
+            if not nombre_campana:
+                return
+
+        # Crear la ventana principal
+        frame = tk.Toplevel(self.root)
+        # frame.state("zoomed")
+
+        # Crear un Notebook para organizar las tablas
+        notebook = ttk.Notebook(frame)
+        notebook.pack(fill="both", expand=True)
+
+        # Configurar las tablas, títulos y datos
+        lis_titles = self.mon.obtener_nombres_tablas_campanas()
+        # Obtener los datos de la campaña seleccionada si es de tipo 'show', si no, crear DataFrames vacíos
+        lis_df = self.mon.obtener_info_campana(nombre_campana) if type in ['show_edit'] else [pd.DataFrame(columns=df.columns) for df in self.mon.obtener_info_campana(nombre_ultima_campana)]
+        lis_tree = []
+
+        # Crear un tab por cada tabla
+        for title, df in zip(lis_titles, lis_df):
+            # Crear un tab por cada tabla
+            tab = tk.Frame(notebook)
+            notebook.add(tab, text=title)
+            tree = create_table(tab, df)
+            # Guardar el tree y el df en una lista
+            lis_tree.append(tree)
+            # Sustituir el dataframe con la info del tree para mantener el mismo formato y comparar cambios
+            lis_df[lis_titles.index(title)] = extract_tree_data(tree, df.columns)
+
+            # Botones para agregar y eliminar filas
+            add_button = tk.Button(tab, width=15, text="Agregar Fila", command=lambda t=tree, h=df.columns: add_row(t, h))
+            add_button.pack(side="top", pady=5, padx=5)
+
+            delete_button = tk.Button(tab, width=15, text="Eliminar Fila", command=lambda t=tree: delete_row(t))
+            delete_button.pack(side="top", pady=5, padx=5)
+
+            # Agregar botones para cargar una lista completa de tiendas o productos
+            if title in ('Tiendas'):
+                button_listas_tiendas = tk.Button(tab, width=15, text="Cargar Lista", command=lambda t=tree, d=df, title=title: cargar_lista(t, d, title, tipo='cargar_lista'))
+                button_listas_tiendas.pack(side="top", pady=5, padx=5)
+
+                button_total_cadena = tk.Button(tab, width=15, text="Total Cadena", command=lambda t=tree, d=df, title=title: cargar_lista(t, d, title, tipo='total_cadena_tiendas'))
+                button_total_cadena.pack(side="top", pady=5, padx=5)
+            
+            if title in ('Productos'):
+                button_listas_productos = tk.Button(tab, width=15, text="Cargar Lista", command=lambda t=tree, d=df, title=title: cargar_lista(t, d, title, tipo='cargar_lista'))
+                button_listas_productos.pack(side="top", pady=5, padx=5)
+
+                button_productos_ingresados = tk.Button(tab, wraplength=60, width=15, text="Usar Productos Ingresados", command=lambda t=tree, d=df, title=title: cargar_lista(t, d, title, tipo='productos_ingresados'))
+                button_productos_ingresados.pack(side="top", pady=5, padx=5)
+
+        # Función para extraer y comparar los datos de todas las tablas
+        def on_save_and_compare_all():
+            for i, (tree, df) in enumerate(zip(lis_tree, lis_df)):
+                table_name = lis_titles[i]
+                df_new = extract_tree_data(tree, df.columns)
+                # Comparar los DataFrames
+                print(f"Comparando: {table_name}")
+                df_comparison = compare_dataframes(df, df_new)
+
+                if not df_comparison.empty: # and validate_df_types(df_new, table_name):
+                    # Si las tablas son producto o tienda, dejar en el dataframe solo las columnas codigo_campanaa en ambas y product_code y store_code respectivamente
+                    if table_name in ('Tiendas'):
+                        df_new = df_new[['codigo_campana', 'store_code']]
+                        # Convertir store_code a string de 4 digitos con ceros a la izquierda
+                        df_new['store_code'] = df_new['store_code'].apply(lambda x: str(x).zfill(4))
+                    if table_name in ('Productos'):
+                        df_new = df_new[['codigo_campana', 'product_code']]
+                        # Convertir product_code a string de 18 digitos con ceros a la izquierda
+                        df_new['product_code'] = df_new['product_code'].apply(lambda x: str(x).zfill(18))
+
+                    # Guardar los cambios en la campaña si hay diferencias
+                    error = self.mon.guardar_info_campana(nombre_campana, table_name, df_new)
+                    if bool(error):
+                        # Obtener las columnas con errores a partir del df.compare() obtenido
+                        cols_error = ','.join(df_comparison.loc[:, (df_comparison != "").any()].columns.get_level_values(0).unique().tolist())
+                        messagebox.showwarning("Advertencia", f"Error en los datos ingresados.\n\nTabla: {table_name}\nColumnas: {cols_error}\nError: {repr(error)}")
+                        return
+                    else:
+                        # Mostrar mensaje de éxito
+                        messagebox.showinfo("Información", f"Cambios en la tabla {table_name} guardados exitosamente.")
+            # Salir de la ventana
+            frame.destroy()
+
+        # Botón para guardar los cambios y comparar todas las tablas
+        save_button = tk.Button(frame, text="Guardar y Salir", command=on_save_and_compare_all)
+        save_button.pack(pady=10)
+
+    def delete_campaign(self, list_box):
+        nombre_campana = self.validate_entry_campana(list_box)
+        if not nombre_campana:
+            return
+
+        # Preguntar si desea eliminar la campaña
+        op = messagebox.askyesno("Advertencia", f"¿Está seguro que desea eliminar la campaña {nombre_campana}?")
+        if op:
+            self.mon.eliminar_info_campana(nombre_campana)
+            messagebox.showinfo("Información", f"La campaña {nombre_campana} ha sido eliminada exitosamente.")
+    
+    def update_campaign(self, list_box):
+        # Botón para confirmar la selección
+        def confirmar_seleccion():
+            lis_tablas_seleccionadas = [tabla for tabla, var in var_tablas.items() if var.get()]
+            frame.destroy()
+
+            # Preguntar si desea guardar los cambios
+            op = messagebox.askyesno("Advertencia", f"¿Está seguro que desea actualizar los resultados de la campaña {nombre_campana}?")
+            if op:
+                # Validar que la campaña seleccionada tiene productos en la tabla MON_CAMP_PRODUCTOS
+                if not campaign_products_exists(nombre_campana):
+                    messagebox.showwarning("Advertencia", "No hay productos definidos para esta campaña.\nPor favor ingrese productos antes de actualizar los resultados.")
+                    return
+                # Actualizar los resultados de la campaña
+                self.mon.actualizar_resultados_campana(nombre_campana, lis_tablas_seleccionadas)
+                messagebox.showinfo("Información", f"Los resultados de la campaña {nombre_campana} han sido actualizados exitosamente.")
+
+        def campaign_products_exists(nombre_campana):
+            return self.mon.validate_campaign_products(nombre_campana)
+
+        nombre_campana = self.validate_entry_campana(list_box)
+        if not nombre_campana:
+            return
+        
+        lis_tablas = self.mon.obtener_obtener_lista_opciones('Campañas') # REVISAR
+            
+        # Mostrar ventana emergente para seleccionar las tablas de resultados
+        frame = tk.Toplevel(self.root)
+        frame.resizable(0, 0)
+
+        label_titulo = tk.Label(frame, text="Selección de Tablas", font=("Arial", 12, "bold"))
+        label_titulo.grid(row=0, column=0, pady=10, padx=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=0, pady=5, padx=10, sticky="we")
+
+        # Crear una casilla de verificación por cada tabla de resultados
+        var_tablas = {}
+        for i, tabla in enumerate(lis_tablas, start=2):
+            var_tablas[tabla] = tk.IntVar()
+            check = tk.Checkbutton(frame, text=tabla, variable=var_tablas[tabla])
+            check.grid(row=i, column=0, pady=5, padx=5, sticky='w')
+        
+        button_confirmar = tk.Button(frame, text="Confirmar", command=confirmar_seleccion)
+        button_confirmar.grid(row=len(lis_tablas) + 2, column=0, pady=10)
+
+    def show_results(self, list_box):
+        nombre_campana = self.validate_entry_campana(list_box)
+        # self.mon.mostrar_resultados_campana(nombre_campana)
+
+    def generar_resultados(self):
+        # Crear layout para ventana de resultados
+        self.menu_frame.pack_forget()
+        self.clear_content_frame()
+
+        campanas = self.mon.get_campanas()
+
+        # Crear un Frame para los botones
+        frame = tk.Frame(self.content_frame)
+        frame.pack(padx=10, pady=10)
+
+        # Titulo de la sección
+        tk.Label(frame, text="Campañas Monetización", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=0, columnspan=2, pady=5, sticky="we")
+
+        # Label Campañas Monetización
+        tk.Label(frame, text="Campañas", font=("Arial", 10, "bold")).grid(row=2, column=0, pady=5, padx=10, sticky='w')
+
+        # Listbox para mostrar las campañas
+        list_box = tk.Listbox(frame, width=70, height=15, selectmode='single')
+        list_box.grid(row=3, rowspan=6, column=0, padx=10, pady=5)
+        list_box.insert(tk.END, *campanas.nombre)
+
+        # Botones laterales para Ver, Editar, Eliminar, Crear, espacio en blanco, Actualizar, Ver Resultados y Regresar al Menú
+        tk.Button(frame, text="Ver/Editar", width=12, command=lambda: self.show_edit_campaign(list_box, 'show_edit')).grid(row=3, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Agregar", width=12, command=lambda: self.show_edit_campaign(list_box, 'add')).grid(row=4, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Eliminar", width=12, command=lambda: self.delete_campaign(list_box)).grid(row=5, column=1, pady=2, padx=10)
+        tk.Label(frame, text="").grid(row=6, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Actualizar", width=12, command=lambda: self.update_campaign(list_box), bg="navy", fg="white").grid(row=7, column=1, pady=2, padx=10)
+        tk.Button(frame, text="Ver Resultados", width=12, command=lambda: self.show_results(list_box), bg="green", fg="white").grid(row=8, column=1, pady=2, padx=10)
+        
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=9, column=0, columnspan=2, pady=5, sticky="we")
+        
+        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=10, column=0, columnspan=2, pady=5)
 
 # root = tk.Tk()
 # app = App(root)
