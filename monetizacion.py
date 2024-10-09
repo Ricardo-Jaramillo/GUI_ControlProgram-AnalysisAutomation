@@ -112,9 +112,12 @@ class Monetizacion(Conn, Productos):
             lista = None
         return lista
 
-    def obtener_nombres_tablas_resultados(self):
-        # Obtener los nombres de las tablas de los resultados
-        return self.camp.get_table_names_resultados()
+    def obtener_obtener_lista_opciones(self, nombre): # REVISAR FUNCION
+        # Obtener los nombres de las opciones de las tablas
+        if nombre == 'Campañas':
+            return self.camp.get_table_names_resultados()
+        elif nombre == 'BusinesssCase':
+            return self.po.get_table_names_analisis_bc()
 
     def validate_campaign_products(self, campaign_name):
         # Validar que la campaña tenga productos

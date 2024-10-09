@@ -10,7 +10,17 @@ class PublicosObjetivo():
         self.df_listas_envio = pd.DataFrame()
         self.dict_listas_envios = {}
         self.set_pos_variables()
+        self.set_dict_tablas_analisis_bc() # REVISAR
+
+    def set_dict_tablas_analisis_bc(self): # REVISAR FUNCION
+        self.dict_tablas_bc = {
+            'Radiografia': None,
+            'Segmentado': None
+            }
     
+    def get_table_names_analisis_bc(self): # REVISAR FUNCION
+        return list(self.set_dict_tablas_analisis_bc.keys())
+
     def set_pos_variables(self, tiendas='', excluir='', is_online=0, condicion=0, inicio='', termino=''):
         self.tiendas = tiendas
         self.is_online = is_online

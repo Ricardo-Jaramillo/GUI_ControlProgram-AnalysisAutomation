@@ -748,6 +748,26 @@ class App:
         return True
     
     def submit_businesscase(self, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion):
+        def confirmar_seleccion_bc(): # REVISAR FUNCION
+            # Crear un Top Level para preguntar al usuario las tablas a seleccionar
+            top = tk.Toplevel(self.root)
+
+            # Obtener las posibles opciones
+            lis_tablas = self.mon.obtener_obtener_lista_opciones('BusinessCase')
+
+            # Mostrar las opciones con checkboxes y guardar las opciones seleccionadas
+            lis_seleccion_tablas_bc = []
+
+            for i, tabla in enumerate(lis_tablas):
+                var = tk.IntVar()
+                tk.Checkbutton(top, text=tabla, variable=var).grid(row=i, column=0)
+                lis_seleccion_tablas_bc.append((tabla, var))
+
+            # Botón para confirmar la selección
+            tk.Button(top, text="Confirmar", command=top.destroy).grid(row=i+1, column=0)
+
+            return lis_seleccion_tablas_bc
+        
         # Extraer los campos de BC
         inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion = entry_inicio_campana.get(), entry_fin_campana.get(), entry_inicio_analisis.get(), entry_fin_analisis.get(), entry_condicion.get()
 
@@ -762,8 +782,7 @@ class App:
             if self.mon.validate_if_table_exists('#BC'):
                 override = messagebox.askyesno("Advertencia", "Ya hay datos para BC, ¿Desea sobreescribirlos?")
             
-            # Print para verificar que los datos se están pasando correctamente
-            # print(presupuesto, sms, mail, cupon, wa, wa_ratio)
+            lis_seleccion_tablas_bc = confirmar_seleccion_bc() # REVISAR
 
             # Extraer datos para el BusinessCase
             self.mon.generar_datos_bc(inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, override)
@@ -1511,7 +1530,7 @@ class App:
         if not nombre_campana:
             return
         
-        lis_tablas = self.mon.obtener_nombres_tablas_resultados()
+        lis_tablas = self.mon.obtener_obtener_lista_opciones('Campañas') # REVISAR
             
         # Mostrar ventana emergente para seleccionar las tablas de resultados
         frame = tk.Toplevel(self.root)
