@@ -37,6 +37,2918 @@ class Radiografia():
                 'fecha_fin_p2': (pd.to_datetime(fecha_fin) - pd.DateOffset(months=1)).strftime('%Y-%m-%d')
             }
 
+    def get_query_cat(self, id):
+        query_actual_marca_mc_total = f'''
+            --TOTAL ---------------------------------------------------------
+            --ACTUAL -------------------------------------------------------
+            --MARCA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_MC_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_MC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_MC
+                ,SUM(VENTA) VENTA_MARCA_MC
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC
+                ,SUM(UNIDADES) UNIDADES_MARCA_MC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_marca_nmc_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_NMC_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_NMC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_NMC
+                ,SUM(VENTA) VENTA_MARCA_NMC
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC
+                ,SUM(UNIDADES) UNIDADES_MARCA_NMC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_marca_total_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_TOTAL_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_TOTAL_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA
+                ,SUM(VENTA) VENTA_MARCA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA
+                ,SUM(UNIDADES) UNIDADES_MARCA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_marca_online_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_ONLINE_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_ONLINE_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_ONLINE
+                ,SUM(VENTA) VENTA_MARCA_ONLINE
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_ONLINE
+                ,SUM(UNIDADES) UNIDADES_MARCA_ONLINE
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_MARCA_MC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_MARCA_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_MARCA_MC_ONLINE
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_MARCA_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_MARCA_NMC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_mc_total = f'''
+            --TOTAL ---------------------------------------------------------
+            --ACTUAL -------------------------------------------------------
+            --CATEGORIA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_MC_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_MC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_MC
+                ,SUM(VENTA) VENTA_CAT_MC
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC
+                ,SUM(UNIDADES) UNIDADES_CAT_MC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_nmc_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_NMC_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_NMC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_NMC
+                ,SUM(VENTA) VENTA_CAT_NMC
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC
+                ,SUM(UNIDADES) UNIDADES_CAT_NMC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_total_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_TOTAL_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_TOTAL_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT
+                ,SUM(VENTA) VENTA_CAT
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT
+                ,SUM(UNIDADES) UNIDADES_CAT
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_online_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_ONLINE_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_ONLINE_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_ONLINE
+                ,SUM(VENTA) VENTA_CAT_ONLINE
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_ONLINE
+                ,SUM(UNIDADES) UNIDADES_CAT_ONLINE
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_CAT_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_CAT_MC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_CAT_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_CAT_MC_ONLINE
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_CAT_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_CAT_NMC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_total = f'''
+            --JOIN ACTUAL_TOTAL --------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_TOTAL AS (
+                SELECT
+                    ID_RADIOGRAFIA
+                    ,CLASS_DESC
+                    ,SUBCLASS_DESC
+                    ,PROD_TYPE_DESC
+                    ,CLIENTES_MARCA
+                    ,VENTA_MARCA
+                    ,VENTA_MARCA_MC
+                    ,VENTA_MARCA_NMC
+                    ,TX_MARCA
+                    ,TX_MARCA_MC
+                    ,TX_MARCA_NMC
+                    ,UNIDADES_MARCA
+                    ,UNIDADES_MARCA_MC
+                    ,UNIDADES_MARCA_NMC
+                    ,VENTA_MARCA_ONLINE
+                    ,VENTA_MARCA_MC_ONLINE
+                    ,VENTA_MARCA_NMC_ONLINE
+                    ,CLIENTES_CAT
+                    ,VENTA_CAT
+                    ,VENTA_CAT_MC
+                    ,VENTA_CAT_NMC
+                    ,TX_CAT
+                    ,TX_CAT_MC
+                    ,TX_CAT_NMC
+                    ,UNIDADES_CAT
+                    ,UNIDADES_CAT_MC
+                    ,UNIDADES_CAT_NMC
+                    ,VENTA_CAT_ONLINE
+                    ,VENTA_CAT_MC_ONLINE
+                    ,VENTA_CAT_NMC_ONLINE
+                FROM #MON_RAD_ACTUAL_MARCA_TOTAL_TOTAL A
+                FULL JOIN #MON_RAD_ACTUAL_MARCA_MC_TOTAL B USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_MARCA_NMC_TOTAL C USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_MARCA_ONLINE_TOTAL D USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_TOTAL_TOTAL E USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_MC_TOTAL F USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_NMC_TOTAL G USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_ONLINE_TOTAL H USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+            );
+
+            -- SELECT * FROM #MON_RAD_ACTUAL_TOTAL;
+
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_TOTAL_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_MC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_NMC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_ONLINE_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_TOTAL_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_MC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_NMC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_ONLINE_TOTAL;
+        '''
+
+        query_aa_marca_mc_total = f'''
+            --TOTAL ---------------------------------------------------------
+            --AA -------------------------------------------------------
+            --MARCA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_MC_TOTAL;
+            CREATE TABLE #MON_RAD_AA_MARCA_MC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_MC_AA
+                ,SUM(VENTA) VENTA_MARCA_MC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_MC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_marca_nmc_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_NMC_TOTAL;
+            CREATE TABLE #MON_RAD_AA_MARCA_NMC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_NMC_AA
+                ,SUM(VENTA) VENTA_MARCA_NMC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_NMC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_marca_total_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_TOTAL_TOTAL;
+            CREATE TABLE #MON_RAD_AA_MARCA_TOTAL_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_AA
+                ,SUM(VENTA) VENTA_MARCA_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_marca_online_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_ONLINE_TOTAL;
+            CREATE TABLE #MON_RAD_AA_MARCA_ONLINE_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_ONLINE_AA
+                ,SUM(VENTA) VENTA_MARCA_ONLINE_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_ONLINE_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_ONLINE_AA
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_MARCA_MC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_MARCA_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_MARCA_MC_ONLINE_AA
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_MARCA_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_MARCA_NMC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_mc_total = f'''
+            --TOTAL ---------------------------------------------------------
+            --AA -------------------------------------------------------
+            --CATEGORIA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_MC_TOTAL;
+            CREATE TABLE #MON_RAD_AA_CAT_MC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_MC_AA
+                ,SUM(VENTA) VENTA_CAT_MC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_MC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_nmc_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_NMC_TOTAL;
+            CREATE TABLE #MON_RAD_AA_CAT_NMC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_NMC_AA
+                ,SUM(VENTA) VENTA_CAT_NMC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_NMC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_total_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_TOTAL_TOTAL;
+            CREATE TABLE #MON_RAD_AA_CAT_TOTAL_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_AA
+                ,SUM(VENTA) VENTA_CAT_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_online_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_ONLINE_TOTAL;
+            CREATE TABLE #MON_RAD_AA_CAT_ONLINE_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,'TOTAL' CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_ONLINE_AA
+                ,SUM(VENTA) VENTA_CAT_ONLINE_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_ONLINE_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_ONLINE_AA
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_CAT_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_CAT_MC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_CAT_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_CAT_MC_ONLINE_AA
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_CAT_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_CAT_NMC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_total = f'''
+            --JOIN AA_TOTAL --------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_TOTAL;
+            CREATE TABLE #MON_RAD_AA_TOTAL AS (
+                SELECT
+                    ID_RADIOGRAFIA
+                    ,CLASS_DESC
+                    ,SUBCLASS_DESC
+                    ,PROD_TYPE_DESC
+                    ,CLIENTES_MARCA_AA
+                    ,VENTA_MARCA_AA
+                    ,VENTA_MARCA_MC_AA
+                    ,VENTA_MARCA_NMC_AA
+                    ,TX_MARCA_AA
+                    ,TX_MARCA_MC_AA
+                    ,TX_MARCA_NMC_AA
+                    ,UNIDADES_MARCA_AA
+                    ,UNIDADES_MARCA_MC_AA
+                    ,UNIDADES_MARCA_NMC_AA
+                    ,VENTA_MARCA_ONLINE_AA
+                    ,VENTA_MARCA_MC_ONLINE_AA
+                    ,VENTA_MARCA_NMC_ONLINE_AA
+                    ,CLIENTES_CAT_AA
+                    ,VENTA_CAT_AA
+                    ,VENTA_CAT_MC_AA
+                    ,VENTA_CAT_NMC_AA
+                    ,TX_CAT_AA
+                    ,TX_CAT_MC_AA
+                    ,TX_CAT_NMC_AA
+                    ,UNIDADES_CAT_AA
+                    ,UNIDADES_CAT_MC_AA
+                    ,UNIDADES_CAT_NMC_AA
+                    ,VENTA_CAT_ONLINE_AA
+                    ,VENTA_CAT_MC_ONLINE_AA
+                    ,VENTA_CAT_NMC_ONLINE_AA
+                FROM #MON_RAD_AA_MARCA_TOTAL_TOTAL A
+                FULL JOIN #MON_RAD_AA_MARCA_MC_TOTAL B USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_MARCA_NMC_TOTAL C USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_MARCA_ONLINE_TOTAL D USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_TOTAL_TOTAL E USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_MC_TOTAL F USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_NMC_TOTAL G USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_ONLINE_TOTAL H USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+            );
+
+            -- SELECT * FROM #MON_RAD_AA_TOTAL;
+
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_TOTAL_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_MC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_NMC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_ONLINE_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_TOTAL_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_MC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_NMC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_ONLINE_TOTAL;
+        '''
+
+        query_total = f'''
+            --JOIN TOTAL----------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_CAT_TOTAL;
+            CREATE TABLE #MON_RAD_CAT_TOTAL AS (
+                SELECT
+                    *
+                FROM #MON_RAD_ACTUAL_TOTAL
+                LEFT JOIN #MON_RAD_AA_TOTAL USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+            );
+
+            --SELECT * FROM #MON_RAD_CAT_TOTAL;
+
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_TOTAL;
+
+            --GUARDAR TOTAL EN DB----------------------------------------------------------
+            DELETE CHEDRAUI.MON_RAD_CAT WHERE ID_RADIOGRAFIA = '{id}' AND CLASS_DESC = 'TOTAL' AND SUBCLASS_DESC = 'TOTAL' AND PROD_TYPE_DESC = 'TOTAL';
+            INSERT INTO CHEDRAUI.MON_RAD_CAT SELECT * FROM #MON_RAD_CAT_TOTAL;        
+        '''
+
+        query_actual_marca_mc_class = f'''
+            --CLASS ---------------------------------------------------------
+            --ACTUAL -------------------------------------------------------
+            --MARCA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_MC_CLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_MC_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_MC
+                ,SUM(VENTA) VENTA_MARCA_MC
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC
+                ,SUM(UNIDADES) UNIDADES_MARCA_MC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_marca_nmc_class = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_NMC_CLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_NMC_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_NMC
+                ,SUM(VENTA) VENTA_MARCA_NMC
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC
+                ,SUM(UNIDADES) UNIDADES_MARCA_NMC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_marca_total_class = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_TOTAL_CLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_TOTAL_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA
+                ,SUM(VENTA) VENTA_MARCA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA
+                ,SUM(UNIDADES) UNIDADES_MARCA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_marca_online_class = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_ONLINE_CLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_ONLINE_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_ONLINE
+                ,SUM(VENTA) VENTA_MARCA_ONLINE
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_ONLINE
+                ,SUM(UNIDADES) UNIDADES_MARCA_ONLINE
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_MARCA_MC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_MARCA_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_MARCA_MC_ONLINE
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_MARCA_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_MARCA_NMC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_mc_class = f'''
+            --CLASS ---------------------------------------------------------
+            --ACTUAL -------------------------------------------------------
+            --CATEGORIA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_MC_CLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_MC_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_MC
+                ,SUM(VENTA) VENTA_CAT_MC
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC
+                ,SUM(UNIDADES) UNIDADES_CAT_MC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_nmc_class = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_NMC_CLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_NMC_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_NMC
+                ,SUM(VENTA) VENTA_CAT_NMC
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC
+                ,SUM(UNIDADES) UNIDADES_CAT_NMC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_total_class = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_TOTAL_CLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_TOTAL_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT
+                ,SUM(VENTA) VENTA_CAT
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT
+                ,SUM(UNIDADES) UNIDADES_CAT
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_online_class = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_ONLINE_CLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_ONLINE_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_ONLINE
+                ,SUM(VENTA) VENTA_CAT_ONLINE
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_ONLINE
+                ,SUM(UNIDADES) UNIDADES_CAT_ONLINE
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_CAT_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_CAT_MC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_CAT_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_CAT_MC_ONLINE
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_CAT_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_CAT_NMC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_class = f'''
+            --JOIN ACTUAL_CLASS --------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_CLASS AS (
+                SELECT
+                    ID_RADIOGRAFIA
+                    ,CLASS_DESC
+                    ,SUBCLASS_DESC
+                    ,PROD_TYPE_DESC
+                    ,CLIENTES_MARCA
+                    ,VENTA_MARCA
+                    ,VENTA_MARCA_MC
+                    ,VENTA_MARCA_NMC
+                    ,TX_MARCA
+                    ,TX_MARCA_MC
+                    ,TX_MARCA_NMC
+                    ,UNIDADES_MARCA
+                    ,UNIDADES_MARCA_MC
+                    ,UNIDADES_MARCA_NMC
+                    ,VENTA_MARCA_ONLINE
+                    ,VENTA_MARCA_MC_ONLINE
+                    ,VENTA_MARCA_NMC_ONLINE
+                    ,CLIENTES_CAT
+                    ,VENTA_CAT
+                    ,VENTA_CAT_MC
+                    ,VENTA_CAT_NMC
+                    ,TX_CAT
+                    ,TX_CAT_MC
+                    ,TX_CAT_NMC
+                    ,UNIDADES_CAT
+                    ,UNIDADES_CAT_MC
+                    ,UNIDADES_CAT_NMC
+                    ,VENTA_CAT_ONLINE
+                    ,VENTA_CAT_MC_ONLINE
+                    ,VENTA_CAT_NMC_ONLINE
+                FROM #MON_RAD_ACTUAL_MARCA_TOTAL_CLASS A
+                FULL JOIN #MON_RAD_ACTUAL_MARCA_MC_CLASS B USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_MARCA_NMC_CLASS C USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_MARCA_ONLINE_CLASS D USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_TOTAL_CLASS E USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_MC_CLASS F USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_NMC_CLASS G USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_ONLINE_CLASS H USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+            );
+
+            -- SELECT * FROM #MON_RAD_ACTUAL_CLASS;
+
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_TOTAL_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_MC_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_NMC_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_ONLINE_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_TOTAL_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_MC_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_NMC_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_ONLINE_CLASS;
+        '''
+
+        query_aa_marca_mc_class = f'''
+            --CLASS ---------------------------------------------------------
+            --AA -------------------------------------------------------
+            --MARCA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_MC_CLASS;
+            CREATE TABLE #MON_RAD_AA_MARCA_MC_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_MC_AA
+                ,SUM(VENTA) VENTA_MARCA_MC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_MC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_marca_nmc_class = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_NMC_CLASS;
+            CREATE TABLE #MON_RAD_AA_MARCA_NMC_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_NMC_AA
+                ,SUM(VENTA) VENTA_MARCA_NMC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_NMC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_marca_total_class = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_TOTAL_CLASS;
+            CREATE TABLE #MON_RAD_AA_MARCA_TOTAL_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_AA
+                ,SUM(VENTA) VENTA_MARCA_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_marca_online_class = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_ONLINE_CLASS;
+            CREATE TABLE #MON_RAD_AA_MARCA_ONLINE_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_ONLINE_AA
+                ,SUM(VENTA) VENTA_MARCA_ONLINE_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_ONLINE_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_ONLINE_AA
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_MARCA_MC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_MARCA_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_MARCA_MC_ONLINE_AA
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_MARCA_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_MARCA_NMC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_mc_class = f'''
+            --CLASS ---------------------------------------------------------
+            --AA -------------------------------------------------------
+            --CATEGORIA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_MC_CLASS;
+            CREATE TABLE #MON_RAD_AA_CAT_MC_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_MC_AA
+                ,SUM(VENTA) VENTA_CAT_MC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_MC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_nmc_class = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_NMC_CLASS;
+            CREATE TABLE #MON_RAD_AA_CAT_NMC_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_NMC_AA
+                ,SUM(VENTA) VENTA_CAT_NMC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_NMC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_total_class = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_TOTAL_CLASS;
+            CREATE TABLE #MON_RAD_AA_CAT_TOTAL_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_AA
+                ,SUM(VENTA) VENTA_CAT_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_online_class = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_ONLINE_CLASS;
+            CREATE TABLE #MON_RAD_AA_CAT_ONLINE_CLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,'TOTAL' SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_ONLINE_AA
+                ,SUM(VENTA) VENTA_CAT_ONLINE_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_ONLINE_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_ONLINE_AA
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_CAT_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_CAT_MC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_CAT_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_CAT_MC_ONLINE_AA
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_CAT_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_CAT_NMC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+        
+        query_aa_class = f'''
+            --JOIN AA_CLASS --------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_CLASS;
+            CREATE TABLE #MON_RAD_AA_CLASS AS (
+                SELECT
+                    ID_RADIOGRAFIA
+                    ,CLASS_DESC
+                    ,SUBCLASS_DESC
+                    ,PROD_TYPE_DESC
+                    ,CLIENTES_MARCA_AA
+                    ,VENTA_MARCA_AA
+                    ,VENTA_MARCA_MC_AA
+                    ,VENTA_MARCA_NMC_AA
+                    ,TX_MARCA_AA
+                    ,TX_MARCA_MC_AA
+                    ,TX_MARCA_NMC_AA
+                    ,UNIDADES_MARCA_AA
+                    ,UNIDADES_MARCA_MC_AA
+                    ,UNIDADES_MARCA_NMC_AA
+                    ,VENTA_MARCA_ONLINE_AA
+                    ,VENTA_MARCA_MC_ONLINE_AA
+                    ,VENTA_MARCA_NMC_ONLINE_AA
+                    ,CLIENTES_CAT_AA
+                    ,VENTA_CAT_AA
+                    ,VENTA_CAT_MC_AA
+                    ,VENTA_CAT_NMC_AA
+                    ,TX_CAT_AA
+                    ,TX_CAT_MC_AA
+                    ,TX_CAT_NMC_AA
+                    ,UNIDADES_CAT_AA
+                    ,UNIDADES_CAT_MC_AA
+                    ,UNIDADES_CAT_NMC_AA
+                    ,VENTA_CAT_ONLINE_AA
+                    ,VENTA_CAT_MC_ONLINE_AA
+                    ,VENTA_CAT_NMC_ONLINE_AA
+                FROM #MON_RAD_AA_MARCA_TOTAL_CLASS A
+                FULL JOIN #MON_RAD_AA_MARCA_MC_CLASS B USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_MARCA_NMC_CLASS C USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_MARCA_ONLINE_CLASS D USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_TOTAL_CLASS E USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_MC_CLASS F USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_NMC_CLASS G USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_ONLINE_CLASS H USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+            );
+
+            -- SELECT * FROM #MON_RAD_AA_CLASS;
+
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_TOTAL_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_MC_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_NMC_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_ONLINE_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_TOTAL_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_MC_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_NMC_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_ONLINE_CLASS;
+        '''
+
+        query_class = f'''
+            --JOIN CLASS----------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_CAT_CLASS;
+            CREATE TABLE #MON_RAD_CAT_CLASS AS (
+                SELECT
+                    *
+                FROM #MON_RAD_ACTUAL_CLASS
+                LEFT JOIN #MON_RAD_AA_CLASS USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+            );
+
+            --SELECT * FROM #MON_RAD_CAT_CLASS;
+
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CLASS;
+
+            --GUARDAR TOTAL EN DB----------------------------------------------------------
+            DELETE CHEDRAUI.MON_RAD_CAT WHERE ID_RADIOGRAFIA = '{id}' AND CLASS_DESC <> 'TOTAL' AND SUBCLASS_DESC = 'TOTAL' AND PROD_TYPE_DESC = 'TOTAL';
+            INSERT INTO CHEDRAUI.MON_RAD_CAT SELECT * FROM #MON_RAD_CAT_CLASS;
+        '''
+
+        query_actual_marca_mc_subclass = f'''
+            --SUBCLASS ---------------------------------------------------------
+            --ACTUAL -------------------------------------------------------
+            --MARCA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_MC_SUBCLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_MC_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_MC
+                ,SUM(VENTA) VENTA_MARCA_MC
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC
+                ,SUM(UNIDADES) UNIDADES_MARCA_MC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_marca_nmc_subclass = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_NMC_SUBCLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_NMC_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_NMC
+                ,SUM(VENTA) VENTA_MARCA_NMC
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC
+                ,SUM(UNIDADES) UNIDADES_MARCA_NMC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_marca_total_subclass = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_TOTAL_SUBCLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_TOTAL_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA
+                ,SUM(VENTA) VENTA_MARCA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA
+                ,SUM(UNIDADES) UNIDADES_MARCA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_marca_online_subclass = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_ONLINE_SUBCLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_ONLINE_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_ONLINE
+                ,SUM(VENTA) VENTA_MARCA_ONLINE
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_ONLINE
+                ,SUM(UNIDADES) UNIDADES_MARCA_ONLINE
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_MARCA_MC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_MARCA_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_MARCA_MC_ONLINE
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_MARCA_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_MARCA_NMC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_mc_subclass = f'''
+            --SUBCLASS ---------------------------------------------------------
+            --ACTUAL -------------------------------------------------------
+            --CATEGORIA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_MC_SUBCLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_MC_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_MC
+                ,SUM(VENTA) VENTA_CAT_MC
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC
+                ,SUM(UNIDADES) UNIDADES_CAT_MC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_nmc_subclass = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_NMC_SUBCLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_NMC_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_NMC
+                ,SUM(VENTA) VENTA_CAT_NMC
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC
+                ,SUM(UNIDADES) UNIDADES_CAT_NMC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_total_subclass = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_TOTAL_SUBCLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_TOTAL_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT
+                ,SUM(VENTA) VENTA_CAT
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT
+                ,SUM(UNIDADES) UNIDADES_CAT
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_online_subclass = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_ONLINE_SUBCLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_ONLINE_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_ONLINE
+                ,SUM(VENTA) VENTA_CAT_ONLINE
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_ONLINE
+                ,SUM(UNIDADES) UNIDADES_CAT_ONLINE
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_CAT_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_CAT_MC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_CAT_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_CAT_MC_ONLINE
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_CAT_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_CAT_NMC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_subclass = f'''
+            --JOIN ACTUAL_SUBCLASS --------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_SUBCLASS;
+            CREATE TABLE #MON_RAD_ACTUAL_SUBCLASS AS (
+                SELECT
+                    ID_RADIOGRAFIA
+                    ,CLASS_DESC
+                    ,SUBCLASS_DESC
+                    ,PROD_TYPE_DESC
+                    ,CLIENTES_MARCA
+                    ,VENTA_MARCA
+                    ,VENTA_MARCA_MC
+                    ,VENTA_MARCA_NMC
+                    ,TX_MARCA
+                    ,TX_MARCA_MC
+                    ,TX_MARCA_NMC
+                    ,UNIDADES_MARCA
+                    ,UNIDADES_MARCA_MC
+                    ,UNIDADES_MARCA_NMC
+                    ,VENTA_MARCA_ONLINE
+                    ,VENTA_MARCA_MC_ONLINE
+                    ,VENTA_MARCA_NMC_ONLINE
+                    ,CLIENTES_CAT
+                    ,VENTA_CAT
+                    ,VENTA_CAT_MC
+                    ,VENTA_CAT_NMC
+                    ,TX_CAT
+                    ,TX_CAT_MC
+                    ,TX_CAT_NMC
+                    ,UNIDADES_CAT
+                    ,UNIDADES_CAT_MC
+                    ,UNIDADES_CAT_NMC
+                    ,VENTA_CAT_ONLINE
+                    ,VENTA_CAT_MC_ONLINE
+                    ,VENTA_CAT_NMC_ONLINE
+                FROM #MON_RAD_ACTUAL_MARCA_TOTAL_SUBCLASS A
+                FULL JOIN #MON_RAD_ACTUAL_MARCA_MC_SUBCLASS B USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_MARCA_NMC_SUBCLASS C USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_MARCA_ONLINE_SUBCLASS D USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_TOTAL_SUBCLASS E USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_MC_SUBCLASS F USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_NMC_SUBCLASS G USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_ONLINE_SUBCLASS H USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+            );
+
+            -- SELECT * FROM #MON_RAD_ACTUAL_SUBCLASS;
+
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_TOTAL_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_MC_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_NMC_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_ONLINE_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_TOTAL_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_MC_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_NMC_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_ONLINE_SUBCLASS;
+        '''
+
+        query_aa_marca_mc_subclass = f'''
+            --SUBCLASS ---------------------------------------------------------
+            --AA -------------------------------------------------------
+            --MARCA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_MC_SUBCLASS;
+            CREATE TABLE #MON_RAD_AA_MARCA_MC_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_MC_AA
+                ,SUM(VENTA) VENTA_MARCA_MC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_MC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_marca_nmc_subclass = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_NMC_SUBCLASS;
+            CREATE TABLE #MON_RAD_AA_MARCA_NMC_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_NMC_AA
+                ,SUM(VENTA) VENTA_MARCA_NMC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_NMC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_marca_total_subclass = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_TOTAL_SUBCLASS;
+            CREATE TABLE #MON_RAD_AA_MARCA_TOTAL_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_AA
+                ,SUM(VENTA) VENTA_MARCA_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_marca_online_subclass = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_ONLINE_SUBCLASS;
+            CREATE TABLE #MON_RAD_AA_MARCA_ONLINE_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_ONLINE_AA
+                ,SUM(VENTA) VENTA_MARCA_ONLINE_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_ONLINE_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_ONLINE_AA
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_MARCA_MC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_MARCA_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_MARCA_MC_ONLINE_AA
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_MARCA_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_MARCA_NMC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_mc_subclass = f'''
+            --SUBCLASS ---------------------------------------------------------
+            --AA -------------------------------------------------------
+            --CATEGORIA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_MC_SUBCLASS;
+            CREATE TABLE #MON_RAD_AA_CAT_MC_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_MC_AA
+                ,SUM(VENTA) VENTA_CAT_MC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_MC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_nmc_subclass = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_NMC_SUBCLASS;
+            CREATE TABLE #MON_RAD_AA_CAT_NMC_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_NMC_AA
+                ,SUM(VENTA) VENTA_CAT_NMC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_NMC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_total_subclass = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_TOTAL_SUBCLASS;
+            CREATE TABLE #MON_RAD_AA_CAT_TOTAL_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_AA
+                ,SUM(VENTA) VENTA_CAT_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_online_subclass = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_ONLINE_SUBCLASS;
+            CREATE TABLE #MON_RAD_AA_CAT_ONLINE_SUBCLASS AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,'TOTAL' PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_ONLINE_AA
+                ,SUM(VENTA) VENTA_CAT_ONLINE_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_ONLINE_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_ONLINE_AA
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_CAT_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_CAT_MC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_CAT_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_CAT_MC_ONLINE_AA
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_CAT_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_CAT_NMC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_subclass = f'''
+            --JOIN AA_SUBCLASS --------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_SUBCLASS;
+            CREATE TABLE #MON_RAD_AA_SUBCLASS AS (
+                SELECT
+                    ID_RADIOGRAFIA
+                    ,CLASS_DESC
+                    ,SUBCLASS_DESC
+                    ,PROD_TYPE_DESC
+                    ,CLIENTES_MARCA_AA
+                    ,VENTA_MARCA_AA
+                    ,VENTA_MARCA_MC_AA
+                    ,VENTA_MARCA_NMC_AA
+                    ,TX_MARCA_AA
+                    ,TX_MARCA_MC_AA
+                    ,TX_MARCA_NMC_AA
+                    ,UNIDADES_MARCA_AA
+                    ,UNIDADES_MARCA_MC_AA
+                    ,UNIDADES_MARCA_NMC_AA
+                    ,VENTA_MARCA_ONLINE_AA
+                    ,VENTA_MARCA_MC_ONLINE_AA
+                    ,VENTA_MARCA_NMC_ONLINE_AA
+                    ,CLIENTES_CAT_AA
+                    ,VENTA_CAT_AA
+                    ,VENTA_CAT_MC_AA
+                    ,VENTA_CAT_NMC_AA
+                    ,TX_CAT_AA
+                    ,TX_CAT_MC_AA
+                    ,TX_CAT_NMC_AA
+                    ,UNIDADES_CAT_AA
+                    ,UNIDADES_CAT_MC_AA
+                    ,UNIDADES_CAT_NMC_AA
+                    ,VENTA_CAT_ONLINE_AA
+                    ,VENTA_CAT_MC_ONLINE_AA
+                    ,VENTA_CAT_NMC_ONLINE_AA
+                FROM #MON_RAD_AA_MARCA_TOTAL_SUBCLASS A
+                FULL JOIN #MON_RAD_AA_MARCA_MC_SUBCLASS B USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_MARCA_NMC_SUBCLASS C USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_MARCA_ONLINE_SUBCLASS D USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_TOTAL_SUBCLASS E USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_MC_SUBCLASS F USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_NMC_SUBCLASS G USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_ONLINE_SUBCLASS H USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+            );
+
+            -- SELECT * FROM #MON_RAD_AA_SUBCLASS;
+
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_TOTAL_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_MC_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_NMC_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_ONLINE_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_TOTAL_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_MC_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_NMC_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_ONLINE_SUBCLASS;
+        '''
+
+        query_subclass = f'''
+            --JOIN SUBCLASS----------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_CAT_SUBCLASS;
+            CREATE TABLE #MON_RAD_CAT_SUBCLASS AS (
+                SELECT
+                    *
+                FROM #MON_RAD_ACTUAL_SUBCLASS
+                LEFT JOIN #MON_RAD_AA_SUBCLASS USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+            );
+
+            --SELECT * FROM #MON_RAD_CAT_SUBCLASS;
+
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_SUBCLASS;
+            DROP TABLE IF EXISTS #MON_RAD_AA_SUBCLASS;
+
+            --GUARDAR SUBCLASS EN DB----------------------------------------------------------
+            DELETE CHEDRAUI.MON_RAD_CAT WHERE ID_RADIOGRAFIA = '{id}' AND CLASS_DESC <> 'TOTAL' AND SUBCLASS_DESC <> 'TOTAL' AND PROD_TYPE_DESC = 'TOTAL';
+            INSERT INTO CHEDRAUI.MON_RAD_CAT SELECT * FROM #MON_RAD_CAT_SUBCLASS;
+        '''
+
+        query_actual_marca_mc_prodtype = f'''
+            --PRODTYPE ---------------------------------------------------------
+            --ACTUAL -------------------------------------------------------
+            --MARCA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_MC_PRODTYPE;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_MC_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_MC
+                ,SUM(VENTA) VENTA_MARCA_MC
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC
+                ,SUM(UNIDADES) UNIDADES_MARCA_MC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_marca_nmc_prodtype = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_NMC_PRODTYPE;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_NMC_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_NMC
+                ,SUM(VENTA) VENTA_MARCA_NMC
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC
+                ,SUM(UNIDADES) UNIDADES_MARCA_NMC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_marca_total_prodtype = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_TOTAL_PRODTYPE;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_TOTAL_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA
+                ,SUM(VENTA) VENTA_MARCA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA
+                ,SUM(UNIDADES) UNIDADES_MARCA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_marca_online_prodtype = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_ONLINE_PRODTYPE;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_ONLINE_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_ONLINE
+                ,SUM(VENTA) VENTA_MARCA_ONLINE
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_ONLINE
+                ,SUM(UNIDADES) UNIDADES_MARCA_ONLINE
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_MARCA_MC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_MARCA_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_MARCA_MC_ONLINE
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_MARCA_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_MARCA_NMC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_mc_prodtype = f'''
+            --PRODTYPE ---------------------------------------------------------
+            --ACTUAL -------------------------------------------------------
+            --CATEGORIA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_MC_PRODTYPE;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_MC_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_MC
+                ,SUM(VENTA) VENTA_CAT_MC
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC
+                ,SUM(UNIDADES) UNIDADES_CAT_MC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_nmc_prodtype = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_NMC_PRODTYPE;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_NMC_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_NMC
+                ,SUM(VENTA) VENTA_CAT_NMC
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC
+                ,SUM(UNIDADES) UNIDADES_CAT_NMC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_total_prodtype = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_TOTAL_PRODTYPE;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_TOTAL_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT
+                ,SUM(VENTA) VENTA_CAT
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT
+                ,SUM(UNIDADES) UNIDADES_CAT
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_cat_online_prodtype = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_ONLINE_PRODTYPE;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_ONLINE_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_ONLINE
+                ,SUM(VENTA) VENTA_CAT_ONLINE
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_ONLINE
+                ,SUM(UNIDADES) UNIDADES_CAT_ONLINE
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_CAT_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_CAT_MC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_CAT_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_CAT_MC_ONLINE
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_CAT_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_CAT_NMC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_actual_prodtype = f'''
+            --JOIN ACTUAL_PRODTYPE --------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_PRODTYPE;
+            CREATE TABLE #MON_RAD_ACTUAL_PRODTYPE AS (
+                SELECT
+                    ID_RADIOGRAFIA
+                    ,CLASS_DESC
+                    ,SUBCLASS_DESC
+                    ,PROD_TYPE_DESC
+                    ,CLIENTES_MARCA
+                    ,VENTA_MARCA
+                    ,VENTA_MARCA_MC
+                    ,VENTA_MARCA_NMC
+                    ,TX_MARCA
+                    ,TX_MARCA_MC
+                    ,TX_MARCA_NMC
+                    ,UNIDADES_MARCA
+                    ,UNIDADES_MARCA_MC
+                    ,UNIDADES_MARCA_NMC
+                    ,VENTA_MARCA_ONLINE
+                    ,VENTA_MARCA_MC_ONLINE
+                    ,VENTA_MARCA_NMC_ONLINE
+                    ,CLIENTES_CAT
+                    ,VENTA_CAT
+                    ,VENTA_CAT_MC
+                    ,VENTA_CAT_NMC
+                    ,TX_CAT
+                    ,TX_CAT_MC
+                    ,TX_CAT_NMC
+                    ,UNIDADES_CAT
+                    ,UNIDADES_CAT_MC
+                    ,UNIDADES_CAT_NMC
+                    ,VENTA_CAT_ONLINE
+                    ,VENTA_CAT_MC_ONLINE
+                    ,VENTA_CAT_NMC_ONLINE
+                FROM #MON_RAD_ACTUAL_MARCA_TOTAL_PRODTYPE A
+                FULL JOIN #MON_RAD_ACTUAL_MARCA_MC_PRODTYPE B USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_MARCA_NMC_PRODTYPE C USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_MARCA_ONLINE_PRODTYPE D USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_TOTAL_PRODTYPE E USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_MC_PRODTYPE F USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_NMC_PRODTYPE G USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_ACTUAL_CAT_ONLINE_PRODTYPE H USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+            );
+
+            -- SELECT * FROM #MON_RAD_ACTUAL_PRODTYPE;
+
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_TOTAL_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_MC_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_NMC_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_ONLINE_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_TOTAL_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_MC_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_NMC_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_ONLINE_PRODTYPE;
+        '''
+
+        query_aa_marca_mc_prodtype = f'''
+            --PRODTYPE ---------------------------------------------------------
+            --AA -------------------------------------------------------
+            --MARCA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_MC_PRODTYPE;
+            CREATE TABLE #MON_RAD_AA_MARCA_MC_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_MC_AA
+                ,SUM(VENTA) VENTA_MARCA_MC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_MC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_marca_nmc_prodtype = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_NMC_PRODTYPE;
+            CREATE TABLE #MON_RAD_AA_MARCA_NMC_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_NMC_AA
+                ,SUM(VENTA) VENTA_MARCA_NMC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_NMC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_marca_total_prodtype = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_TOTAL_PRODTYPE;
+            CREATE TABLE #MON_RAD_AA_MARCA_TOTAL_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_AA
+                ,SUM(VENTA) VENTA_MARCA_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_marca_online_prodtype = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_ONLINE_PRODTYPE;
+            CREATE TABLE #MON_RAD_AA_MARCA_ONLINE_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_ONLINE_AA
+                ,SUM(VENTA) VENTA_MARCA_ONLINE_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_ONLINE_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_ONLINE_AA
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_MARCA_MC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_MARCA_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_MARCA_MC_ONLINE_AA
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_MARCA_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_MARCA_NMC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_mc_prodtype = f'''
+            --PRODTYPE ---------------------------------------------------------
+            --AA -------------------------------------------------------
+            --CATEGORIA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_MC_PRODTYPE;
+            CREATE TABLE #MON_RAD_AA_CAT_MC_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_MC_AA
+                ,SUM(VENTA) VENTA_CAT_MC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_MC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_nmc_prodtype = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_NMC_PRODTYPE;
+            CREATE TABLE #MON_RAD_AA_CAT_NMC_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_NMC_AA
+                ,SUM(VENTA) VENTA_CAT_NMC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_NMC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_total_prodtype = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_TOTAL_PRODTYPE;
+            CREATE TABLE #MON_RAD_AA_CAT_TOTAL_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_AA
+                ,SUM(VENTA) VENTA_CAT_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_cat_online_prodtype = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_ONLINE_PRODTYPE;
+            CREATE TABLE #MON_RAD_AA_CAT_ONLINE_PRODTYPE AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_ONLINE_AA
+                ,SUM(VENTA) VENTA_CAT_ONLINE_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_ONLINE_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_ONLINE_AA
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_CAT_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_CAT_MC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_CAT_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_CAT_MC_ONLINE_AA
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_CAT_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_CAT_NMC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            AND IND_DUPLICADO = 0
+            GROUP BY 1,2,3,4
+            );
+        '''
+
+        query_aa_prodtype = f'''
+            --JOIN AA_PRODTYPE --------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_PRODTYPE;
+            CREATE TABLE #MON_RAD_AA_PRODTYPE AS (
+                SELECT
+                    ID_RADIOGRAFIA
+                    ,CLASS_DESC
+                    ,SUBCLASS_DESC
+                    ,PROD_TYPE_DESC
+                    ,CLIENTES_MARCA_AA
+                    ,VENTA_MARCA_AA
+                    ,VENTA_MARCA_MC_AA
+                    ,VENTA_MARCA_NMC_AA
+                    ,TX_MARCA_AA
+                    ,TX_MARCA_MC_AA
+                    ,TX_MARCA_NMC_AA
+                    ,UNIDADES_MARCA_AA
+                    ,UNIDADES_MARCA_MC_AA
+                    ,UNIDADES_MARCA_NMC_AA
+                    ,VENTA_MARCA_ONLINE_AA
+                    ,VENTA_MARCA_MC_ONLINE_AA
+                    ,VENTA_MARCA_NMC_ONLINE_AA
+                    ,CLIENTES_CAT_AA
+                    ,VENTA_CAT_AA
+                    ,VENTA_CAT_MC_AA
+                    ,VENTA_CAT_NMC_AA
+                    ,TX_CAT_AA
+                    ,TX_CAT_MC_AA
+                    ,TX_CAT_NMC_AA
+                    ,UNIDADES_CAT_AA
+                    ,UNIDADES_CAT_MC_AA
+                    ,UNIDADES_CAT_NMC_AA
+                    ,VENTA_CAT_ONLINE_AA
+                    ,VENTA_CAT_MC_ONLINE_AA
+                    ,VENTA_CAT_NMC_ONLINE_AA
+                FROM #MON_RAD_AA_MARCA_TOTAL_PRODTYPE A
+                FULL JOIN #MON_RAD_AA_MARCA_MC_PRODTYPE B USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_MARCA_NMC_PRODTYPE C USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_MARCA_ONLINE_PRODTYPE D USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_TOTAL_PRODTYPE E USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_MC_PRODTYPE F USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_NMC_PRODTYPE G USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+                FULL JOIN #MON_RAD_AA_CAT_ONLINE_PRODTYPE H USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+            );
+
+            -- SELECT * FROM #MON_RAD_AA_PRODTYPE;
+
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_TOTAL_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_MC_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_NMC_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_ONLINE_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_TOTAL_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_MC_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_NMC_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_ONLINE_PRODTYPE;
+        '''
+
+        query_prodtype = f'''
+            --JOIN PRODTYPE----------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_CAT_PRODTYPE;
+            CREATE TABLE #MON_RAD_CAT_PRODTYPE AS (
+                SELECT
+                    *
+                FROM #MON_RAD_ACTUAL_PRODTYPE
+                LEFT JOIN #MON_RAD_AA_PRODTYPE USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
+            );
+
+            --SELECT * FROM #MON_RAD_CAT_PRODTYPE;
+
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_PRODTYPE;
+            DROP TABLE IF EXISTS #MON_RAD_AA_PRODTYPE;
+
+            --GUARDAR PRODTYPE EN DB----------------------------------------------------------
+            DELETE CHEDRAUI.MON_RAD_CAT WHERE ID_RADIOGRAFIA = '{id}' AND CLASS_DESC <> 'TOTAL' AND SUBCLASS_DESC <> 'TOTAL' AND PROD_TYPE_DESC <> 'TOTAL';
+            INSERT INTO CHEDRAUI.MON_RAD_CAT SELECT * FROM #MON_RAD_CAT_PRODTYPE;
+        '''
+
+        lis_query_actual_total = [query_actual_marca_mc_total, query_actual_marca_nmc_total, query_actual_marca_total_total, query_actual_marca_online_total, query_actual_cat_mc_total, query_actual_cat_nmc_total, query_actual_cat_total_total, query_actual_cat_online_total, query_actual_total]
+        lis_query_aa_total = [query_aa_marca_mc_total, query_aa_marca_nmc_total, query_aa_marca_total_total, query_aa_marca_online_total, query_aa_cat_mc_total, query_aa_cat_nmc_total, query_aa_cat_total_total, query_aa_cat_online_total, query_aa_total]
+        lis_query_total = lis_query_actual_total + lis_query_aa_total + [query_total]
+
+        lis_query_actual_class = [query_actual_marca_mc_class, query_actual_marca_nmc_class, query_actual_marca_total_class, query_actual_marca_online_class, query_actual_cat_mc_class, query_actual_cat_nmc_class, query_actual_cat_total_class, query_actual_cat_online_class, query_actual_class]
+        lis_query_aa_class = [query_aa_marca_mc_class, query_aa_marca_nmc_class, query_aa_marca_total_class, query_aa_marca_online_class, query_aa_cat_mc_class, query_aa_cat_nmc_class, query_aa_cat_total_class, query_aa_cat_online_class, query_aa_class]
+        lis_query_class = lis_query_actual_class + lis_query_aa_class + [query_class]
+
+        lis_query_actual_subclass = [query_actual_marca_mc_subclass, query_actual_marca_nmc_subclass, query_actual_marca_total_subclass, query_actual_marca_online_subclass, query_actual_cat_mc_subclass, query_actual_cat_nmc_subclass, query_actual_cat_total_subclass, query_actual_cat_online_subclass, query_actual_subclass]
+        lis_query_aa_subclass = [query_aa_marca_mc_subclass, query_aa_marca_nmc_subclass, query_aa_marca_total_subclass, query_aa_marca_online_subclass, query_aa_cat_mc_subclass, query_aa_cat_nmc_subclass, query_aa_cat_total_subclass, query_aa_cat_online_subclass, query_aa_subclass]
+        lis_query_subclass = lis_query_actual_subclass + lis_query_aa_subclass + [query_subclass]
+
+        lis_query_actual_prodtype = [query_actual_marca_mc_prodtype, query_actual_marca_nmc_prodtype, query_actual_marca_total_prodtype, query_actual_marca_online_prodtype, query_actual_cat_mc_prodtype, query_actual_cat_nmc_prodtype, query_actual_cat_total_prodtype, query_actual_cat_online_prodtype, query_actual_prodtype]
+        lis_query_aa_prodtype = [query_aa_marca_mc_prodtype, query_aa_marca_nmc_prodtype, query_aa_marca_total_prodtype, query_aa_marca_online_prodtype, query_aa_cat_mc_prodtype, query_aa_cat_nmc_prodtype, query_aa_cat_total_prodtype, query_aa_cat_online_prodtype, query_aa_prodtype]
+        lis_query_prodtype = lis_query_actual_prodtype + lis_query_aa_prodtype + [query_prodtype]
+
+        return lis_query_total + lis_query_class + lis_query_subclass + lis_query_prodtype
+
+    def get_query_marca(self, id):
+        query_actual_marca_mc_total = f'''
+            --TOTAL ---------------------------------------------------------
+            --ACTUAL -------------------------------------------------------
+            --MARCA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_MC_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_MC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_MC
+                ,SUM(VENTA) VENTA_MARCA_MC
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC
+                ,SUM(UNIDADES) UNIDADES_MARCA_MC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_actual_marca_nmc_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_NMC_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_NMC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_NMC
+                ,SUM(VENTA) VENTA_MARCA_NMC
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC
+                ,SUM(UNIDADES) UNIDADES_MARCA_NMC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_actual_marca_total_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_TOTAL_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_TOTAL_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA
+                ,SUM(VENTA) VENTA_MARCA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA
+                ,SUM(UNIDADES) UNIDADES_MARCA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_actual_marca_online_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_ONLINE_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_MARCA_ONLINE_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_ONLINE
+                ,SUM(VENTA) VENTA_MARCA_ONLINE
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_ONLINE
+                ,SUM(UNIDADES) UNIDADES_MARCA_ONLINE
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_MARCA_MC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_MARCA_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_MARCA_MC_ONLINE
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_MARCA_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_MARCA_NMC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_actual_cat_mc_total = f'''
+            --TOTAL ---------------------------------------------------------
+            --ACTUAL -------------------------------------------------------
+            --CATEGORIA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_MC_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_MC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_MC
+                ,SUM(VENTA) VENTA_CAT_MC
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC
+                ,SUM(UNIDADES) UNIDADES_CAT_MC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_actual_cat_nmc_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_NMC_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_NMC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_NMC
+                ,SUM(VENTA) VENTA_CAT_NMC
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC
+                ,SUM(UNIDADES) UNIDADES_CAT_NMC
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_actual_cat_total_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_TOTAL_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_TOTAL_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT
+                ,SUM(VENTA) VENTA_CAT
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT
+                ,SUM(UNIDADES) UNIDADES_CAT
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_actual_cat_online_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_ONLINE_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_CAT_ONLINE_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_ONLINE
+                ,SUM(VENTA) VENTA_CAT_ONLINE
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_ONLINE
+                ,SUM(UNIDADES) UNIDADES_CAT_ONLINE
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_CAT_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_CAT_MC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_CAT_MC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_CAT_MC_ONLINE
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_CAT_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_CAT_NMC_ONLINE
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ACTUAL'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_actual_total = f'''
+            --JOIN ACTUAL_TOTAL --------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_TOTAL;
+            CREATE TABLE #MON_RAD_ACTUAL_TOTAL AS (
+            SELECT
+                ID_RADIOGRAFIA
+                ,'TODAS' CLASS_DESC
+                ,'TODAS' SUBCLASS_DESC
+                ,'TODAS' PROD_TYPE_DESC
+                ,MARCA
+                ,CLIENTES_MARCA
+                ,VENTA_MARCA
+                ,VENTA_MARCA_MC
+                ,VENTA_MARCA_NMC
+                ,TX_MARCA
+                ,TX_MARCA_MC
+                ,TX_MARCA_NMC
+                ,UNIDADES_MARCA
+                ,UNIDADES_MARCA_MC
+                ,UNIDADES_MARCA_NMC
+                ,VENTA_MARCA_ONLINE
+                ,VENTA_MARCA_MC_ONLINE
+                ,VENTA_MARCA_NMC_ONLINE
+                ,CLIENTES_CAT
+                ,VENTA_CAT
+                ,VENTA_CAT_MC
+                ,VENTA_CAT_NMC
+                ,TX_CAT
+                ,TX_CAT_MC
+                ,TX_CAT_NMC
+                ,UNIDADES_CAT
+                ,UNIDADES_CAT_MC
+                ,UNIDADES_CAT_NMC
+                ,VENTA_CAT_ONLINE
+                ,VENTA_CAT_MC_ONLINE
+                ,VENTA_CAT_NMC_ONLINE
+            FROM #MON_RAD_ACTUAL_MARCA_TOTAL_TOTAL A
+            FULL JOIN #MON_RAD_ACTUAL_MARCA_MC_TOTAL B USING(ID_RADIOGRAFIA, MARCA)
+            FULL JOIN #MON_RAD_ACTUAL_MARCA_NMC_TOTAL C USING(ID_RADIOGRAFIA, MARCA)
+            FULL JOIN #MON_RAD_ACTUAL_MARCA_ONLINE_TOTAL D USING(ID_RADIOGRAFIA, MARCA)
+            FULL JOIN #MON_RAD_ACTUAL_CAT_TOTAL_TOTAL E USING(ID_RADIOGRAFIA, MARCA)
+            FULL JOIN #MON_RAD_ACTUAL_CAT_MC_TOTAL F USING(ID_RADIOGRAFIA, MARCA)
+            FULL JOIN #MON_RAD_ACTUAL_CAT_NMC_TOTAL G USING(ID_RADIOGRAFIA, MARCA)
+            FULL JOIN #MON_RAD_ACTUAL_CAT_ONLINE_TOTAL H USING(ID_RADIOGRAFIA, MARCA)
+            );
+
+            -- SELECT * FROM #MON_RAD_ACTUAL_TOTAL;
+
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_TOTAL_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_MC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_NMC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_MARCA_ONLINE_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_TOTAL_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_MC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_NMC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_CAT_ONLINE_TOTAL;
+        '''
+
+        query_aa_marca_mc_total = f'''
+            --TOTAL ---------------------------------------------------------
+            --AA -------------------------------------------------------
+            --MARCA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_MC_TOTAL;
+            CREATE TABLE #MON_RAD_AA_MARCA_MC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_MC_AA
+                ,SUM(VENTA) VENTA_MARCA_MC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_MC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_aa_marca_nmc_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_NMC_TOTAL;
+            CREATE TABLE #MON_RAD_AA_MARCA_NMC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_NMC_AA
+                ,SUM(VENTA) VENTA_MARCA_NMC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_NMC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_aa_marca_total_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_TOTAL_TOTAL;
+            CREATE TABLE #MON_RAD_AA_MARCA_TOTAL_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_AA
+                ,SUM(VENTA) VENTA_MARCA_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_aa_marca_online_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_ONLINE_TOTAL;
+            CREATE TABLE #MON_RAD_AA_MARCA_ONLINE_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_MARCA_ONLINE_AA
+                ,SUM(VENTA) VENTA_MARCA_ONLINE_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_ONLINE_AA
+                ,SUM(UNIDADES) UNIDADES_MARCA_ONLINE_AA
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_MARCA_MC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_MARCA_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_MARCA_MC_ONLINE_AA
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_MARCA_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_MARCA_NMC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_aa_cat_mc_total = f'''
+            --TOTAL ---------------------------------------------------------
+            --AA -------------------------------------------------------
+            --CATEGORIA -------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_MC_TOTAL;
+            CREATE TABLE #MON_RAD_AA_CAT_MC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_MC_AA
+                ,SUM(VENTA) VENTA_CAT_MC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_MC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 1
+            --   AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_aa_cat_nmc_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_NMC_TOTAL;
+            CREATE TABLE #MON_RAD_AA_CAT_NMC_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_NMC_AA
+                ,SUM(VENTA) VENTA_CAT_NMC_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_NMC_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_aa_cat_total_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_TOTAL_TOTAL;
+            CREATE TABLE #MON_RAD_AA_CAT_TOTAL_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_AA
+                ,SUM(VENTA) VENTA_CAT_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            --   AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_aa_cat_online_total = f'''
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_ONLINE_TOTAL;
+            CREATE TABLE #MON_RAD_AA_CAT_ONLINE_TOTAL AS (
+            SELECT 
+                '{id}' ID_RADIOGRAFIA
+                ,MARCA
+                
+                ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT_ONLINE_AA
+                ,SUM(VENTA) VENTA_CAT_ONLINE_AA
+                ,COUNT(DISTINCT INVOICE_NO) TX_CAT_ONLINE_AA
+                ,SUM(UNIDADES) UNIDADES_CAT_ONLINE_AA
+
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN CUSTOMER_CODE END) CLIENTES_CAT_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN VENTA END) VENTA_CAT_MC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 1 THEN INVOICE_NO END) TX_CAT_MC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 1 THEN UNIDADES END) UNIDADES_CAT_MC_ONLINE_AA
+                
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN CUSTOMER_CODE END) CLIENTES_CAT_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN VENTA END) VENTA_CAT_NMC_ONLINE_AA
+                ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE_AA
+                ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE_AA
+
+            FROM CHEDRAUI.VTA
+            WHERE PERIODO = 'ANO_ANTERIOR'
+            --   AND IND_MARCA = 1
+            --   AND IND_MC = 0
+            AND IND_ONLINE = 1
+            --   AND IND_DUPLICADO = 0
+            GROUP BY 1,2
+            );
+        '''
+
+        query_aa_total = f'''
+            --JOIN AA_TOTAL --------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_AA_TOTAL;
+            CREATE TABLE #MON_RAD_AA_TOTAL AS (
+            SELECT
+                ID_RADIOGRAFIA
+                ,'TODAS' CLASS_DESC
+                ,'TODAS' SUBCLASS_DESC
+                ,'TODAS' PROD_TYPE_DESC
+                ,MARCA
+                ,CLIENTES_MARCA_AA
+                ,VENTA_MARCA_AA
+                ,VENTA_MARCA_MC_AA
+                ,VENTA_MARCA_NMC_AA
+                ,TX_MARCA_AA
+                ,TX_MARCA_MC_AA
+                ,TX_MARCA_NMC_AA
+                ,UNIDADES_MARCA_AA
+                ,UNIDADES_MARCA_MC_AA
+                ,UNIDADES_MARCA_NMC_AA
+                ,VENTA_MARCA_ONLINE_AA
+                ,VENTA_MARCA_MC_ONLINE_AA
+                ,VENTA_MARCA_NMC_ONLINE_AA
+                ,CLIENTES_CAT_AA
+                ,VENTA_CAT_AA
+                ,VENTA_CAT_MC_AA
+                ,VENTA_CAT_NMC_AA
+                ,TX_CAT_AA
+                ,TX_CAT_MC_AA
+                ,TX_CAT_NMC_AA
+                ,UNIDADES_CAT_AA
+                ,UNIDADES_CAT_MC_AA
+                ,UNIDADES_CAT_NMC_AA
+                ,VENTA_CAT_ONLINE_AA
+                ,VENTA_CAT_MC_ONLINE_AA
+                ,VENTA_CAT_NMC_ONLINE_AA
+            FROM #MON_RAD_AA_MARCA_TOTAL_TOTAL A
+            FULL JOIN #MON_RAD_AA_MARCA_MC_TOTAL B USING(ID_RADIOGRAFIA, MARCA)
+            FULL JOIN #MON_RAD_AA_MARCA_NMC_TOTAL C USING(ID_RADIOGRAFIA, MARCA)
+            FULL JOIN #MON_RAD_AA_MARCA_ONLINE_TOTAL D USING(ID_RADIOGRAFIA, MARCA)
+            FULL JOIN #MON_RAD_AA_CAT_TOTAL_TOTAL E USING(ID_RADIOGRAFIA, MARCA)
+            FULL JOIN #MON_RAD_AA_CAT_MC_TOTAL F USING(ID_RADIOGRAFIA, MARCA)
+            FULL JOIN #MON_RAD_AA_CAT_NMC_TOTAL G USING(ID_RADIOGRAFIA, MARCA)
+            FULL JOIN #MON_RAD_AA_CAT_ONLINE_TOTAL H USING(ID_RADIOGRAFIA, MARCA)
+            );
+
+            -- SELECT * FROM #MON_RAD_AA_TOTAL;
+
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_TOTAL_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_MC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_NMC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_MARCA_ONLINE_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_TOTAL_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_MC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_NMC_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_CAT_ONLINE_TOTAL;
+        '''
+
+        query_total = f'''
+            --JOIN TOTAL----------------------------------------------------------
+            DROP TABLE IF EXISTS #MON_RAD_CAT_TOTAL;
+            CREATE TABLE #MON_RAD_CAT_TOTAL AS (
+                SELECT
+                    *
+                FROM #MON_RAD_ACTUAL_TOTAL
+                LEFT JOIN #MON_RAD_AA_TOTAL USING(ID_RADIOGRAFIA, CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC, MARCA)
+            
+            UNION
+            
+            SELECT
+                ID_RADIOGRAFIA
+                ,CLASS_DESC
+                ,SUBCLASS_DESC
+                ,PROD_TYPE_DESC
+                ,'TOTAL' MARCA
+                ,CLIENTES_MARCA
+                ,VENTA_MARCA
+                ,VENTA_MARCA_MC
+                ,VENTA_MARCA_NMC
+                ,TX_MARCA
+                ,TX_MARCA_MC
+                ,TX_MARCA_NMC
+                ,UNIDADES_MARCA
+                ,UNIDADES_MARCA_MC
+                ,UNIDADES_MARCA_NMC
+                ,VENTA_MARCA_ONLINE
+                ,VENTA_MARCA_MC_ONLINE
+                ,VENTA_MARCA_NMC_ONLINE
+                ,CLIENTES_CAT
+                ,VENTA_CAT
+                ,VENTA_CAT_MC
+                ,VENTA_CAT_NMC
+                ,TX_CAT
+                ,TX_CAT_MC
+                ,TX_CAT_NMC
+                ,UNIDADES_CAT
+                ,UNIDADES_CAT_MC
+                ,UNIDADES_CAT_NMC
+                ,VENTA_CAT_ONLINE
+                ,VENTA_CAT_MC_ONLINE
+                ,VENTA_CAT_NMC_ONLINE
+                ,CLIENTES_MARCA_AA
+                ,VENTA_MARCA_AA
+                ,VENTA_MARCA_MC_AA
+                ,VENTA_MARCA_NMC_AA
+                ,TX_MARCA_AA
+                ,TX_MARCA_MC_AA
+                ,TX_MARCA_NMC_AA
+                ,UNIDADES_MARCA_AA
+                ,UNIDADES_MARCA_MC_AA
+                ,UNIDADES_MARCA_NMC_AA
+                ,VENTA_MARCA_ONLINE_AA
+                ,VENTA_MARCA_MC_ONLINE_AA
+                ,VENTA_MARCA_NMC_ONLINE_AA
+                ,CLIENTES_CAT_AA
+                ,VENTA_CAT_AA
+                ,VENTA_CAT_MC_AA
+                ,VENTA_CAT_NMC_AA
+                ,TX_CAT_AA
+                ,TX_CAT_MC_AA
+                ,TX_CAT_NMC_AA
+                ,UNIDADES_CAT_AA
+                ,UNIDADES_CAT_MC_AA
+                ,UNIDADES_CAT_NMC_AA
+                ,VENTA_CAT_ONLINE_AA
+                ,VENTA_CAT_MC_ONLINE_AA
+                ,VENTA_CAT_NMC_ONLINE_AA
+            FROM CHEDRAUI.MON_RAD_CAT
+            WHERE ID_RADIOGRAFIA = '$[ID_RADIOGRAFIA]'
+            AND CLASS_DESC = 'TOTAL'
+            AND SUBCLASS_DESC = 'TOTAL'
+            AND PROD_TYPE_DESC = 'TOTAL'
+            );
+
+            --SELECT * FROM #MON_RAD_CAT_TOTAL;
+
+            DROP TABLE IF EXISTS #MON_RAD_ACTUAL_TOTAL;
+            DROP TABLE IF EXISTS #MON_RAD_AA_TOTAL;
+
+            --GUARDAR TOTAL EN DB----------------------------------------------------------
+            DELETE CHEDRAUI.MON_RAD_MARCA WHERE ID_RADIOGRAFIA = '{id}';
+            INSERT INTO CHEDRAUI.MON_RAD_MARCA SELECT * FROM #MON_RAD_CAT_TOTAL;
+        '''
+
+        lis_query_actual = [query_actual_marca_mc_total, query_actual_marca_nmc_total, query_actual_marca_total_total, query_actual_marca_online_total, query_actual_cat_mc_total, query_actual_cat_nmc_total, query_actual_cat_total_total, query_actual_cat_online_total, query_actual_total]
+        lis_query_aa = [query_aa_marca_mc_total, query_aa_marca_nmc_total, query_aa_marca_total_total, query_aa_marca_online_total, query_aa_cat_mc_total, query_aa_cat_nmc_total, query_aa_cat_total_total, query_aa_cat_online_total, query_aa_total]
+        lis_query_total = lis_query_actual + lis_query_aa + [query_total]
+
+        return lis_query_total
+
     def get_query_create_rad_tables(self, id, proveedores, nombre):
         query_rad_desc = f"""
             DROP TABLE IF EXISTS #MON_RAD_DESC;
@@ -192,300 +3104,7 @@ class Radiografia():
             INSERT INTO CHEDRAUI.MON_RAD_PRODUCTOS SELECT * FROM #MON_RAD_PRODUCTOS;
         """
 
-        query_rad_cat = f"""
-            -- 3. DATOS CATEGORIA ACTUAL Y AÑO ANTERIOR
-            --TOTAL
-            DROP TABLE IF EXISTS #MON_RAD_CAT_TOTAL;
-            CREATE TABLE #MON_RAD_CAT_TOTAL AS (
-            SELECT 
-                '{id}' ID_RADIOGRAFIA
-                ,'TOTAL' CLASS_DESC
-                ,'TOTAL' SUBCLASS_DESC
-                ,'TOTAL' PROD_TYPE_DESC
-                
-                --ACTUAL
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_MARCA
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 THEN VENTA END) VENTA_MARCA
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN VENTA END) VENTA_MARCA_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 THEN VENTA END) VENTA_MARCA_NMC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 THEN INVOICE_NO END) TX_MARCA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN INVOICE_NO END) TX_MARCA_MC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 THEN INVOICE_NO END) TX_MARCA_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 THEN UNIDADES END) UNIDADES_MARCA
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN UNIDADES END) UNIDADES_MARCA_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 THEN UNIDADES END) UNIDADES_MARCA_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_MC_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_NMC_ONLINE
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 THEN VENTA END) VENTA_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN VENTA END) VENTA_CAT_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN VENTA END) VENTA_CAT_NMC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 THEN INVOICE_NO END) TX_CAT
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN INVOICE_NO END) TX_CAT_MC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN INVOICE_NO END) TX_CAT_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 THEN UNIDADES END) UNIDADES_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN UNIDADES END) UNIDADES_CAT_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN UNIDADES END) UNIDADES_CAT_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_MC_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_NMC_ONLINE
-                
-                --AÑO ANTERIOR
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 THEN VENTA END) VENTA_MARCA_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN VENTA END) VENTA_MARCA_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 THEN VENTA END) VENTA_MARCA_NMC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 THEN INVOICE_NO END) TX_MARCA_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN INVOICE_NO END) TX_MARCA_MC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 THEN INVOICE_NO END) TX_MARCA_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 THEN UNIDADES END) UNIDADES_MARCA_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN UNIDADES END) UNIDADES_MARCA_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 THEN UNIDADES END) UNIDADES_MARCA_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_MC_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_NMC_ONLINE_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 THEN VENTA END) VENTA_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN VENTA END) VENTA_CAT_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN VENTA END) VENTA_CAT_NMC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 THEN INVOICE_NO END) TX_CAT_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN INVOICE_NO END) TX_CAT_MC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN INVOICE_NO END) TX_CAT_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 THEN UNIDADES END) UNIDADES_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN UNIDADES END) UNIDADES_CAT_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN UNIDADES END) UNIDADES_CAT_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_MC_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_NMC_ONLINE_AA
-            FROM CHEDRAUI.VTA
-            GROUP BY 1,2,3,4
-            );
-
-            --CLASS
-            DROP TABLE IF EXISTS #MON_RAD_CAT_CLASS;
-            CREATE TABLE #MON_RAD_CAT_CLASS AS (
-            SELECT 
-                '{id}' ID_RADIOGRAFIA
-                ,CLASS_DESC
-                ,'TOTAL' SUBCLASS_DESC
-                ,'TOTAL' PROD_TYPE_DESC
-                
-                --ACTUAL
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_MARCA
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 THEN VENTA END) VENTA_MARCA
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN VENTA END) VENTA_MARCA_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 THEN VENTA END) VENTA_MARCA_NMC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 THEN INVOICE_NO END) TX_MARCA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN INVOICE_NO END) TX_MARCA_MC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 THEN INVOICE_NO END) TX_MARCA_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 THEN UNIDADES END) UNIDADES_MARCA
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN UNIDADES END) UNIDADES_MARCA_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 THEN UNIDADES END) UNIDADES_MARCA_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_MC_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_NMC_ONLINE
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 THEN VENTA END) VENTA_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN VENTA END) VENTA_CAT_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN VENTA END) VENTA_CAT_NMC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 THEN INVOICE_NO END) TX_CAT
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN INVOICE_NO END) TX_CAT_MC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN INVOICE_NO END) TX_CAT_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 THEN UNIDADES END) UNIDADES_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN UNIDADES END) UNIDADES_CAT_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN UNIDADES END) UNIDADES_CAT_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_MC_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_NMC_ONLINE
-                
-                --AÑO ANTERIOR
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 THEN VENTA END) VENTA_MARCA_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN VENTA END) VENTA_MARCA_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 THEN VENTA END) VENTA_MARCA_NMC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 THEN INVOICE_NO END) TX_MARCA_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN INVOICE_NO END) TX_MARCA_MC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 THEN INVOICE_NO END) TX_MARCA_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 THEN UNIDADES END) UNIDADES_MARCA_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN UNIDADES END) UNIDADES_MARCA_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 THEN UNIDADES END) UNIDADES_MARCA_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_MC_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_NMC_ONLINE_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 THEN VENTA END) VENTA_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN VENTA END) VENTA_CAT_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN VENTA END) VENTA_CAT_NMC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 THEN INVOICE_NO END) TX_CAT_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN INVOICE_NO END) TX_CAT_MC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN INVOICE_NO END) TX_CAT_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 THEN UNIDADES END) UNIDADES_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN UNIDADES END) UNIDADES_CAT_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN UNIDADES END) UNIDADES_CAT_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_MC_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_NMC_ONLINE_AA
-            FROM CHEDRAUI.VTA
-            GROUP BY 1,2,3,4
-            );
-
-            --SUBCLASS
-            DROP TABLE IF EXISTS #MON_RAD_CAT_SUBCLASS;
-            CREATE TABLE #MON_RAD_CAT_SUBCLASS AS (
-            SELECT 
-                '{id}' ID_RADIOGRAFIA
-                ,CLASS_DESC
-                ,SUBCLASS_DESC
-                ,'TOTAL' PROD_TYPE_DESC
-                
-                --ACTUAL
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_MARCA
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 THEN VENTA END) VENTA_MARCA
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN VENTA END) VENTA_MARCA_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 THEN VENTA END) VENTA_MARCA_NMC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 THEN INVOICE_NO END) TX_MARCA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN INVOICE_NO END) TX_MARCA_MC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 THEN INVOICE_NO END) TX_MARCA_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 THEN UNIDADES END) UNIDADES_MARCA
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN UNIDADES END) UNIDADES_MARCA_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 THEN UNIDADES END) UNIDADES_MARCA_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_MC_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_NMC_ONLINE
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 THEN VENTA END) VENTA_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN VENTA END) VENTA_CAT_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN VENTA END) VENTA_CAT_NMC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 THEN INVOICE_NO END) TX_CAT
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN INVOICE_NO END) TX_CAT_MC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN INVOICE_NO END) TX_CAT_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 THEN UNIDADES END) UNIDADES_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN UNIDADES END) UNIDADES_CAT_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN UNIDADES END) UNIDADES_CAT_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_MC_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_NMC_ONLINE
-                
-                --AÑO ANTERIOR
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 THEN VENTA END) VENTA_MARCA_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN VENTA END) VENTA_MARCA_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 THEN VENTA END) VENTA_MARCA_NMC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 THEN INVOICE_NO END) TX_MARCA_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN INVOICE_NO END) TX_MARCA_MC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 THEN INVOICE_NO END) TX_MARCA_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 THEN UNIDADES END) UNIDADES_MARCA_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN UNIDADES END) UNIDADES_MARCA_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 THEN UNIDADES END) UNIDADES_MARCA_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_MC_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_NMC_ONLINE_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 THEN VENTA END) VENTA_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN VENTA END) VENTA_CAT_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN VENTA END) VENTA_CAT_NMC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 THEN INVOICE_NO END) TX_CAT_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN INVOICE_NO END) TX_CAT_MC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN INVOICE_NO END) TX_CAT_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 THEN UNIDADES END) UNIDADES_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN UNIDADES END) UNIDADES_CAT_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN UNIDADES END) UNIDADES_CAT_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_MC_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_NMC_ONLINE_AA
-            FROM CHEDRAUI.VTA
-            GROUP BY 1,2,3,4
-            );
-
-            --PROD_TYPE_DESC
-            DROP TABLE IF EXISTS #MON_RAD_CAT_PROD_TYPE_DESC;
-            CREATE TABLE #MON_RAD_CAT_PROD_TYPE_DESC AS (
-            SELECT 
-                '{id}' ID_RADIOGRAFIA
-                ,CLASS_DESC
-                ,SUBCLASS_DESC
-                ,PROD_TYPE_DESC
-                
-                --ACTUAL
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_MARCA
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 THEN VENTA END) VENTA_MARCA
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN VENTA END) VENTA_MARCA_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 THEN VENTA END) VENTA_MARCA_NMC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 THEN INVOICE_NO END) TX_MARCA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN INVOICE_NO END) TX_MARCA_MC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 THEN INVOICE_NO END) TX_MARCA_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 THEN UNIDADES END) UNIDADES_MARCA
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 THEN UNIDADES END) UNIDADES_MARCA_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 THEN UNIDADES END) UNIDADES_MARCA_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_MC_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MARCA=1 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_NMC_ONLINE
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 THEN VENTA END) VENTA_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN VENTA END) VENTA_CAT_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN VENTA END) VENTA_CAT_NMC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 THEN INVOICE_NO END) TX_CAT
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN INVOICE_NO END) TX_CAT_MC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN INVOICE_NO END) TX_CAT_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 THEN UNIDADES END) UNIDADES_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN UNIDADES END) UNIDADES_CAT_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN UNIDADES END) UNIDADES_CAT_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_MC_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_DUPLICADO = 0 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_NMC_ONLINE
-                
-                --AÑO ANTERIOR
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 THEN VENTA END) VENTA_MARCA_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN VENTA END) VENTA_MARCA_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 THEN VENTA END) VENTA_MARCA_NMC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 THEN INVOICE_NO END) TX_MARCA_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN INVOICE_NO END) TX_MARCA_MC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 THEN INVOICE_NO END) TX_MARCA_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 THEN UNIDADES END) UNIDADES_MARCA_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 THEN UNIDADES END) UNIDADES_MARCA_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 THEN UNIDADES END) UNIDADES_MARCA_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_MC_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MARCA=1 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_NMC_ONLINE_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 THEN VENTA END) VENTA_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN VENTA END) VENTA_CAT_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN VENTA END) VENTA_CAT_NMC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 THEN INVOICE_NO END) TX_CAT_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN INVOICE_NO END) TX_CAT_MC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN INVOICE_NO END) TX_CAT_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 THEN UNIDADES END) UNIDADES_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 THEN UNIDADES END) UNIDADES_CAT_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 THEN UNIDADES END) UNIDADES_CAT_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_MC_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_DUPLICADO = 0 AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_NMC_ONLINE_AA
-            FROM CHEDRAUI.VTA
-            GROUP BY 1,2,3,4
-            );
-
-            DROP TABLE IF EXISTS #MON_RAD_CAT;
-            CREATE TABLE #MON_RAD_CAT AS (
-            SELECT * FROM #MON_RAD_CAT_TOTAL
-            UNION
-            SELECT * FROM #MON_RAD_CAT_CLASS
-            UNION
-            SELECT * FROM #MON_RAD_CAT_SUBCLASS
-            UNION
-            SELECT * FROM #MON_RAD_CAT_PROD_TYPE_DESC
-            ORDER BY 1,2,3,4
-            );
-
-            DROP TABLE IF EXISTS #MON_RAD_CAT_TOTAL;
-            DROP TABLE IF EXISTS #MON_RAD_CAT_CLASS;
-            DROP TABLE IF EXISTS #MON_RAD_CAT_SUBCLASS;
-            DROP TABLE IF EXISTS #MON_RAD_CAT_PROD_TYPE_DESC;
-
-            DELETE CHEDRAUI.MON_RAD_CAT WHERE ID_RADIOGRAFIA='{id}';
-            INSERT INTO CHEDRAUI.MON_RAD_CAT SELECT * FROM #MON_RAD_CAT;
-        """
+        query_rad_cat = self.get_query_cat(id)
 
         query_rad_datos_producto = f"""
         -- 4. DATOS PRODUCTO
@@ -539,169 +3158,7 @@ class Radiografia():
             INSERT INTO CHEDRAUI.MON_RAD_PRODUCTO SELECT * FROM #MON_RAD_PRODUCTO ;
         """
 
-        query_rad_marca = f"""
-        -- 5. DATOS MARCA
-            --AGG
-            DROP TABLE IF EXISTS #MON_RAD_MARCA_AGG;
-            CREATE TABLE #MON_RAD_MARCA_AGG AS (
-            SELECT 
-                '{id}' ID_RADIOGRAFIA
-                ,'TODAS' CLASS_DESC
-                ,'TODAS' SUBCLASS_DESC
-                ,'TODAS' PROD_TYPE_DESC
-                ,MARCA
-                
-                --ACTUAL
-                --MARCA
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_MARCA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' THEN VENTA END) VENTA_MARCA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=1 THEN VENTA END) VENTA_MARCA_MC
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=0 THEN VENTA END) VENTA_MARCA_NMC
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' THEN INVOICE_NO END) TX_MARCA
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=1 THEN INVOICE_NO END) TX_MARCA_MC
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=0 THEN INVOICE_NO END) TX_MARCA_NMC
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' THEN UNIDADES END) UNIDADES_MARCA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=1 THEN UNIDADES END) UNIDADES_MARCA_MC
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=0 THEN UNIDADES END) UNIDADES_MARCA_NMC
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_ONLINE
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_MC_ONLINE
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_NMC_ONLINE
-                --CAT
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' THEN VENTA END) VENTA_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=1 THEN VENTA END) VENTA_CAT_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=0 THEN VENTA END) VENTA_CAT_NMC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' THEN INVOICE_NO END) TX_CAT
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=1 THEN INVOICE_NO END) TX_CAT_MC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=0 THEN INVOICE_NO END) TX_CAT_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' THEN UNIDADES END) UNIDADES_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=1 THEN UNIDADES END) UNIDADES_CAT_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=0 THEN UNIDADES END) UNIDADES_CAT_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_MC_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_NMC_ONLINE
-
-                --AÑO ANTERIOR
-                --MARCA
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' THEN VENTA END) VENTA_MARCA_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN VENTA END) VENTA_MARCA_MC_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 THEN VENTA END) VENTA_MARCA_NMC_AA
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' THEN INVOICE_NO END) TX_MARCA_AA
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN INVOICE_NO END) TX_MARCA_MC_AA
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 THEN INVOICE_NO END) TX_MARCA_NMC_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' THEN UNIDADES END) UNIDADES_MARCA_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN UNIDADES END) UNIDADES_MARCA_MC_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 THEN UNIDADES END) UNIDADES_MARCA_NMC_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_ONLINE_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_MC_ONLINE_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_NMC_ONLINE_AA
-                
-                --CAT
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' THEN VENTA END) VENTA_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN VENTA END) VENTA_CAT_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 THEN VENTA END) VENTA_CAT_NMC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' THEN INVOICE_NO END) TX_CAT_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN INVOICE_NO END) TX_CAT_MC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 THEN INVOICE_NO END) TX_CAT_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' THEN UNIDADES END) UNIDADES_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN UNIDADES END) UNIDADES_CAT_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 THEN UNIDADES END) UNIDADES_CAT_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_MC_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_NMC_ONLINE_AA
-            FROM CHEDRAUI.VTA
-            GROUP BY 1,2,3,4,5
-            );
-
-            --TOTAL
-            DROP TABLE IF EXISTS #MON_RAD_MARCA_TOTAL;
-            CREATE TABLE #MON_RAD_MARCA_TOTAL AS (
-            SELECT 
-                '{id}' ID_RADIOGRAFIA
-                ,'TODAS' CLASS_DESC
-                ,'TODAS' SUBCLASS_DESC
-                ,'TODAS' PROD_TYPE_DESC
-                ,'TOTAL' MARCA
-                
-                --ACTUAL
-                --MARCA
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_MARCA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' THEN VENTA END) VENTA_MARCA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=1 THEN VENTA END) VENTA_MARCA_MC
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=0 THEN VENTA END) VENTA_MARCA_NMC
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' THEN INVOICE_NO END) TX_MARCA
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=1 THEN INVOICE_NO END) TX_MARCA_MC
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=0 THEN INVOICE_NO END) TX_MARCA_NMC
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' THEN UNIDADES END) UNIDADES_MARCA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=1 THEN UNIDADES END) UNIDADES_MARCA_MC
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=0 THEN UNIDADES END) UNIDADES_MARCA_NMC
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_ONLINE
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_MC_ONLINE
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ACTUAL' AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_NMC_ONLINE
-                --CAT
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' THEN VENTA END) VENTA_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=1 THEN VENTA END) VENTA_CAT_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=0 THEN VENTA END) VENTA_CAT_NMC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' THEN INVOICE_NO END) TX_CAT
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=1 THEN INVOICE_NO END) TX_CAT_MC
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=0 THEN INVOICE_NO END) TX_CAT_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' THEN UNIDADES END) UNIDADES_CAT
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=1 THEN UNIDADES END) UNIDADES_CAT_MC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=0 THEN UNIDADES END) UNIDADES_CAT_NMC
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_MC_ONLINE
-                ,SUM(CASE WHEN PERIODO = 'ACTUAL' AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_NMC_ONLINE
-
-                --AÑO ANTERIOR
-                --MARCA
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_MARCA_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' THEN VENTA END) VENTA_MARCA_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN VENTA END) VENTA_MARCA_MC_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 THEN VENTA END) VENTA_MARCA_NMC_AA
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' THEN INVOICE_NO END) TX_MARCA_AA
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN INVOICE_NO END) TX_MARCA_MC_AA
-                ,COUNT(DISTINCT CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 THEN INVOICE_NO END) TX_MARCA_NMC_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' THEN UNIDADES END) UNIDADES_MARCA_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN UNIDADES END) UNIDADES_MARCA_MC_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 THEN UNIDADES END) UNIDADES_MARCA_NMC_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_ONLINE_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_MC_ONLINE_AA
-                ,SUM(CASE WHEN IND_MARCA = 1 AND PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_NMC_ONLINE_AA
-                
-                --CAT
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN CUSTOMER_CODE END) CLIENTES_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' THEN VENTA END) VENTA_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN VENTA END) VENTA_CAT_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 THEN VENTA END) VENTA_CAT_NMC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' THEN INVOICE_NO END) TX_CAT_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN INVOICE_NO END) TX_CAT_MC_AA
-                ,COUNT(DISTINCT CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 THEN INVOICE_NO END) TX_CAT_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' THEN UNIDADES END) UNIDADES_CAT_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 THEN UNIDADES END) UNIDADES_CAT_MC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 THEN UNIDADES END) UNIDADES_CAT_NMC_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_MC_ONLINE_AA
-                ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_CAT_NMC_ONLINE_AA
-            FROM CHEDRAUI.VTA
-            GROUP BY 1,2,3,4,5
-            );
-
-            DROP TABLE IF EXISTS #MON_RAD_MARCA;
-            CREATE TABLE #MON_RAD_MARCA AS (
-            SELECT * FROM #MON_RAD_MARCA_AGG
-            UNION
-            SELECT * FROM #MON_RAD_MARCA_TOTAL
-            );
-
-            DROP TABLE IF EXISTS #MON_RAD_MARCA_AGG;
-            DROP TABLE IF EXISTS #MON_RAD_MARCA_TOTAL;
-            
-            DELETE CHEDRAUI.MON_RAD_MARCA  WHERE ID_RADIOGRAFIA='{id}';
-            INSERT INTO CHEDRAUI.MON_RAD_MARCA SELECT * FROM #MON_RAD_MARCA;
-        """
+        query_rad_marca = self.get_query_marca(id)
 
         query_rad_funnel_clientes = f"""
             -- 6. NUMERO DE COMPRAS
@@ -1077,7 +3534,7 @@ class Radiografia():
             SELECT 1 AS ONE;
         """
 
-        query_lis = [query_rad_desc, query_vta, query_rad_productos, query_rad_cat, query_rad_datos_producto, query_rad_marca, query_rad_funnel_clientes, query_rad_evolucion, query_rad_segmentado] #, query_rad_mix]
+        query_lis = [query_rad_desc, query_vta, query_rad_productos] + query_rad_cat + [query_rad_datos_producto] + query_rad_marca + [query_rad_funnel_clientes, query_rad_evolucion, query_rad_segmentado] #, query_rad_mix]
 
         return query_lis
 
