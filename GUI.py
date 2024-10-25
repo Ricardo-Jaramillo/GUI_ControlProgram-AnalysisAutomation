@@ -1117,27 +1117,69 @@ class App:
         return True
 
     def submit_datos_rad(self, entry_inicio, entry_termino, entry_nombre):
+        # 1. Función para confirmar selección
+        # 2. Validar las entradas
+        # 3. Obtener lista de opciones de tablas a confirmar
+        # 4. Generar la ventana de selección
+        # 5. Ejecutar la función de confirmar_seleccion
+
+        # 1. Función para confirmar la selección
+        def confirmar_seleccion():
+            lis_tablas_seleccionadas = [tabla for tabla, var in var_tablas.items() if var.get()]
+            frame.destroy()
+
+            # Preguntar si desea guardar los cambios
+            op = messagebox.askyesno("Advertencia", f"¿Está seguro que desea generar la Radiografía seleccionada?")
+            if op:
+                
+                # Preguntar si ya existe la radiografía con el mismo nombre y mes
+                if self.mon.rad.validate_if_rad_exists(self.mon, inicio, termino, nombre):
+                    override = messagebox.askyesno("Advertencia", "Ya hay Radiografía generada, ¿Desea sobreescribirla?")
+                else:
+                    override = None
+
+                self.mon.generar_datos_rad(inicio=inicio, termino=termino, nombre=nombre, override=override, lis_seleccion=lis_tablas_seleccionadas)
+                # Mostrar el mensaje de éxito
+                messagebox.showinfo("Información", "Radiografía generada exitosamente.")
+                # self.show_dataframe(self.mon.rad.df_rad, "Radiografía")
+
+        # 2. Validar las entradas del usuario
         # Extraer los datos de las entradas
-        inicio = entry_inicio.get().strip()
-        termino = entry_termino.get().strip()
-        nombre = entry_nombre.get().strip()
+        inicio, termino, nombre = entry_inicio.get().strip(), entry_termino.get().strip(), entry_nombre.get().strip()
 
         if self.validate_entries_rad(inicio, termino, nombre):
             # Preguntar si ya existe la tabla PRODUCTOS
             if not self.mon.validate_if_table_exists('#PRODUCTOS'):
                 messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar Radiografía.")
                 return
+        else:
+            return
+        
+        # 3. Obtener la lista de opciones de tablas a confirmar
+        lis_tablas = self.mon.obtener_lista_opciones('Radiografia Completa')
 
-            # Preguntar si ya existe la radiografía con el mismo nombre y mes
-            if self.mon.rad.validate_if_rad_exists(self.mon, inicio, termino, nombre):
-                override = messagebox.askyesno("Advertencia", "Ya hay Radiografía generada, ¿Desea sobreescribirla?")
-            else:
-                override = None
+        # 4. Generar la ventana de selección
+        # Mostrar ventana emergente para seleccionar las tablas de resultados
+        frame = tk.Toplevel(self.root)
+        frame.resizable(0, 0)
 
-            self.mon.generar_datos_rad(inicio=inicio, termino=termino, nombre=nombre, override=override)
-            # Mostrar el mensaje de éxito
-            messagebox.showinfo("Información", "Radiografía generada exitosamente.")
-            # self.show_dataframe(self.mon.rad.df_rad, "Radiografía")
+        label_titulo = tk.Label(frame, text="Selección de Tablas", font=("Arial", 12, "bold"))
+        label_titulo.grid(row=0, column=0, pady=10, padx=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=0, pady=5, padx=10, sticky="we")
+
+        # Crear una casilla de verificación por cada tabla de resultados
+        var_tablas = {}
+        for i, tabla in enumerate(lis_tablas, start=2):
+            var_tablas[tabla] = tk.IntVar()
+            check = tk.Checkbutton(frame, text=tabla, variable=var_tablas[tabla])
+            check.grid(row=i, column=0, pady=5, padx=5, sticky='w')
+        
+        # 5. Ejecutar la función de confirmar_seleccion
+        button_confirmar = tk.Button(frame, text="Confirmar", command=confirmar_seleccion)
+        button_confirmar.grid(row=len(lis_tablas) + 2, column=0, pady=10)
 
     def rad_existentes(self):
         def seleccion_radiografia(event):
@@ -1530,7 +1572,7 @@ class App:
         if not nombre_campana:
             return
         
-        lis_tablas = self.mon.obtener_obtener_lista_opciones('Campañas') # REVISAR
+        lis_tablas = self.mon.obtener_lista_opciones('Campañas') # REVISAR
             
         # Mostrar ventana emergente para seleccionar las tablas de resultados
         frame = tk.Toplevel(self.root)

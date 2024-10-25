@@ -68,11 +68,11 @@ class Monetizacion(Conn, Productos):
         # Crear Listas de Envío
         self.po.create_table_listas_envio(self)
     
-    def generar_datos_rad(self, inicio, termino, nombre, override):
+    def generar_datos_rad(self, inicio, termino, nombre, override, lis_seleccion):
         # Set variables
         self.rad.set_rad_variables(inicio=inicio, termino=termino, nombre=nombre)
         # Create RAD table
-        self.rad.create_tables_rad(self, override=override)
+        self.rad.create_tables_rad(self, lis_seleccion, override=override)
 
     def separar_listas_envio(self):
         # Separar Listas de Envío
@@ -90,11 +90,11 @@ class Monetizacion(Conn, Productos):
         # Eliminar la información de la campaña
         self.camp.eliminar_info_campana(self, nombre_campana)
     
-    def actualizar_resultados_campana(self, nombre_campana, lis_tablas):
+    def actualizar_resultados_campana(self, nombre_campana, lis_seleccion):
         # Crear las variables de la campaña
         self.camp.set_campana_variables(self, nombre_campana)
         # Actualizar la campaña con el nombre proporcionado
-        self.camp.actualizar_resultados_campana(self, lis_tablas)
+        self.camp.actualizar_resultados_campana(self, lis_seleccion)
 
     def obtener_nombres_tablas_campanas(self):
         # Obtener los nombres de las tablas de las campañas
@@ -112,12 +112,14 @@ class Monetizacion(Conn, Productos):
             lista = None
         return lista
 
-    def obtener_obtener_lista_opciones(self, nombre): # REVISAR FUNCION
+    def obtener_lista_opciones(self, nombre): # REVISAR FUNCION
         # Obtener los nombres de las opciones de las tablas
         if nombre == 'Campañas':
             return self.camp.get_table_names_resultados()
         elif nombre == 'BusinesssCase':
             return self.po.get_table_names_analisis_bc()
+        elif nombre == 'Radiografia Completa':
+            return self.rad.get_table_names_radiografia_completa()
 
     def validate_campaign_products(self, campaign_name):
         # Validar que la campaña tenga productos

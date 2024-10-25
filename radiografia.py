@@ -6,11 +6,25 @@ from datetime import datetime, timedelta
 class Radiografia():
     def __init__(self):
         self.set_rad_variables()
+        self.set_dict_tablas_radiografia_completa()
     
     def set_rad_variables(self, inicio='', termino='', nombre=''):
         self.dict_fechas = {}
         self.nombre = nombre
         self.__get_fechas_campana(inicio, termino)
+
+    def set_dict_tablas_radiografia_completa(self):
+        # Crear tablas de Radiografía
+        self.dict_tablas_radiografia_completa = {
+            'Venta': None,
+            'Lista de Productos': None,
+            'Categorias': None,
+            'Productos': None,
+            'Marcas': None,
+            'Funnel Clientes': None,
+            'Evolucion': None,
+            'Segmentos': None,
+            }
 
     def __get_fechas_campana(self, inicio, termino):
         # Crear diccionario de fechas
@@ -37,7 +51,10 @@ class Radiografia():
                 'fecha_fin_p2': (pd.to_datetime(fecha_fin) - pd.DateOffset(months=1)).strftime('%Y-%m-%d')
             }
 
-    def get_query_cat(self, id):
+    def get_table_names_radiografia_completa(self):
+        return list(self.dict_tablas_radiografia_completa.keys())
+
+    def get_queries_rad_categorias(self, id):
         query_actual_marca_mc_total = f'''
             --TOTAL ---------------------------------------------------------
             --ACTUAL -------------------------------------------------------
@@ -2336,7 +2353,7 @@ class Radiografia():
 
         return lis_query_total + lis_query_class + lis_query_subclass + lis_query_prodtype
 
-    def get_query_marca(self, id):
+    def get_queries_rad_marcas(self, id):
         query_actual_marca_mc_total = f'''
             --TOTAL ---------------------------------------------------------
             --ACTUAL -------------------------------------------------------
@@ -2948,8 +2965,8 @@ class Radiografia():
         lis_query_total = lis_query_actual + lis_query_aa + [query_total]
 
         return lis_query_total
-
-    def get_query_create_rad_tables(self, id, proveedores, nombre):
+    
+    def get_queries_rad_venta(self, id, proveedores, nombre):
         query_rad_desc = f"""
             DROP TABLE IF EXISTS #MON_RAD_DESC;
             CREATE TABLE #MON_RAD_DESC (
@@ -3078,7 +3095,10 @@ class Radiografia():
             GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
             );
             """
-            
+
+        return [query_rad_desc, query_vta]
+
+    def get_queries_rad_lista_productos(self, id):
         query_rad_productos = f"""
             -- 2. PRODUCTOS MARCA Y CATEGORIA
             DROP TABLE IF EXISTS #MON_RAD_PRODUCTOS;
@@ -3103,9 +3123,9 @@ class Radiografia():
             DELETE CHEDRAUI.MON_RAD_PRODUCTOS WHERE ID_RADIOGRAFIA ='{id}';
             INSERT INTO CHEDRAUI.MON_RAD_PRODUCTOS SELECT * FROM #MON_RAD_PRODUCTOS;
         """
+        return [query_rad_productos]
 
-        query_rad_cat = self.get_query_cat(id)
-
+    def get_queries_rad_productos(self, id):
         query_rad_datos_producto = f"""
         -- 4. DATOS PRODUCTO
             DROP TABLE IF EXISTS #MON_RAD_PRODUCTO;
@@ -3157,9 +3177,9 @@ class Radiografia():
             DELETE  CHEDRAUI.MON_RAD_PRODUCTO WHERE ID_RADIOGRAFIA='{id}';
             INSERT INTO CHEDRAUI.MON_RAD_PRODUCTO SELECT * FROM #MON_RAD_PRODUCTO ;
         """
+        return [query_rad_datos_producto]
 
-        query_rad_marca = self.get_query_marca(id)
-
+    def get_queries_rad_funnel_clientes(self, id):
         query_rad_funnel_clientes = f"""
             -- 6. NUMERO DE COMPRAS
             --NUMERO DE COMPRAS
@@ -3387,7 +3407,9 @@ class Radiografia():
             DELETE CHEDRAUI.MON_RAD_FUNNEL_CLIENTES WHERE ID_RADIOGRAFIA = '{id}';
             INSERT INTO CHEDRAUI.MON_RAD_FUNNEL_CLIENTES SELECT * FROM #MON_RAD_FUNNEL_CLIENTES;
         """
+        return [query_rad_funnel_clientes]
 
+    def get_queries_rad_evolucion(self, id):
         query_rad_evolucion = f"""
             -- 7. EVOLUCIÓN MARCA
             DROP TABLE IF EXISTS #MON_RAD_EVO;
@@ -3411,7 +3433,9 @@ class Radiografia():
             DELETE CHEDRAUI.MON_RAD_EVO WHERE ID_RADIOGRAFIA='{id}';
             INSERT INTO CHEDRAUI.MON_RAD_EVO SELECT * FROM #MON_RAD_EVO;
         """
+        return [query_rad_evolucion]
 
+    def get_queries_rad_segmentos(self, id):
         query_rad_segmentado = f"""
             -- 8. SEGMENTADO
             DROP TABLE IF EXISTS #MON_RAD_SEGMENTADO;
@@ -3529,14 +3553,7 @@ class Radiografia():
             DELETE CHEDRAUI.MON_RAD_SEGMENTADO WHERE ID_RADIOGRAFIA = '{id}';
             INSERT INTO CHEDRAUI.MON_RAD_SEGMENTADO SELECT * FROM #MON_RAD_SEGMENTADO UNION SELECT  '{id}' AS ID_RADIOGRAFIA, * FROM CHEDRAUI.MON_RAD_SEGMENTOS_CHEDRAUI;
         """
-
-        query_rad_mix = f"""
-            SELECT 1 AS ONE;
-        """
-
-        query_lis = [query_rad_desc, query_vta, query_rad_productos] + query_rad_cat + [query_rad_datos_producto] + query_rad_marca + [query_rad_funnel_clientes, query_rad_evolucion, query_rad_segmentado] #, query_rad_mix]
-
-        return query_lis
+        return [query_rad_segmentado]
 
     def validate_if_rad_exists(self, conn, inicio, termino, nombre):
         # Preguntar si las tablas de radiografia ya existen con el id y nombre ingresado
@@ -3552,13 +3569,35 @@ class Radiografia():
         id = f"{inicio[2:4]}{inicio[5:7]}_{termino[2:4]}{termino[5:7]}_{proveedores}_{nombre}".replace(' ', '_')
         return id.upper(), proveedores.upper(), nombre.upper()
 
-    def create_tables_rad(self, conn, override=False):
+    def create_tables_rad(self, conn, lis_tablas_seleccionadas, override=False):
         id_rad, proveedores, nombre = self.__get_id_rad(conn, self.dict_fechas['fecha_ini'], self.dict_fechas['fecha_fin'], self.nombre)
-        # Crear tablas de Radiografía
-        query_lis = self.get_query_create_rad_tables(id=id_rad, proveedores=proveedores, nombre=nombre)
+
+        lis_queries_venta = self.get_queries_rad_venta(id_rad, proveedores, nombre)
+        lis_queries_lista_productos = self.get_queries_rad_lista_productos(id_rad)
+        lis_queries_categorias = self.get_queries_rad_categorias(id_rad)
+        lis_queries_productos = self.get_queries_rad_productos(id_rad)
+        lis_queries_marcas = self.get_queries_rad_marcas(id_rad)
+        lis_queries_funnel_clientes = self.get_queries_rad_funnel_clientes(id_rad)
+        lis_queries_evolucion = self.get_queries_rad_evolucion(id_rad)
+        lis_queries_segmentos = self.get_queries_rad_segmentos(id_rad)
+
+        self.dict_tablas_radiografia_completa['Venta'] = lis_queries_venta
+        self.dict_tablas_radiografia_completa['Lista de Productos'] = lis_queries_lista_productos
+        self.dict_tablas_radiografia_completa['Categorias'] = lis_queries_categorias
+        self.dict_tablas_radiografia_completa['Productos'] = lis_queries_productos
+        self.dict_tablas_radiografia_completa['Marcas'] = lis_queries_marcas
+        self.dict_tablas_radiografia_completa['Funnel Clientes'] = lis_queries_funnel_clientes
+        self.dict_tablas_radiografia_completa['Evolucion'] = lis_queries_evolucion
+        self.dict_tablas_radiografia_completa['Segmentos'] = lis_queries_segmentos
+
+        lis_exec_queries = []
         
+        # Agregar a lis_queries las queries de las tablas seleccionadas
+        for tabla in lis_tablas_seleccionadas:
+            lis_exec_queries += self.dict_tablas_radiografia_completa[tabla]
+
         # Mostrar una barra de progreso para la creación de las tablas con tqdm
-        for query in tqdm(query_lis, desc='Creating Radiografia tables'):
+        for query in tqdm(lis_exec_queries, desc='Creating Radiografia tables'):
             # Si override no se especifica, la tabla no existe, se crea
             if override is None:
                 conn.execute(query=query)
