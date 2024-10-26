@@ -46,11 +46,11 @@ class Monetizacion(Conn, Productos):
         # Create PO table
         self.po.create_table_pos_temporal(self, override)
 
-    # Función para extraer datos para el BusinessCase
-    def generar_datos_bc(self, inicio_campana, fin_campana, inicio_analisis,fin_analisis, condicion, override):
-        self.po.set_bc_variables(inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion)
-        # Create BusinessCase tables
-        self.po.create_tables_bc(self, override)
+    # Función para extraer datos para Radiografía Corta
+    def generar_datos_rad_corta(self, nombre, inicio_campana, fin_campana, inicio_analisis,fin_analisis, condicion, override):
+        self.rad.set_rad_corta_variables(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion)
+        # Create Radiografía Corta tables
+        self.rad.create_tables_rad_corta(self, override)
 
     def get_bc_data(self):
         # Get BusinessCase data
@@ -116,8 +116,6 @@ class Monetizacion(Conn, Productos):
         # Obtener los nombres de las opciones de las tablas
         if nombre == 'Campañas':
             return self.camp.get_table_names_resultados()
-        elif nombre == 'BusinesssCase':
-            return self.po.get_table_names_analisis_bc()
         elif nombre == 'Radiografia Completa':
             return self.rad.get_table_names_radiografia_completa()
 

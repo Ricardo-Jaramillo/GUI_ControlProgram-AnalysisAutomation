@@ -144,10 +144,11 @@ class App:
 
         buttons = [
             ("1. Ingresar Productos", self.ingresar_productos),
-            ("2. Generar BusinessCase", self.generar_bc),
-            ("3. Generar Públicos Objetivos", self.generar_publicos_objetivos),
-            ("4. Generar Listas de envío", self.generar_listas),
-            ("5. Generar Radiografía", self.generar_rad),
+            ("2. BusinessCase", lambda : print("BusinessCase")),
+            ("3. Públicos Objetivos", self.generar_publicos_objetivos),
+            ("4. Listas de envío", self.generar_listas),
+            ("5. Radiografía", self.generar_rad),
+            ("6. Radiografía Corta", self.generar_rad_corta),
             ("6. Resultados de Campañas", self.generar_resultados),
             ("7. Ver/Guardar Datos", self.ver_guardar_datos),
             ("Salir", self.end_program)
@@ -740,38 +741,32 @@ class App:
         
 
     # Validar los campos para el BusinessCase
-    def validate_entries_bc(self, inicio_campana, fin_campana, fin_analisis, condicion):
+    def validate_entries_rad_corta(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion):
         # Si hay condicion, verificar que sea numérica
         if bool(condicion) and not condicion.isdigit():
             messagebox.showwarning("Advertencia", "Por favor ingrese un valor numérico para Condición de Compra.")
             return False
+        # Validar que las fechas sean correctas
+        try:
+            inicio_campana = pd.to_datetime(inicio_campana)
+            fin_campana = pd.to_datetime(fin_campana)
+            inicio_analisis = pd.to_datetime(inicio_analisis)
+            fin_analisis = pd.to_datetime(fin_analisis)
+        except:
+            messagebox.showwarning("Advertencia", "Por favor ingrese fechas en formato YYYY-MM-DD.")
+            return False
+        # Validar que nombre no esté vacío
+        if not bool(nombre):
+            messagebox.showwarning("Advertencia", "Por favor ingrese un nombre para la Radiografía.")
+            return False
         return True
-    
-    def submit_businesscase(self, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion):
-        def confirmar_seleccion_bc(): # REVISAR FUNCION
-            # Crear un Top Level para preguntar al usuario las tablas a seleccionar
-            top = tk.Toplevel(self.root)
-
-            # Obtener las posibles opciones
-            lis_tablas = self.mon.obtener_obtener_lista_opciones('BusinessCase')
-
-            # Mostrar las opciones con checkboxes y guardar las opciones seleccionadas
-            lis_seleccion_tablas_bc = []
-
-            for i, tabla in enumerate(lis_tablas):
-                var = tk.IntVar()
-                tk.Checkbutton(top, text=tabla, variable=var).grid(row=i, column=0)
-                lis_seleccion_tablas_bc.append((tabla, var))
-
-            # Botón para confirmar la selección
-            tk.Button(top, text="Confirmar", command=top.destroy).grid(row=i+1, column=0)
-
-            return lis_seleccion_tablas_bc
         
+    
+    def submit_rad_corta(self, entry_nombre_rad, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion):
         # Extraer los campos de BC
-        inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion = entry_inicio_campana.get(), entry_fin_campana.get(), entry_inicio_analisis.get(), entry_fin_analisis.get(), entry_condicion.get()
+        nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion = entry_nombre_rad.get(), entry_inicio_campana.get(), entry_fin_campana.get(), entry_inicio_analisis.get(), entry_fin_analisis.get(), entry_condicion.get()
 
-        if self.validate_entries_bc(inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion):
+        if self.validate_entries_rad_corta(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion):
             # Preguntar si ya existe la tabla PRODUCTOS
             if not self.mon.validate_if_table_exists('#PRODUCTOS'):
                 messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar BusinessCase.")
@@ -779,68 +774,27 @@ class App:
             
             # Verificar si se generó #BC
             override = None
-            if self.mon.validate_if_table_exists('#BC'):
-                override = messagebox.askyesno("Advertencia", "Ya hay datos para BC, ¿Desea sobreescribirlos?")
+            if self.mon.validate_if_table_exists('#RAD_CORTA'):
+                override = messagebox.askyesno("Advertencia", "Ya hay datos de Radiografía Corta, ¿Desea sobreescribirlos?")
             
-            lis_seleccion_tablas_bc = confirmar_seleccion_bc() # REVISAR
-
-            # Extraer datos para el BusinessCase
-            self.mon.generar_datos_bc(inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, override)
+            # Extraer datos para el Radiografía Corta
+            self.mon.generar_datos_rad_corta(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, override)
 
             # Mensaje de éxito
-            messagebox.showinfo("Información", "BusinessCase generado exitosamente.")
-            # self.get_dataframe('BusinessCase', type='show')
+            messagebox.showinfo("Información", "Radiografía Corta generada exitosamente.")
+            # self.get_dataframe('Radiografía Corta', type='show')
 
-    def generar_bc(self):
-        # Crear layout para el BusinessCase
+    def generar_rad_corta(self):
+        # Crear layout para el Radiografía Corta
         self.menu_frame.pack_forget()
         self.clear_content_frame()
-        
-        # Función para mostrar el BusinessCase
-        def show_bc():
-            # Extraer datos para el BusinessCase
-            df_bc = self.mon.get_bc_data()
-
-            if df_bc.empty:
-                messagebox.showwarning("Advertencia", "No hay datos para BusinessCase. Por favor genere los datos.")
-                return
-
-            # Crear un Top Level para mostrar el BusinessCase
-            top = tk.Toplevel(self.root)
-            top.title("BusinessCase")
-            top.geometry("800x600")
-
-            # Mostrar los datos del BusinessCase con df_bc:
-            tree = ttk.Treeview(top)
-
-            # Definir las columnas
-            tree["columns"] = list(df_bc.columns)
-            tree["show"] = "headings"
-
-            # Definir las columnas y encabezados
-            for col in tree["columns"]:
-                tree.heading(col, text=col)
-                tree.column(col, width=75)
-
-            # Insertar los datos
-            for index, row in df_bc.iterrows():
-                tree.insert("", tk.END, values=list(row))
-            
-            # Label para el BusinessCase
-            tk.Label(top, text="BusinessCase", font=("Arial", 14, "bold")).grid(row=0, column=0, pady=10, padx=10)
-            
-            # Posicionar el treeview
-            tree.grid(row=1, column=0, pady=10, padx=10)
-
-            # Botón para guardar el BusinessCase
-            tk.Button(top, text="Guardar BC", command=lambda: self.save_dataframe(df_bc, 'BusinessCase')).grid(row=2, column=0, pady=10, padx=10)
 
         # Cear un frame para la sección
         frame = tk.Frame(self.content_frame)
         frame.pack(pady=10, padx=10)
 
         # Label
-        tk.Label(frame, text="Business Case", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=4, pady=10)
+        tk.Label(frame, text="Radiografía Corta", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=4, pady=10)
 
         # Línea horizontal
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
@@ -848,68 +802,48 @@ class App:
 
         # Línea vertical
         separator = tk.Frame(frame, width=2, bd=1, relief="sunken")
-        separator.grid(row=1, column=2, rowspan=6, pady=5, padx=10, sticky="ns")
+        separator.grid(row=1, column=2, rowspan=8, pady=5, padx=10, sticky="ns")
 
         # Ingresar fecha de inicio y fecha termino de campaña
-        tk.Label(frame, text="Datos para Business Case", font=("Arial", 10, "bold")).grid(row=2, column=0, columnspan=2, pady=10)
-        tk.Label(frame, text="Mes Inicio de Campaña:").grid(row=3, column=0, pady=5, sticky='e')
-        tk.Label(frame, text="Mes Fin de Campaña:").grid(row=4, column=0, pady=5, sticky='e')
+        tk.Label(frame, text="Datos para Radiografía", font=("Arial", 10, "bold")).grid(row=2, column=0, columnspan=2, pady=10)
+        # Ingresar Nombre de la Campaña
+        tk.Label(frame, text="Nombre Radiografía:").grid(row=3, column=0, pady=10, sticky='e')
+        entry_nombre_rad = tk.Entry(frame, width=25)
+        entry_nombre_rad.grid(row=3, column=1, pady=5)
+        # Fechas
+        tk.Label(frame, text="Mes Inicio de Campaña:").grid(row=4, column=0, pady=5, sticky='e')
+        tk.Label(frame, text="Mes Fin de Campaña:").grid(row=5, column=0, pady=5, sticky='e')
         entry_inicio_campana = DateEntry(frame, date_pattern='yyyy-mm-dd')
         entry_fin_campana = DateEntry(frame, date_pattern='yyyy-mm-dd')
-        entry_inicio_campana.grid(row=3, column=1, pady=5)
-        entry_fin_campana.grid(row=4, column=1, pady=5)
+        entry_inicio_campana.grid(row=4, column=1, pady=5)
+        entry_fin_campana.grid(row=5, column=1, pady=5)
 
         # Ingresar fecha del inicio del análisis
-        tk.Label(frame, text="Mes Inicio del Análisis:").grid(row=5, column=0, pady=10, sticky='e')
+        tk.Label(frame, text="Mes Inicio del Análisis:").grid(row=6, column=0, pady=10, sticky='e')
         entry_inicio_analisis = DateEntry(frame, date_pattern='yyyy-mm-dd')
-        entry_inicio_analisis.grid(row=5, column=1, pady=5)
+        entry_inicio_analisis.grid(row=6, column=1, pady=5)
         
         # Ingresar fecha del fin del análisis
-        tk.Label(frame, text="Mes Fin del Análisis:").grid(row=6, column=0, pady=10, sticky='e')
+        tk.Label(frame, text="Mes Fin del Análisis:").grid(row=7, column=0, pady=10, sticky='e')
         entry_fin_analisis = DateEntry(frame, date_pattern='yyyy-mm-dd')
-        entry_fin_analisis.grid(row=6, column=1, pady=5)
+        entry_fin_analisis.grid(row=7, column=1, pady=5)
 
         # Ingresar Condición de Compra
-        tk.Label(frame, text="Condición de Compra:").grid(row=7, column=0, pady=10)
+        tk.Label(frame, text="Condición de Compra:").grid(row=8, column=0, pady=10)
         entry_condicion = tk.Entry(frame, width=15)
-        entry_condicion.grid(row=7, column=1, pady=5)
+        entry_condicion.grid(row=8, column=1, pady=5)
 
         # Label para Presupuesto, valor numérico
-        tk.Button(frame, width=14, text="Generar Datos", command=lambda: self.submit_businesscase(entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion)).grid(row=2, column=3, pady=5)
+        tk.Button(frame, width=14, text="Generar Datos", command=lambda: self.submit_rad_corta(entry_nombre_rad, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion)).grid(row=2, column=3, pady=5)
 
         # Botón para guardar el BusinessCase
-        tk.Button(frame, width=14, text="Ver BC", command=show_bc).grid(row=3, column=3, pady=5)
+        # tk.Button(frame, width=14, text="Ver BC", command=show_bc).grid(row=3, column=3, pady=5)
 
         # Boton para ver análisis de BC
-        tk.Button(frame, width=14, text="Ver Análisis", command=self.analisis_bc).grid(row=4, column=3, pady=5)
+        # tk.Button(frame, width=14, text="Ver Análisis", command=self.analisis_bc).grid(row=4, column=3, pady=5)
 
         # Bot
-        tk.Button(frame, width=14, text="Regresar al Menú", command=self.show_menu).grid(row=7, column=3, pady=5)
-
-        # # Label para Presupuesto, valor numérico
-        # tk.Label(frame, text="Presupuesto", font=("Arial", 10, "bold")).pack(pady=5)
-        # entry_presupuesto = tk.Entry(frame)
-        # entry_presupuesto.pack()
-
-        # # Entrada para para el porcentaje de WA
-        # tk.Label(left_frame, text="Porcentaje para WA", font=("Arial", 10, "bold")).pack(pady=5)
-        # var_wa_ratio = tk.Entry(left_frame)
-        # var_wa_ratio.pack()
-
-        # # Label para Canal
-        # tk.Label(left_frame, text="Canal", font=("Arial", 10, "bold")).pack(pady=5)
-        # # Casilla de verificación para canal SMS, Mail, Cupón y WA
-        # var_sms = tk.IntVar()
-        # var_mail = tk.IntVar()
-        # var_cupon = tk.IntVar()
-        # var_wa = tk.IntVar()
-        # tk.Checkbutton(left_frame, text="SMS", variable=var_sms).pack(side=tk.LEFT, padx=5)
-        # tk.Checkbutton(left_frame, text="Mail", variable=var_mail).pack(side=tk.LEFT, padx=5)
-        # tk.Checkbutton(left_frame, text="Cupón", variable=var_cupon).pack(side=tk.LEFT, padx=5)
-        # tk.Checkbutton(left_frame, text="WA", variable=var_wa).pack(side=tk.LEFT, padx=5)
-
-        # tk.Button(right_frame, text="Calcular Datos para BC", command=lambda: self.submit_businesscase(entry_presupuesto, var_sms, var_mail, var_cupon, var_wa, var_wa_ratio)).pack(pady=10)
-        # tk.Button(right_frame, text="Regresar al Menú", command=self.show_menu).pack(pady=5, side=tk.BOTTOM)
+        tk.Button(frame, width=14, text="Regresar al Menú", command=self.show_menu).grid(row=8, column=3, pady=5)
 
     # Función para validar entradas de listas
     def validate_entries_po_envios(self, entry_condicion, entry_excluir):
@@ -1233,7 +1167,6 @@ class App:
         tk.Label(frame, text="Generar Radiografía", font=("Arial", 12, "bold")).grid(row=2, column=0, columnspan=2, pady=5, padx=10)
 
         # Ingresar nombre de la Radiografía
-
         tk.Label(frame, text="Nombre", font=("Arial", 10, "bold")).grid(row=3, column=0, pady=5, padx=10, sticky='w')
         entry_nombre = tk.Entry(frame)
         entry_nombre.grid(row=3, column=1, pady=5, padx=10)
