@@ -8,12 +8,13 @@ class Radiografia():
         self.set_rad_variables()
         self.set_dict_tablas_radiografia_completa()
     
-    def set_rad_variables(self, inicio='', termino='', nombre=''):
+    def set_rad_variables(self, inicio='', termino='', nombre='', online=0):
         self.dict_fechas = {}
         self.nombre = nombre
+        self.ind_online = online
         self.__get_fechas_campana(inicio, termino)
 
-    def set_rad_corta_variables(self, nombre, fec_ini_campana, fec_fin_campana, fec_ini_analisis, fec_fin_analisis, condicion):
+    def set_rad_corta_variables(self, nombre, fec_ini_campana, fec_fin_campana, fec_ini_analisis, fec_fin_analisis, condicion, online):
         # Seleccionar las fechas y offsets
 
         ini_campana = fec_ini_campana[:7]
@@ -25,6 +26,7 @@ class Radiografia():
 
         self.dict_rad_corta_var = {
             'nombre': nombre
+            ,'ind_online': online
             ,'mes_ini_campana': ini_campana
             ,'mes_fin_campana': fin_campana
             ,'mes_fin_analisis': fin_analisis
@@ -3068,6 +3070,7 @@ class Radiografia():
             LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER) F USING(INVOICE_NO)
             WHERE (A.SALE_NET_VAL > 0 AND A.BUSINESS_TYPE = 'R')
             AND INVOICE_DATE BETWEEN '{self.dict_fechas['fecha_ini_a']}' AND '{self.dict_fechas['fecha_fin']}'
+            {'AND IND_ONLINE = 1' if self.ind_online == 1 else ''}
             GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
             
             UNION ALL
@@ -3121,6 +3124,7 @@ class Radiografia():
             LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER_NM) F USING(INVOICE_NO)
             WHERE (A.SALE_NET_VAL > 0 AND A.BUSINESS_TYPE = 'R')
             AND INVOICE_DATE BETWEEN '{self.dict_fechas['fecha_ini_a']}' AND '{self.dict_fechas['fecha_fin']}'
+            {'AND IND_ONLINE = 1' if self.ind_online == 1 else ''}
             GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
             );
             """
@@ -3632,6 +3636,7 @@ class Radiografia():
             AND BUSINESS_TYPE = 'R'
             AND SALE_NET_VAL > 0
             --   AND UI_FLG = 0
+            {'AND IND_ONLINE = 1' if self.dict_rad_corta_var['ind_online'] else ''}
             GROUP BY 1,2,3,4
 
             UNION
@@ -3654,6 +3659,7 @@ class Radiografia():
             AND BUSINESS_TYPE = 'R'
             AND SALE_NET_VAL > 0
             --   AND UI_FLG = 0
+            {'AND IND_ONLINE = 1' if self.dict_rad_corta_var['ind_online'] else ''}
             GROUP BY 1,2,3,4
             );
         '''

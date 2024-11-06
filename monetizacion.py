@@ -47,8 +47,8 @@ class Monetizacion(Conn, Productos):
         self.po.create_table_pos_temporal(self, override)
 
     # Función para extraer datos para Radiografía Corta
-    def generar_datos_rad_corta(self, nombre, inicio_campana, fin_campana, inicio_analisis,fin_analisis, condicion, override):
-        self.rad.set_rad_corta_variables(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion)
+    def generar_datos_rad_corta(self, nombre, inicio_campana, fin_campana, inicio_analisis,fin_analisis, condicion, online, override):
+        self.rad.set_rad_corta_variables(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, online)
         # Create Radiografía Corta tables
         self.rad.create_tables_rad_corta(self, override)
 
@@ -68,9 +68,9 @@ class Monetizacion(Conn, Productos):
         # Crear Listas de Envío
         self.po.create_table_listas_envio(self)
     
-    def generar_datos_rad(self, inicio, termino, nombre, override, lis_seleccion):
+    def generar_datos_rad(self, inicio, termino, nombre, online, override, lis_seleccion):
         # Set variables
-        self.rad.set_rad_variables(inicio=inicio, termino=termino, nombre=nombre)
+        self.rad.set_rad_variables(inicio=inicio, termino=termino, nombre=nombre, online=online)
         # Create RAD table
         self.rad.create_tables_rad(self, lis_seleccion, override=override)
 

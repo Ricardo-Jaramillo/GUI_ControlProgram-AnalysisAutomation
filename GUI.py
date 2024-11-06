@@ -762,9 +762,9 @@ class App:
         return True
         
     
-    def submit_rad_corta(self, entry_nombre_rad, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion):
+    def submit_rad_corta(self, entry_nombre_rad, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion, entry_online):
         # Extraer los campos de BC
-        nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion = entry_nombre_rad.get(), entry_inicio_campana.get(), entry_fin_campana.get(), entry_inicio_analisis.get(), entry_fin_analisis.get(), entry_condicion.get()
+        nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, online = entry_nombre_rad.get(), entry_inicio_campana.get(), entry_fin_campana.get(), entry_inicio_analisis.get(), entry_fin_analisis.get(), entry_condicion.get(), entry_online.get()
 
         if self.validate_entries_rad_corta(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion):
             # Preguntar si ya existe la tabla PRODUCTOS
@@ -778,7 +778,7 @@ class App:
                 override = messagebox.askyesno("Advertencia", "Ya hay datos de Radiografía Corta, ¿Desea sobreescribirlos?")
             
             # Extraer datos para el Radiografía Corta
-            self.mon.generar_datos_rad_corta(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, override)
+            self.mon.generar_datos_rad_corta(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, online, override)
 
             # Mensaje de éxito
             messagebox.showinfo("Información", "Radiografía Corta generada exitosamente.")
@@ -802,7 +802,7 @@ class App:
 
         # Línea vertical
         separator = tk.Frame(frame, width=2, bd=1, relief="sunken")
-        separator.grid(row=1, column=2, rowspan=8, pady=5, padx=10, sticky="ns")
+        separator.grid(row=1, column=2, rowspan=9, pady=5, padx=10, sticky="ns")
 
         # Ingresar fecha de inicio y fecha termino de campaña
         tk.Label(frame, text="Datos para Radiografía", font=("Arial", 10, "bold")).grid(row=2, column=0, columnspan=2, pady=10)
@@ -833,8 +833,13 @@ class App:
         entry_condicion = tk.Entry(frame, width=15)
         entry_condicion.grid(row=8, column=1, pady=5)
 
+        # Ingresar si la campaña es online
+        var_online = tk.IntVar()
+        tk.Label(frame, text="Venta Online?").grid(row=4, column=3)
+        tk.Checkbutton(frame, variable=var_online).grid(row=5, column=3)
+
         # Label para Presupuesto, valor numérico
-        tk.Button(frame, width=14, text="Generar Datos", command=lambda: self.submit_rad_corta(entry_nombre_rad, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion)).grid(row=2, column=3, pady=5)
+        tk.Button(frame, width=14, text="Generar Datos", command=lambda: self.submit_rad_corta(entry_nombre_rad, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion, var_online)).grid(row=2, column=3, pady=5)
 
         # Botón para guardar el BusinessCase
         # tk.Button(frame, width=14, text="Ver BC", command=show_bc).grid(row=3, column=3, pady=5)
@@ -843,7 +848,7 @@ class App:
         # tk.Button(frame, width=14, text="Ver Análisis", command=self.analisis_bc).grid(row=4, column=3, pady=5)
 
         # Bot
-        tk.Button(frame, width=14, text="Regresar al Menú", command=self.show_menu).grid(row=8, column=3, pady=5)
+        tk.Button(frame, width=14, text="Regresar al Menú", command=self.show_menu).grid(row=9, column=3, pady=5)
 
     # Función para validar entradas de listas
     def validate_entries_po_envios(self, entry_condicion, entry_excluir):
@@ -1050,7 +1055,7 @@ class App:
             return False
         return True
 
-    def submit_datos_rad(self, entry_inicio, entry_termino, entry_nombre):
+    def submit_datos_rad(self, entry_inicio, entry_termino, entry_nombre, entry_online):
         # 1. Función para confirmar selección
         # 2. Validar las entradas
         # 3. Obtener lista de opciones de tablas a confirmar
@@ -1072,14 +1077,14 @@ class App:
                 else:
                     override = None
 
-                self.mon.generar_datos_rad(inicio=inicio, termino=termino, nombre=nombre, override=override, lis_seleccion=lis_tablas_seleccionadas)
+                self.mon.generar_datos_rad(inicio=inicio, termino=termino, nombre=nombre, online=online, override=override, lis_seleccion=lis_tablas_seleccionadas)
                 # Mostrar el mensaje de éxito
                 messagebox.showinfo("Información", "Radiografía generada exitosamente.")
                 # self.show_dataframe(self.mon.rad.df_rad, "Radiografía")
 
         # 2. Validar las entradas del usuario
         # Extraer los datos de las entradas
-        inicio, termino, nombre = entry_inicio.get().strip(), entry_termino.get().strip(), entry_nombre.get().strip()
+        inicio, termino, nombre, online = entry_inicio.get().strip(), entry_termino.get().strip(), entry_nombre.get().strip(), entry_online.get()
 
         if self.validate_entries_rad(inicio, termino, nombre):
             # Preguntar si ya existe la tabla PRODUCTOS
@@ -1184,17 +1189,21 @@ class App:
         entry_termino = DateEntry(frame, date_pattern='yyyy-mm-dd')
         entry_termino.grid(row=6, column=1, pady=5, padx=5, sticky='w')
 
+        # Preguntar solo venta online?
+        entry_online = tk.IntVar()
+        tk.Checkbutton(frame, text="Venta Online?", variable=entry_online).grid(row=7, column=1, columnspan=2, pady=5, padx=10, sticky='w')
+
         # Línea horizontal
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
-        separator.grid(row=7, column=0, columnspan=2, pady=5, sticky="we")
+        separator.grid(row=8, column=0, columnspan=2, pady=5, sticky="we")
 
         # Boton para ver radiografias existentes
-        tk.Button(frame, text="Ver Radiografías existentes", command=self.rad_existentes).grid(row=8, column=0, columnspan=2, pady=10, sticky='we')
+        tk.Button(frame, text="Ver Radiografías existentes", command=self.rad_existentes).grid(row=9, column=0, columnspan=2, pady=10, sticky='we')
 
         # Botón para generar listas de envío con canales seleccionados
-        tk.Button(frame, text="Generar Radiografía", command=lambda: self.submit_datos_rad(entry_inicio, entry_termino, entry_nombre)).grid(row=9, column=0, pady=5, padx=10)
+        tk.Button(frame, text="Generar Radiografía", command=lambda: self.submit_datos_rad(entry_inicio, entry_termino, entry_nombre, entry_online)).grid(row=10, column=0, pady=5, padx=10)
 
-        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=9, column=1, pady=10)
+        tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=10, column=1, pady=10)
 
     def validate_entry_campana(self, list_box):
         try:
