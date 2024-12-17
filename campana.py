@@ -21,10 +21,12 @@ class Campana():
                                 }
         
     def set_dict_tablas_resultados(self):
-        self.dict_tablas_resultados = {'Resultados': None,
+        self.dict_tablas_resultados = {'Venta': None,
+                                       'Resultados': None,
                                        'Datos ROI': None,
                                        'Datos Funnel': None,
                                        'Tendencia': None,
+                                       'Venta Evolucion': None,
                                        'Evolución': None,
                                        'Segmentos': None,
                                        'Retención': None
@@ -245,10 +247,12 @@ class Campana():
         lis_queries_segmentos = self.get_queries_campana_segmentos()
         lis_queries_retencion = self.get_queries_campana_retencion()
 
+        self.dict_tablas_resultados['Venta'] = lis_queries_venta
         self.dict_tablas_resultados['Resultados'] = lis_queries_resultados
         self.dict_tablas_resultados['Datos ROI'] = lis_queries_datos_roi
         self.dict_tablas_resultados['Datos Funnel'] = lis_queries_datos_funnel
         self.dict_tablas_resultados['Tendencia'] = lis_queries_tendencia
+        self.dict_tablas_resultados['Venta Evolucion'] = lis_queries_venta_evolucion
         self.dict_tablas_resultados['Evolución'] = lis_queries_evolucion
         self.dict_tablas_resultados['Segmentos'] = lis_queries_segmentos
         self.dict_tablas_resultados['Retención'] = lis_queries_retencion
@@ -256,10 +260,10 @@ class Campana():
         lis_exec_queries = []
 
         # Agregar las queries de venta o venta_evolucion si la tabla es requerida. Si alguna de las tablas de lis_tablas_seleccionadas se encuentra en self.required_queries_venta, se agregan las queries de venta. Si alguna de las tablas de lis_tablas_seleccionadas se encuentra en self.required_queries_venta, se agregan las queries de venta_evolucion
-        if any(tabla in self.required_queries_venta for tabla in lis_tablas_seleccionadas):
-            lis_exec_queries += lis_queries_venta
-        if any(tabla in self.required_queries_venta_evolucion for tabla in lis_tablas_seleccionadas):
-            lis_exec_queries += lis_queries_venta_evolucion
+        # if any(tabla in self.required_queries_venta for tabla in lis_tablas_seleccionadas):
+        #     lis_exec_queries += lis_queries_venta
+        # if any(tabla in self.required_queries_venta_evolucion for tabla in lis_tablas_seleccionadas):
+        #     lis_exec_queries += lis_queries_venta_evolucion
 
         # Agregar a lis_queries las queries de las tablas seleccionadas
         for tabla in lis_tablas_seleccionadas:
