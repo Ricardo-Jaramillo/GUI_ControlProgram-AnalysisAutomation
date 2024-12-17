@@ -55,6 +55,7 @@ class Radiografia():
             'Funnel Clientes': None,
             'Evolucion': None,
             'Segmentos': None,
+            'Top Tiendas': None
             }
 
     def __get_fechas_campana(self, inicio, termino):
@@ -3588,6 +3589,63 @@ class Radiografia():
         """
         return [query_rad_segmentado]
 
+    def get_queries_rad_top_tiendas(self, id):
+        query_rad_top_tiendas = f"""
+           -- 9. Mejores teindas 
+            DROP TABLE IF EXISTS #MON_RAD_TOP_TIENDAS;
+            CREATE TABLE #MON_RAD_TOP_TIENDAS AS (
+            SELECT 
+                '{id}' AS ID_RADIOGRAFIA,
+                1::int as ind_mc,
+                B.MARCA,
+                REGION,
+                STATE,
+                FORMATO_TIENDA,
+                A.STORE_CODE,
+                STORE_DESCRIPTION,
+                SUM(SALE_NET_VAL) AS VENTA,
+                COUNT(DISTINCT INVOICE_NO) AS TICKETS,
+                ROW_NUMBER() OVER (partition by marca ORDER BY marca,VENTA DESC) AS POSICION
+            FROM FCT_SALE_LINE AS A 
+            INNER JOIN CHEDRAUI.V_STORE AS C ON A.STORE_CODE=C.STORE_CODE AND A.STORE_KEY=C.STORE_KEY
+            inner join #productos as b on a.product_code = B.product_code and ind_marca=1
+            {"INNER JOIN (SELECT DISTINCT INVOICE_NO FROM FCT_SALE_HEADER WHERE CHANNEL_TYPE IN ('WEB','APP','CC HY') ) AS C ON A.INVOICE_NO = C.INVOICE_NO" if self.ind_online == 1 else ''}
+            WHERE INVOICE_DATE BETWEEN '{self.dict_fechas['fecha_ini']}' AND '{self.dict_fechas['fecha_fin']}'
+                AND SALE_NET_VAL > 0
+                AND BUSINESS_TYPE = 'R'
+            group by 1,2,3,4,5,6,7,8
+
+            union all
+
+            -- SIN AGRUPAR POR MARCA
+            SELECT 
+                '{id}' AS ID_RADIOGRAFIA,
+                1::int as ind_mc,
+                'TOTAL' AS MARCA,
+                REGION,
+                STATE,
+                FORMATO_TIENDA,
+                A.STORE_CODE,
+                STORE_DESCRIPTION,
+                SUM(SALE_NET_VAL) AS VENTA,
+                COUNT(DISTINCT INVOICE_NO) AS TICKETS,
+                ROW_NUMBER() OVER (ORDER BY SUM(SALE_NET_VAL) DESC) AS POSICION
+            FROM FCT_SALE_LINE AS A
+            INNER JOIN CHEDRAUI.V_STORE AS C ON A.STORE_CODE = C.STORE_CODE AND A.STORE_KEY = C.STORE_KEY
+            INNER JOIN #PRODUCTOS AS B ON A.PRODUCT_CODE = B.PRODUCT_CODE AND B.IND_MARCA = 1
+            {"INNER JOIN (SELECT DISTINCT INVOICE_NO FROM FCT_SALE_HEADER WHERE CHANNEL_TYPE IN ('WEB','APP','CC HY') ) AS C ON A.INVOICE_NO = C.INVOICE_NO" if self.ind_online == 1 else ''}
+            WHERE INVOICE_DATE BETWEEN '{self.dict_fechas['fecha_ini']}' AND '{self.dict_fechas['fecha_fin']}'
+                AND SALE_NET_VAL > 0
+                AND BUSINESS_TYPE = 'R'
+            GROUP BY 1,2,3,4,5,6,7,8
+            ORDER BY marca, VENTA DESC
+            );
+
+            DELETE CHEDRAUI.MON_RAD_TOP_TIENDAS WHERE ID_RADIOGRAFIA='{id}';
+            INSERT INTO CHEDRAUI.MON_RAD_TOP_TIENDAS SELECT * FROM #MON_RAD_TOP_TIENDAS;
+        """
+        return [query_rad_top_tiendas]
+
     def get_queries_rad_corta(self):
         query_meses = f'''
             --CREAR FECHAS DE MES
@@ -7093,6 +7151,7 @@ class Radiografia():
         lis_queries_funnel_clientes = self.get_queries_rad_funnel_clientes(id_rad)
         lis_queries_evolucion = self.get_queries_rad_evolucion(id_rad)
         lis_queries_segmentos = self.get_queries_rad_segmentos(id_rad)
+        lis_queries_top_tiendas = self.get_queries_rad_top_tiendas(id_rad)
 
         self.dict_tablas_radiografia_completa['Venta'] = lis_queries_venta
         self.dict_tablas_radiografia_completa['Lista de Productos'] = lis_queries_lista_productos
@@ -7102,10 +7161,11 @@ class Radiografia():
         self.dict_tablas_radiografia_completa['Funnel Clientes'] = lis_queries_funnel_clientes
         self.dict_tablas_radiografia_completa['Evolucion'] = lis_queries_evolucion
         self.dict_tablas_radiografia_completa['Segmentos'] = lis_queries_segmentos
+        self.dict_tablas_radiografia_completa['Top Tiendas'] = lis_queries_top_tiendas
 
         lis_exec_queries = []
         
-        # Agregar a lis_queries las queries de las tablas seleccionadas
+        # Agregar a lis_exec_queries las queries de las tablas seleccionadas
         for tabla in lis_tablas_seleccionadas:
             lis_exec_queries += self.dict_tablas_radiografia_completa[tabla]
 
