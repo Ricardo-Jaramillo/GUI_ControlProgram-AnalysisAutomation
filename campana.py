@@ -1,6 +1,6 @@
 import pandas as pd
 from tqdm import tqdm
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import pandas as pd
 
 # Create a Class to handle the Radiografia data
@@ -57,10 +57,11 @@ class Campana():
         # Asignar variables de la campaña para calculo de tabla de Venta
         condicion_compra = df_desc.condicion_compra[0]
         ind_online = df_desc.ind_online[0]
-        vigencia_ini = df_desc.vigencia_ini[0]
-        vigencia_fin_campana = df_desc.vigencia_fin[0]
+        vigencia_ini = pd.Timestamp(df_desc.vigencia_ini[0]).date()
+        vigencia_fin_campana = pd.Timestamp(df_desc.vigencia_fin[0]).date()
         # Define vigencia_fin como la fecha actual menos 1 dia si la campaña aún no termina
         vigencia_fin = pd.Timestamp.now().date() - pd.DateOffset(days=1) if pd.Timestamp.now().date() <= vigencia_fin_campana else vigencia_fin_campana
+        vigencia_fin = pd.Timestamp(vigencia_fin).date()
         # Calcular los días transcurridos de la campaña
         dias_campana = (vigencia_fin - vigencia_ini).days
         # Ajuste de temporalidad mes anterior
