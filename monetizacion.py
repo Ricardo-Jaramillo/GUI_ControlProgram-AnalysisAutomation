@@ -3,6 +3,8 @@ from productos import Productos
 from publicos_objetivo import PublicosObjetivo
 from radiografia import Radiografia
 from campana import Campana
+from analisis_html import Analisis
+from pathlib import Path
 
 # Create a Class to handle the Monetizacion data that inherits from the Conn class
 class Monetizacion(Conn, Productos):
@@ -13,6 +15,7 @@ class Monetizacion(Conn, Productos):
         self.po = PublicosObjetivo()
         self.rad = Radiografia()
         self.camp = Campana()
+        self.analisis = Analisis()
         # self.ds = DataScience()
 
     def get_marcas_proveedores(self):
@@ -52,7 +55,26 @@ class Monetizacion(Conn, Productos):
         # Create Radiografía Corta tables
         self.rad.create_tables_rad_corta(self, override)
 
-    def get_bc_data(self):
+    def generar_analisis_bc(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, override):
+        self.po.set_bc_variables(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible)
+        # Create BusinessCase tables
+        self.po.create_table_analisis_bc(self, override)
+
+    def guardar_reporte_analisis_bc(self, df, file_path):
+        # Extraer la ruta completa del folder y el nombre del archivo
+        foldername = Path(file_path).parent
+        # Quitar cualquier extensión del nombre del archivo
+        filename = file_path.split('/')[-1]
+        
+        self.analisis.set_df(df)
+        self.analisis.save_html(foldername=foldername, filename=filename, show_figs=False)
+        # self.analisis.return_html()
+
+    def obtener_analisis_bc(self):
+        # Get Analisis BusinessCase data
+        return self.po.get_analisis_bc_data()
+    
+    def obtener_bc(self):
         # Get BusinessCase data
         return self.po.get_bc_data()
 

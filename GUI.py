@@ -144,7 +144,7 @@ class App:
 
         buttons = [
             ("1. Ingresar Productos", self.ingresar_productos),
-            ("2. BusinessCase", lambda : print("BusinessCase")),
+            ("2. BusinessCase", self.analisis_bc),#lambda : print("BusinessCase")),
             ("3. Públicos Objetivos", self.generar_publicos_objetivos),
             ("4. Listas de envío", self.generar_listas),
             ("5. Radiografía", self.generar_rad),
@@ -662,7 +662,7 @@ class App:
         # Label de Titulo
         tk.Label(frame, text="Ver/Guardar Datos generados", font=("Arial", 12, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
         
-        options = ['Productos', 'Públicos Objetivos', 'BusinessCase', 'Listas']
+        options = ['Productos', 'Públicos Objetivos', 'BusinessCase', 'Analisis de BC', 'Listas']
         for row, option in enumerate(options, start=1):
             tk.Button(frame, width=30, text=f"Ver {option}", command=lambda opt=option: self.get_dataframe(opt, type='show')).grid(row=row, column=0, pady=5, padx=5)
             tk.Button(frame, width=30, text=f"Guardar {option}", command=lambda opt=option: self.get_dataframe(opt, type='save')).grid(row=row, column=1, pady=5, padx=5)
@@ -678,11 +678,21 @@ class App:
         else:
             lis_df_listas = pd.DataFrame()
             lis_title_listas = 'Listas de Envío'
+
+        # Extraer datos de Analisis de Business Case
+        if self.mon.po.dict_df_analisis_bc:
+            lis_df_bc = list(self.mon.po.dict_df_analisis_bc.values())
+            lis_title_bc = list(self.mon.po.dict_df_analisis_bc.keys())
+        else:
+            lis_df_bc = pd.DataFrame()
+            lis_title_bc = 'Analisis de BC'
         
         # Dictionary to map the dataframe
         dic = {
             'Productos': (self.mon.df_productos, 'Productos'),
             'Públicos Objetivos': (self.mon.po.df_pos_agg, 'Públicos Objetivos'),
+            'Analisis de BC': (self.mon.po.df_analisis_bc, 'Analisis de BC'),
+            # 'Analisis de BC': (lis_df_bc, lis_title_bc),
             'BusinessCase': (self.mon.po.df_bc, 'BusinessCase'),
             'Listas': (lis_df_listas, lis_title_listas),
         }
@@ -723,22 +733,154 @@ class App:
             dataframe.to_csv(file_path, index=False)
             messagebox.showinfo("Información", title + " guardado exitosamente.")
 
+    def save_location(self, title):
+        file_path = filedialog.asksaveasfilename(filetypes=[("All files", "*.*")], defaultextension=".html", initialfile=title)
+        if file_path:
+            return file_path
+
+    def show_analisis_bc(self):
+        # Verificar si ya se generó el análisis
+        tabla = '#BC'
+        if not self.mon.validate_if_table_exists(tabla):
+            messagebox.showinfo("Información", f"Por favor genere el Análisis antes de visualizarlo.")
+            return
+
+        df_analisis_bc, dict_df_analisis_bc = self.mon.obtener_analisis_bc()
+
+        # Preguntar al usuario la ubicación para guardar el archivo
+        file_path = self.save_location('Analisis_BC')
+        self.mon.guardar_reporte_analisis_bc(df_analisis_bc, file_path)
+
+        # Mensaje de éxito
+        messagebox.showinfo("Información", "Reporte de Análisis de Business Case guardado exitosamente.")
+
+    def show_bc(self):
+        # Verificar si ya se generó el análisis
+        tabla = '#BC'
+        if not self.mon.validate_if_table_exists(tabla):
+            messagebox.showinfo("Información", f"Por favor genere el Business Case antes de visualizarlo.")
+            return
+
+        df_bc = self.mon.obtener_bc()
+
+        print(df_bc)
+
+    def validate_entries_bc(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion):
+        # Validar que las fechas sean en formato YYYY-MM-DD
+        try:
+            inicio_campana = pd.to_datetime(inicio_campana.strip())
+            fin_campana = pd.to_datetime(fin_campana.strip())
+            inicio_analisis = pd.to_datetime(inicio_analisis.strip())
+            fin_analisis = pd.to_datetime(fin_analisis.strip())
+        except:
+            messagebox.showwarning("Advertencia", "Por favor ingrese fechas en formato YYYY-MM-DD.")
+            return False
+        
+        # Validar que el nombre no esté vacío
+        if not nombre.strip():
+            messagebox.showwarning("Advertencia", "Por favor ingrese un nombre para el Análisis.")
+            return False
+        
+        # Validar que la condición sea numérica
+        if condicion.strip() and not condicion.strip().isdigit():
+            messagebox.showwarning("Advertencia", "Por favor ingrese un valor numérico para Condición de Compra.")
+            return False
+
+        return True
+
+    def submit_datos_bc(self, entry_nombre_bc, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion, entry_elegible):
+        # Extraer los campos de BC
+        nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible = entry_nombre_bc.get(), entry_inicio_campana.get(), entry_fin_campana.get(), entry_inicio_analisis.get(), entry_fin_analisis.get(), entry_condicion.get(), entry_elegible.get()
+
+        if self.validate_entries_bc(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion):
+            # Preguntar si ya existe la tabla PRODUCTOS
+            if not self.mon.validate_if_table_exists('#PRODUCTOS'):
+                messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar el Analisis.")
+                return
+            
+            # Verificar si se generó ya la tabla
+            override = None
+            tabla = '#ANALISIS_BC'
+            if self.mon.validate_if_table_exists(tabla):
+                override = messagebox.askyesno("Advertencia", f"Ya hay un analisis generado, ¿Desea sobreescribirlo?")
+            
+            # Extraer datos para el BC
+            self.mon.generar_analisis_bc(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, override)
+
+            # Mensaje de éxito
+            messagebox.showinfo("Información", "Analisis generado exitosamente.")
+
     # Función para mostrar el analisis de BusinessCase
     def analisis_bc(self):
-        # Validar si hay datos para BusinessCase
-        if not self.mon.validate_if_table_exists('#BC'):
-            messagebox.showwarning("Advertencia", "No hay datos para BusinessCase. Por favor genere los datos.")
-            return
+        # Crear layout para el Análisis de Business Case
+        self.menu_frame.pack_forget()
+        self.clear_content_frame()
+
+        # Cear un frame para la sección
+        frame = tk.Frame(self.content_frame)
+        frame.pack(pady=10, padx=10)
+
+        # Label
+        tk.Label(frame, text="Análisis y Business Case", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=4, pady=10)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=0, columnspan=4, pady=5, sticky="we")
+
+        # Línea vertical
+        separator = tk.Frame(frame, width=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=2, rowspan=9, pady=5, padx=10, sticky="ns")
+
+        # Ingresar fecha de inicio y fecha termino de campaña
+        tk.Label(frame, text="Datos para Analisis", font=("Arial", 10, "bold")).grid(row=2, column=0, columnspan=2, pady=10)
+        # Ingresar Nombre del Analisis
+        tk.Label(frame, text="Nombre Analisis:").grid(row=3, column=0, pady=10, sticky='e')
+        entry_nombre_bc = tk.Entry(frame, width=25)
+        entry_nombre_bc.grid(row=3, column=1, pady=5)
+        # Fechas
+        tk.Label(frame, text="Inicio de Campaña:").grid(row=4, column=0, pady=5, sticky='e')
+        tk.Label(frame, text="Fin de Campaña:").grid(row=5, column=0, pady=5, sticky='e')
+        entry_inicio_campana = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_fin_campana = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_inicio_campana.grid(row=4, column=1, pady=5)
+        entry_fin_campana.grid(row=5, column=1, pady=5)
+
+        # Ingresar fecha del inicio del análisis
+        tk.Label(frame, text="Inicio del Análisis:").grid(row=6, column=0, pady=10, sticky='e')
+        entry_inicio_analisis = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_inicio_analisis.grid(row=6, column=1, pady=5)
         
-        # Crear un Top Level para mostrar el análisis de BusinessCase
-        top = tk.Toplevel(self.root)
-        top.title("Análisis de BusinessCase")
-        top.geometry("800x600")
+        # Ingresar fecha del fin del análisis
+        tk.Label(frame, text="Fin del Análisis:").grid(row=7, column=0, pady=10, sticky='e')
+        entry_fin_analisis = DateEntry(frame, date_pattern='yyyy-mm-dd')
+        entry_fin_analisis.grid(row=7, column=1, pady=5)
+
+        # Ingresar Condición de Compra
+        tk.Label(frame, text="Condición de Compra:").grid(row=8, column=0, pady=10)
+        entry_condicion = tk.Entry(frame, width=15)
+        entry_condicion.grid(row=8, column=1, pady=5)
+
+        # Botón para generar el análisis
+        tk.Button(frame, width=14, text="Generar Analisis", command=lambda: self.submit_datos_bc(entry_nombre_bc, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion, var_solo_elegible)).grid(row=2, column=3, pady=5)
+
+        # Botón para ver los resultados del Analisis
+        tk.Button(frame, width=14, text="Ver Analisis", command=self.show_analisis_bc).grid(row=4, column=3, pady=5)
+
+        # Botón para generar el BC
+        # tk.Button(frame, width=14, text="Generar BC", command=lambda: self.submit_datos_bc('bc', entry_nombre_bc, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion, var_solo_elegible)).grid(row=5, column=3, pady=5)
+
+        # Boton para ver análisis de BC
+        tk.Button(frame, width=14, text="Ver BC", command=self.show_bc).grid(row=5, column=3, pady=5)
+
+        # Variable para solo cumple condición de compra
+        var_solo_elegible = tk.IntVar()
+        tk.Checkbutton(frame, text="Solo Elegible?", variable=var_solo_elegible).grid(row=7, column=3, pady=5)
+
+        # Bot
+        tk.Button(frame, width=14, text="Regresar al Menú", command=self.show_menu).grid(row=8, column=3, pady=5)
 
         # Mostrar los datos del BusinessCase con df_bc:
-        df_bc = self.mon.get_bc_data()
-
-        
+        # df_bc = self.mon.get_bc_data()
 
     # Validar los campos para el BusinessCase
     def validate_entries_rad_corta(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion):
