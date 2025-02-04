@@ -22,7 +22,22 @@ class Analisis:
         self.foldername = Path(foldername)
 
     def set_df(self, _df):
+        # Mapear nombres de TABLA
+        dict_tabla = {
+            'MES': 'MES',
+            'FORMATO': 'FORMATO',
+            'ESTADO_REGION': 'ESTADO',
+            'ESTADO_FORMATO_REGION_TIENDA': 'TIENDA',
+            'FAMILIA': 'FAMILIA',
+            'NSE': 'NSE',
+            'CLASS': 'CLASS',
+            'CLASS_SUBCLASS': 'SUBCLASS',
+            'CLASS_PRODTYPE_SUBCLASS': 'PROD_TYPE',
+            'CLASS_PRODTYPE_PRODUCTO_SUBCLASS': 'PRODUCTO'
+        }
+
         df = _df.copy().fillna(0)
+        df['tabla'] = df['tabla'].map(dict_tabla).fillna(df['tabla'])
         self.df = df
 
     def __set_df_mexico(self):

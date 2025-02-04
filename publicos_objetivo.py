@@ -13,6 +13,43 @@ class PublicosObjetivo():
         self.dict_listas_envios = {}
         self.set_pos_variables()
         self.dict_bc_analisis_var = {}
+        self.__set_analisis_agg()
+        self.__set_list_agg_existentes_bc()
+
+    def __set_list_agg_existentes_bc(self):
+        self.lis_agg_existentes_bc = [
+            ['Mes'],
+            ['Region', 'Estado'],
+            ['Formato'],
+            ['Region', 'Estado', 'Formato', 'Tienda'],
+            ['NSE'],
+            ['Familia'],
+            ['Class'],
+            ['Class', 'Subclass'],
+            ['Class', 'Subclass', 'ProdType'],
+            ['Class', 'Subclass', 'ProdType', 'Producto']
+        ]
+    
+    def __set_analisis_agg(self):
+        self.list_agg = [
+            'Mes',
+
+            'Region',
+            'Estado',
+            'Formato',
+            'Tienda',
+
+            'Familia',
+            'NSE',
+
+            'Class',
+            'Subclass',
+            'ProdType',
+            'Producto'
+        ]
+
+    def get_agg_analisis(self):
+        return self.list_agg
 
     def set_pos_variables(self, tiendas='', excluir='', is_online=0, condicion=0, inicio='', termino=''):
         self.tiendas = tiendas
@@ -735,8 +772,107 @@ class PublicosObjetivo():
 
         # Agregar lista de envíos total
         self.dict_listas_envios['list_total'] = self.df_listas_total
+
+    def generar_sql_grouping_sets_bc_total(self, lis_agg):
+        if not lis_agg:
+            return ""
         
-    def get_query_analisis_bc_agg(self):
+        column_mapping = {
+            "Mes": "MES",
+            "Region": "REGION",
+            "Estado": "STATE",
+            "Formato": "FORMATO_TIENDA",
+            "Tienda": "STORE_DESCRIPTION",
+            "NSE": "NSE",
+            "Familia": "TIPO_FAMILIA",
+            "Class": "CLASS_DESC",
+            "Subclass": "SUBCLASS_DESC",
+            "Prodtype": "PROD_TYPE_DESC",
+            "Producto": "PRODUCT_DESCRIPTION"
+        }
+
+        # Transformar cada combinación en la sintaxis SQL correspondiente con coma al inicio de cada línea
+        sql_grouping_sets = "\n".join(
+            f"            ,({', '.join(column_mapping[col] for col in comb)})"
+            for comb in lis_agg
+        )
+
+        sql_query = f"\n{sql_grouping_sets}"
+        return sql_query
+
+    def generar_sql_grouping_sets_bc_campana(self, sql_grouping):
+        # Separar el SQL por líneas
+        lineas = sql_grouping.split("\n")
+        
+        # Buscar líneas que contengan MES o INVOICE_DATE y comentarlas
+        lineas_comentadas = [
+            f"-- {linea}" if "MES" in linea or "INVOICE_DATE" in linea else linea
+            for linea in lineas
+        ]
+
+        # Unir las líneas de nuevo en un string
+        return "\n".join(lineas_comentadas)
+
+    def generar_sql_bc_case_total(self, lis_agg):
+        column_mapping = {
+            "Mes": "DATE_TRUNC('MONTH', INVOICE_DATE_ADJ)::DATE::VARCHAR",
+            "Region": "REGION",
+            "Estado": "STATE",
+            "Formato": "FORMATO_TIENDA",
+            "Tienda": "STORE_DESCRIPTION",
+            "NSE": "NSE",
+            "Familia": "TIPO_FAMILIA",
+            "Class": "CLASS_DESC",
+            "Subclass": "SUBCLASS_DESC",
+            "ProdType": "PROD_TYPE_DESC",
+            "Producto": "PRODUCT_DESCRIPTION"
+        }
+
+        if lis_agg is None:
+            lis_agg = []
+
+        # Unir las combinaciones existentes con las nuevas
+        combinaciones_totales = [sorted(comb) for comb in lis_agg] + [sorted(comb) for comb in self.lis_agg_existentes_bc]
+        print(combinaciones_totales)
+        # Ordenar de mayor a menor número de elementos para que los más específicos estén arriba
+        combinaciones_totales.sort(key=len, reverse=True)
+
+        # Crear el código SQL del CASE
+        case_statements = "\n".join(
+            f"""                WHEN {' AND '.join(f"{column_mapping[col]} <> ''" for col in comb)} THEN '{'_'.join(comb).upper()}'"""
+            for comb in combinaciones_totales
+        )
+
+        sql_case = f"""
+            CASE
+            {case_statements}
+            ELSE 'TOTAL'
+            END AS TABLA"""
+        
+        return sql_case
+
+    def generar_sql_bc_case_campana(self, sql_case):
+        # Separar el SQL por líneas
+        lineas = sql_case.split("\n")
+        
+        # Buscar líneas que contengan MES o INVOICE_DATE y comentarlas
+        lineas_comentadas = [
+            f"-- {linea}" if "MES" in linea or "INVOICE_DATE" in linea else linea
+            for linea in lineas
+        ]
+
+        # Reemplazar el ELSE 'TOTAL' por ELSE 'CAMPANA'
+        lineas_comentadas[-2] = lineas_comentadas[-2].replace("'TOTAL'", "'CAMPANA'")
+        
+        # Unir las líneas de nuevo en un string
+        return "\n".join(lineas_comentadas)
+
+    def get_query_analisis_bc_agg(self, lis_agg):
+        query_grouping_sets_total = self.generar_sql_grouping_sets_bc_total(lis_agg)
+        query_grouping_sets_campana = self.generar_sql_grouping_sets_bc_campana(query_grouping_sets_total)
+        query_case_total = self.generar_sql_bc_case_total(lis_agg)
+        query_case_campana = self.generar_sql_bc_case_campana(query_case_total)
+
         query_tx = f'''
             -- CREAR TABLA DE TX
             DROP TABLE IF EXISTS #TX_CONDICION;
@@ -836,24 +972,12 @@ class PublicosObjetivo():
             );
         '''
 
-        query_agg_total = '''
+        query_agg_total = f'''
             DROP TABLE IF EXISTS #AGG_TOTAL;
             CREATE TABLE #AGG_TOTAL AS (
             SELECT
             
-                CASE
-                WHEN DATE_TRUNC('MONTH', INVOICE_DATE_ADJ)::DATE::VARCHAR <> '' THEN 'MES'
-                WHEN REGION <> '' AND STATE <> '' AND FORMATO_TIENDA <> '' AND STORE_DESCRIPTION <> '' THEN 'TIENDA'
-                WHEN FORMATO_TIENDA <> '' THEN 'FORMATO'
-                WHEN REGION <> '' AND STATE <> '' THEN 'ESTADO'
-                WHEN NSE <> '' THEN 'NSE'
-                WHEN TIPO_FAMILIA <> '' THEN 'FAMILIA'
-                WHEN CLASS_DESC <> '' AND SUBCLASS_DESC <> '' AND PROD_TYPE_DESC <> '' AND PRODUCT_DESCRIPTION <> '' THEN 'PRODUCTO'
-                WHEN CLASS_DESC <> '' AND SUBCLASS_DESC <> '' AND PROD_TYPE_DESC <> '' THEN 'PROD_TYPE'
-                WHEN CLASS_DESC <> '' AND SUBCLASS_DESC <> '' THEN 'SUBCLASS'
-                WHEN CLASS_DESC <> '' THEN 'CLASS'
-                ELSE 'TOTAL'
-                END AS TABLA
+                {query_case_total}
                 
                 ,1::INT IND_MC
                 ,'TOTAL' PROVEEDOR
@@ -967,29 +1091,17 @@ class PublicosObjetivo():
                 ,(CLASS_DESC, SUBCLASS_DESC)
                 ,(CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
                 ,(CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC, PRODUCT_DESCRIPTION)
-            --     ,(REGION, STATE, PRODUCT_DESCRIPTION)
+                {query_grouping_sets_total}
                 )
             );
         '''
 
-        query_agg_campana = '''
+        query_agg_campana = f'''
             DROP TABLE IF EXISTS #AGG_CAMPANA;
             CREATE TABLE #AGG_CAMPANA AS (
             SELECT
             
-                CASE
-            --       WHEN DATE_TRUNC('MONTH', INVOICE_DATE_ADJ)::DATE::VARCHAR <> '' THEN 'MES'
-                WHEN REGION <> '' AND STATE <> '' AND FORMATO_TIENDA <> '' AND STORE_DESCRIPTION <> '' THEN 'TIENDA'
-                WHEN FORMATO_TIENDA <> '' THEN 'FORMATO'
-                WHEN REGION <> '' AND STATE <> '' THEN 'ESTADO'
-                WHEN NSE <> '' THEN 'NSE'
-                WHEN TIPO_FAMILIA <> '' THEN 'FAMILIA'
-                WHEN CLASS_DESC <> '' AND SUBCLASS_DESC <> '' AND PROD_TYPE_DESC <> '' AND PRODUCT_DESCRIPTION <> '' THEN 'PRODUCTO'
-                WHEN CLASS_DESC <> '' AND SUBCLASS_DESC <> '' AND PROD_TYPE_DESC <> '' THEN 'PROD_TYPE'
-                WHEN CLASS_DESC <> '' AND SUBCLASS_DESC <> '' THEN 'SUBCLASS'
-                WHEN CLASS_DESC <> '' THEN 'CLASS'
-                ELSE 'CAMPANA'
-                END AS TABLA
+                {query_case_campana}
                 
                 ,1::INT IND_MC
                 ,'TOTAL' PROVEEDOR
@@ -1103,6 +1215,7 @@ class PublicosObjetivo():
                 ,(CLASS_DESC, SUBCLASS_DESC)
                 ,(CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC)
                 ,(CLASS_DESC, SUBCLASS_DESC, PROD_TYPE_DESC, PRODUCT_DESCRIPTION)
+                {query_grouping_sets_campana}
                 )
             );
         '''
@@ -2104,15 +2217,53 @@ class PublicosObjetivo():
         self.dict_bc_analisis_var['condicion_4'] = 200
         self.dict_bc_analisis_var['condicion_5'] = 300
         
-    def create_table_analisis_bc(self, conn, override):
-        query_agg = self.get_query_analisis_bc_agg()
+    def validate_agg(self, lis_agg):
+        valid_agg = self.list_agg
+
+        # Normalizar delimitadores y convertir en listas ordenadas
+        def normalizar_y_ordenar(item):
+            for sep in [',', '-', ' ']:
+                item = item.replace(sep, '_')
+
+            # Filtrar valores vacíos después de dividir y quitar todo lo que no esté en self.list_agg
+            res = sorted(filter(None, [item.strip().capitalize() for item in item.split('_')]))
+            
+            # Filtrar valores que no estén en self.list_agg, solo guardar cuando todos los valores estén en la lista
+            if all([val in valid_agg for val in res]):
+                res = [val for val in res if val in valid_agg]
+            else:
+                res = []
+
+            return tuple(res)
+        
+        if lis_agg is None:
+            return None
+
+        # Convertimos las combinaciones existentes en conjuntos para comparación
+        sets_existentes = {frozenset(comb) for comb in self.lis_agg_existentes_bc}
+        
+        # Convertimos y ordenamos la lista de combinaciones de entrada
+        lista_procesada = [normalizar_y_ordenar(item) for item in lis_agg]
+
+        # Eliminar valores vacíos
+        lista_procesada = [item for item in lista_procesada if item]
+        
+        # Filtrar las combinaciones que no estén en las existentes (sin importar el orden)
+        resultado = [list(comb) for comb in lista_procesada if frozenset(comb) not in sets_existentes]
+        
+        return resultado
+
+    def create_table_analisis_bc(self, conn, lis_agg):
+        # Limpiar lista de agrupados
+        lis_agg = self.validate_agg(lis_agg)
+
+        query_agg = self.get_query_analisis_bc_agg(lis_agg)
         query_segmentos = self.get_query_analisis_bc_segmentos()
         query_recompra = self.get_query_analisis_bc_recompra()
         query_bc = self.get_query_bc()
 
         for query in tqdm(query_agg + query_segmentos + query_recompra + query_bc):
-            if override or override is None:
-                conn.execute(query)
+            conn.execute(query)
 
         self.df_bc = conn.select('SELECT * FROM #BC ORDER BY 1,2,3,4')
         

@@ -788,6 +788,83 @@ class App:
 
         return True
 
+    def select_analisis_agg(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible):
+        # Botón para confirmar la selección
+        def confirmar_seleccion():
+            # obtener los agrupados seleccionados
+            lis_tablas_seleccionadas = listbox_agrupados.get(0, tk.END)
+            # print(lis_tablas_seleccionadas)
+        
+            # lis_tablas_seleccionadas = [tabla for tabla, var in var_tablas.items() if var.get()]
+            frame.destroy()
+
+            # Preguntar si desea guardar los cambios
+            op = messagebox.askyesno("Advertencia", f"¿Está seguro que desea ejecutar el Analisis?")
+            if op:
+                # Actualizar los resultados de la campaña
+                self.mon.generar_analisis_bc(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, lis_tablas_seleccionadas)
+                
+                # Mensaje de éxito
+                messagebox.showinfo("Información", "Analisis generado exitosamente.")
+
+        # Botón para agregar el agrupado
+        def agregar_agrupado():
+            agrupado = entry_agrupado.get().strip()
+            if agrupado:
+                listbox_agrupados.insert(tk.END, agrupado)
+                entry_agrupado.delete(0, tk.END)
+
+        # Botón para quitar el agrupado seleccionado
+        def quitar_agrupado():
+            try:
+                selected_items = listbox_agrupados.curselection()
+                for index in reversed(selected_items):
+                    listbox_agrupados.delete(index)
+            except:
+                pass
+
+        lis_agg = self.mon.obtener_lista_opciones_agg_analisis()
+            
+        # Mostrar ventana emergente para introducir los agrupados especiales
+        frame = tk.Toplevel(self.root)
+        frame.resizable(0, 0)
+
+        label_titulo = tk.Label(frame, text="Selección de Agrupados", font=("Arial", 12, "bold"))
+        label_titulo.grid(row=0, column=0, pady=10, padx=10, columnspan=5)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=1, column=0, pady=5, padx=10, sticky="we", columnspan=5)
+
+        # Linea vertical para separar las columnas 1 de 2 y 3
+        separator_v = tk.Frame(frame, width=2, bd=1, relief="sunken")
+        separator_v.grid(row=1, column=1, pady=5, padx=10, sticky="ns", rowspan=len(lis_agg) + 3)
+
+        # Crear una columna con las opciones para el agrupado
+        tk.Label(frame, text="Opciones de Agrupado", font=("Arial", 10, "bold")).grid(row=2, column=0, pady=1, padx=10, sticky='w')
+        for i, tabla in enumerate(lis_agg, start=3):
+            tk.Label(frame, text="• "+tabla).grid(row=i, column=0, pady=1, padx=5, sticky='w')
+
+        # Segunda columna con el espacio para ingresar el agrupado y debajo el cuadro donde se agregarán y mostrarán los agrupados
+        tk.Label(frame, text="Ingresar Agrupados:").grid(row=2, column=2, pady=1, padx=5, sticky='w')
+        entry_agrupado = tk.Entry(frame, width=25)
+        entry_agrupado.grid(row=2, column=3, pady=1, padx=5, sticky='w', columnspan=2)
+
+        # Botón para agregar el agrupado
+        tk.Button(frame, text="Agregar", command=agregar_agrupado, width=8).grid(row=3, column=3, pady=1, padx=5)
+        tk.Button(frame, text="Quitar", command=quitar_agrupado, width=8).grid(row=3, column=4, pady=1, padx=5)
+
+        # Listbox para mostrar los agrupados
+        listbox_agrupados = tk.Listbox(frame, width=25, height=15, selectmode=tk.EXTENDED)
+        listbox_agrupados.grid(row=4, column=2, pady=1, padx=5, sticky='we', columnspan=3, rowspan=len(lis_agg) - 1)
+
+        # Linea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=len(lis_agg) + 3, column=0, pady=5, padx=10, sticky="we", columnspan=5)
+
+        button_confirmar = tk.Button(frame, text="Confirmar", command=confirmar_seleccion)
+        button_confirmar.grid(row=len(lis_agg) + 4, column=2, pady=10)
+
     def submit_datos_bc(self, entry_nombre_bc, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion, entry_elegible):
         # Extraer los campos de BC
         nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible = entry_nombre_bc.get(), entry_inicio_campana.get(), entry_fin_campana.get(), entry_inicio_analisis.get(), entry_fin_analisis.get(), entry_condicion.get(), entry_elegible.get()
@@ -803,12 +880,21 @@ class App:
             tabla = '#ANALISIS_BC'
             if self.mon.validate_if_table_exists(tabla):
                 override = messagebox.askyesno("Advertencia", f"Ya hay un analisis generado, ¿Desea sobreescribirlo?")
-            
-            # Extraer datos para el BC
-            self.mon.generar_analisis_bc(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, override)
 
-            # Mensaje de éxito
-            messagebox.showinfo("Información", "Analisis generado exitosamente.")
+            # Preguntar si se desea generar un agrupado especial
+            res = messagebox.askyesno("Advertencia", "¿Desea seleccionar un agrupado especial?")
+            
+            # Preguntar los agrupados que se desean ver
+            # Extraer datos para el BC
+            if override or override is None:
+                if res:
+                    self.select_analisis_agg(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible)
+                else:
+                    self.mon.generar_analisis_bc(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, lis_agg=None)
+                    # Mensaje de éxito
+                    messagebox.showinfo("Información", "Analisis generado exitosamente.")
+            else:
+                return
 
     # Función para mostrar el analisis de BusinessCase
     def analisis_bc(self):

@@ -55,10 +55,10 @@ class Monetizacion(Conn, Productos):
         # Create Radiografía Corta tables
         self.rad.create_tables_rad_corta(self, override)
 
-    def generar_analisis_bc(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, override):
+    def generar_analisis_bc(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, lis_agg):
         self.po.set_bc_variables(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible)
         # Create BusinessCase tables
-        self.po.create_table_analisis_bc(self, override)
+        self.po.create_table_analisis_bc(self, lis_agg)
 
     def guardar_reporte_analisis_bc(self, df, file_path):
         # Extraer la ruta completa del folder y el nombre del archivo
@@ -140,6 +140,9 @@ class Monetizacion(Conn, Productos):
             return self.camp.get_table_names_resultados()
         elif nombre == 'Radiografia Completa':
             return self.rad.get_table_names_radiografia_completa()
+
+    def obtener_lista_opciones_agg_analisis(self):
+        return self.po.get_agg_analisis()
 
     def validate_campaign_products(self, campaign_name):
         # Validar que la campaña tenga productos
