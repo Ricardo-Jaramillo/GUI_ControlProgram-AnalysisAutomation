@@ -21,6 +21,101 @@ class Analisis:
     def __set_foldername(self, foldername):
         self.foldername = Path(foldername)
 
+    # Función para mapear los nombres de las columnas
+    def __map_col_agg(self, df):
+        dict_map = {
+            'mes': 'Mes',
+            'region': 'Region',
+            'state': 'Estado',
+            'formato_tienda': 'Formato',
+            'tienda': 'Tienda',
+            'store_description': 'Tienda',
+            'nse': 'NSE',
+            'tipo_familia': 'Familia',
+            'class_desc': 'Class',
+            'subclass_desc': 'Subclass',
+            'prod_type_desc': 'Prodtype',
+            'product_description': 'Producto'
+        }
+        df_copy = df.copy()
+        return df_copy.rename(columns=dict_map)
+
+    # Funcion para mapear las salidas de cada variable en list_agg
+    @staticmethod
+    def __map_agg(df):
+        dict_map = {
+            'region': {
+                '10 REGIÓN METROPOLITANA': 'Metropolitana',
+                '20 REGIÓN ORIENTE': 'Oriente',
+                '30 REGIÓN SUR': 'Sur',
+                '40 REGIÓN PACÍFICO': 'Pacifico',
+                '45 REGIÓN BAJÍO': 'Bajio',
+                '48 REGIÓN NORESTE': 'Noreste',
+                '50 REGIÓN COMERCIO ELECTRÓNICO': 'Comercio Electronico',
+                '60 REGIÓN VENTAS CENTRAL': 'Ventas Central',
+                '70 REGIÓN BODEGAS': 'Bodegas'
+            },
+            'state': {
+                'Aguascalientes': 'Aguascalientes',
+                'Baja California': 'Baja California',
+                'Baja California Sur': 'Baja California Sur',
+                'Campeche': 'Campeche',
+                'Chiapas': 'Chiapas',
+                'Ciudad de México': 'Ciudad de Mexico',
+                'Distrito Federal': 'Ciudad de Mexico',
+                'Durango': 'Durango',
+                'Estado de México': 'Mexico',
+                'Guanajuato': 'Guanajuato',
+                'Guerrero': 'Guerrero',
+                'Hidalgo': 'Hidalgo',
+                'Jalisco': 'Jalisco',
+                'Michoacán': 'Michoacan',
+                'Morelos': 'Morelos',
+                'Nayarit': 'Nayarit',
+                'Nuevo León': 'Nuevo Leon',
+                'Oaxaca': 'Oaxaca',
+                'Puebla': 'Puebla',
+                'Querétaro': 'Queretaro',
+                'Quintana Roo': 'Quintana Roo',
+                'San Luis Potosí': 'San Luis Potosi',
+                'Sinaloa': 'Sinaloa',
+                'Tabasco': 'Tabasco',
+                'Tamaulipas': 'Tamaulipas',
+                'Tlaxcala': 'Tlaxcala',
+                'Veracruz': 'Veracruz',
+                'Yucatán': 'Yucatan',
+                'Zacatecas': 'Zacatecas'
+            },
+            'formato_tienda': {
+                '01 SELECTO': 'Selecto',
+                '02 AB': 'AB',
+                '03 CD': 'CD',
+                '04 WEB': 'Web',
+                '05 SUPERCITO': 'Supercito',
+            },
+            'tipo_familia': {
+                'FAMILIA_BEBES': '1 Bebes',
+                'FAMILIA_NINOS': '2 Ninos',
+                'FAMILIA_JOVENES': '3 Jovenes',
+                'JOVEN/VIVO_SOLO': '4 Joven/Vive Solo',
+                'PAREJA_MADURA': '5 Pareja Madura',
+                'NO SEGMENTADO': '6 No Segmentado',
+            },
+            'nse': {
+                'Alto': '1 Alto',
+                'Bajo': '3 Bajo',
+                'Medio': '2 Medio',
+                'NO SEGMENTADO': '4 No Segmentado',
+            }
+        }
+
+        df_copy = df.copy()
+        
+        for col in df_copy.columns:
+            if col in dict_map:
+                df_copy[col] = df_copy[col].map(dict_map[col]).fillna(df_copy[col])
+        return df_copy
+
     def set_df(self, _df):
         # Mapear nombres de TABLA
         dict_tabla = {
@@ -35,9 +130,16 @@ class Analisis:
             'CLASS_PRODTYPE_SUBCLASS': 'PROD_TYPE',
             'CLASS_PRODTYPE_PRODUCTO_SUBCLASS': 'PRODUCTO'
         }
-
+        # Mapear los valores de TABLA
         df = _df.copy().fillna(0)
         df['tabla'] = df['tabla'].map(dict_tabla).fillna(df['tabla'])
+
+        # Mapear valores de cada columna
+        df = self.__map_agg(df)
+
+        # Mapear los nombres de las columnas
+        df = self.__map_col_agg(df)
+
         self.df = df
 
     def __set_df_mexico(self):
@@ -68,11 +170,15 @@ class Analisis:
         df_dict = {}
         
         # Dataframe de KPIs
+        print(columns)
         if 'TOTAL' in columns:
+            print('TOTAL en columns')
+            print(df[df['tabla'] == 'TOTAL'][kpi_columns].reset_index(drop=True).T) #CONTINUAR
             df_kpis = df[df['tabla'] == 'TOTAL'][kpi_columns].reset_index(drop=True).T
             df_kpis.rename(columns={0: 'valor'}, inplace=True)
             df_kpis = df_kpis[df_kpis['valor'].notnull() & pd.to_numeric(df_kpis['valor'], errors='coerce').notnull()]
             df_dict['KPIS'] = df_kpis
+            print('Dataframe de KPIs creado correctamente.')
         
         # Dataframes restantes
         for col in columns:
@@ -120,12 +226,12 @@ class Analisis:
 
     # Función para graficar con estilo Seaborn
     def plot_mes(self, _df, col_var, figsize=(16, 4), y2_var=None, ax_type=['bar', None], twinx=False, show=False):
-        df = _df.copy().sort_values('mes')
+        df = _df.copy().sort_values('Mes')
         fig, ax1 = plt.subplots(figsize=figsize)
 
         # Ajustar el desplazamiento horizontal de las barras
         bar_width = 0.4
-        x_positions = np.arange(len(df['mes']))
+        x_positions = np.arange(len(df['Mes']))
 
         # Configuración para manejar gráficos de barras dobles
         if ax_type == ['bar', 'bar']:
@@ -177,9 +283,9 @@ class Analisis:
 
         # Ajustar etiquetas del eje X
         ax1.set_xticks(x_positions)
-        ax1.set_xticklabels(df['mes'], rotation=45)
+        ax1.set_xticklabels(df['Mes'], rotation=45)
 
-        title = f"{col_var} por mes" if not y2_var else f"{col_var} y {y2_var} por mes"
+        title = f"{col_var} por Mes" if not y2_var else f"{col_var} y {y2_var} por Mes"
 
         plt.title(title, fontsize=14, color='black', weight='bold')
         plt.tight_layout()
@@ -195,23 +301,23 @@ class Analisis:
     def merge_df_mapa(self, _df, df_mapa):
         df = _df.copy()
         estados = df_mapa.name.unique()
-        for val_state in df['state'].unique():
+        for val_state in df['Estado'].unique():
             # Hacer el match de cada estado con los nombres del Geo, con una tolerancia de 90%
             match = process.extractOne(val_state, estados, score_cutoff=90)
             if match:
                 # print(f'{state} -> {match[0]}')
-                df.loc[df['state'] == val_state, 'state'] = match[0]
+                df.loc[df['Estado'] == val_state, 'Estado'] = match[0]
             else:
                 print(f'No se encontró match para {val_state}')
 
         # Paso 3: Asegúrate de que los nombres de los estados coincidan entre el GeoJSON y tu DataFrame
         # Limpia los nombres en ambos DataFrames para evitar problemas (mayúsculas, espacios, acentos)
         df_mapa['name'] = df_mapa['name'].str.strip().str.lower()
-        df['state'] = df['state'].str.strip().str.lower()
+        df['Estado'] = df['Estado'].str.strip().str.lower()
 
         # Paso 4: Haz un merge entre el GeoJSON y tus datos
         # El GeoJSON usa 'name' para los nombres de los estados, y tu DataFrame usa 'state'
-        df_plot = df_mapa.merge(df, left_on='name', right_on='state', how='inner')
+        df_plot = df_mapa.merge(df, left_on='name', right_on='Estado', how='inner')
 
         return df_plot
 
@@ -251,7 +357,7 @@ class Analisis:
             plt.close(fig)
 
         # Cambiar la columna a formato de moneda
-        df_aux = df_plot[['state', column]].sort_values(column, ascending=False).reset_index(drop=True)
+        df_aux = df_plot[['Estado', column]].sort_values(column, ascending=False).reset_index(drop=True)
         df_aux[column] = df_aux[column].map('${:,.0f}'.format)
 
         return fig, df_aux
@@ -265,7 +371,7 @@ class Analisis:
         df_filtered = df[df[ref_column].isin(filter)].sort_values(sortby, ascending=False)
         
         # Agrupar por estado y sumar la venta
-        df_agg = df_filtered.groupby('state').agg(
+        df_agg = df_filtered.groupby('Estado').agg(
             share=('share', 'mean'),
             venta_actual=('venta_actual', 'sum'),
             cat_venta_actual=('cat_venta_actual', 'sum'),
@@ -394,11 +500,11 @@ class Analisis:
 
         return fig
 
-    def plot_pie(self, _df, cat_column, var_column, show_na=True, figsize=(8, 8), show=False):
+    def plot_pie(self, _df, cat_column, var_column, figsize=(8, 8), show=False):
         df = _df.copy().sort_values(var_column, ascending=False)
-
-        if not show_na:
-            df = df[df[cat_column] != 'NO SEGMENTADO']
+        
+        # Quitar vacíos
+        df = df[df[var_column] > 0]
 
         # Configurar los datos para el gráfico
         sizes = df[var_column]
@@ -580,25 +686,25 @@ class Analisis:
         df_plot = self.merge_df_mapa(df_estado, df_mexico)
         fig_estados, df_table_estados = self.plot_estado(df_plot, 'venta_actual', 'Venta Actual por Estado', cmap='OrRd', figsize=(12, 8), show=show)
 
-        df_table_filtered_tiendas, df_filtered_tiendas_agg = self.top_low_n(df_tienda, 'store_description', 'venta_actual', n=5)
+        df_table_filtered_tiendas, df_filtered_tiendas_agg = self.top_low_n(df_tienda, 'Tienda', 'venta_actual', n=5)
         df_plot = self.merge_df_mapa(df_filtered_tiendas_agg, df_mexico)
         fig_top_tiendas, df_table_filtered_estados = self.plot_estado(df_plot, 'venta_actual', 'Top y Lowest 10 tiendas por Estado', cmap='OrRd', figsize=(12, 8), show=show)
 
         fig_table_estados = self.plot_table(df_table_estados, 'venta_actual', 'Venta por Estados', title_off=2, figsize=(6, 4), show=show)
         fig_table_top_tiendas = self.plot_table(df_table_filtered_tiendas, 'venta_actual', 'Top y Lowest 10 Tiendas por Venta Actual', title_off=1.2, figsize=(12, 4), show=show)
 
-        fig_formato = self.plot_cat_column(df_formato, 'formato_tienda', 'venta_actual', 'Venta Actual por Formato de Tienda', figsize=(12, 4), show=show)
-        fig_familia = self.plot_cat_column(df_familia, 'tipo_familia', 'venta_actual', 'Venta Actual por Tipo de Familia', figsize=(12, 4), show=show)
-        fig_nse = self.plot_cat_column(df_nse, 'nse', 'venta_actual', 'Venta Actual por NSE', figsize=(12, 4), show=show)
+        fig_formato = self.plot_cat_column(df_formato, 'Formato', 'venta_actual', 'Venta Actual por Formato de Tienda', figsize=(12, 4), show=show)
+        fig_familia = self.plot_cat_column(df_familia, 'Familia', 'venta_actual', 'Venta Actual por Tipo de Familia', figsize=(12, 4), show=show)
+        fig_nse = self.plot_cat_column(df_nse, 'NSE', 'venta_actual', 'Venta Actual por NSE', figsize=(12, 4), show=show)
 
-        fig_formato_pie = self.plot_pie(df_formato, 'formato_tienda', 'venta_actual', show_na=False, figsize=(8, 4), show=show)
-        fig_familia_pie = self.plot_pie(df_familia, 'tipo_familia', 'venta_actual', show_na=False, figsize=(8, 4), show=show)
-        fig_nse_pie = self.plot_pie(df_nse, 'nse', 'venta_actual', show_na=False, figsize=(8, 4), show=show)
+        fig_formato_pie = self.plot_pie(df_formato, 'Formato', 'venta_actual', figsize=(8, 4), show=show)
+        fig_familia_pie = self.plot_pie(df_familia, 'Familia', 'venta_actual', figsize=(8, 4), show=show)
+        fig_nse_pie = self.plot_pie(df_nse, 'NSE', 'venta_actual', figsize=(8, 4), show=show)
 
-        fig_class = self.plot_cat_column_h(df_class, 'class_desc', 'venta_actual', 'Venta Actual por Clase', figsize=(8, 2), frac_off_x=0.06, top=5, show=show)
-        fig_subclass = self.plot_cat_column_h(df_subclass, 'subclass_desc', 'venta_actual', 'Venta Actual por Subclase', figsize=(8, 2), frac_off_x=0.06, top=5, show=show)
-        fig_prod_type = self.plot_cat_column_h(df_prod_type, 'prod_type_desc', 'venta_actual', 'Venta Actual por Tipo de Producto', figsize=(8, 4), frac_off_x=0.06, hue='subclass_desc', top=10, show=show)
-        fig_product = self.plot_cat_column_h(df_producto, 'product_description', 'venta_actual', 'Venta Actual por Producto', figsize=(8, 8), frac_off_x=0.06, frac_off_y=0.005, hue='prod_type_desc', top=20, show=show)
+        fig_class = self.plot_cat_column_h(df_class, 'Class', 'venta_actual', 'Venta Actual por Clase', figsize=(8, 2), frac_off_x=0.06, top=5, show=show)
+        fig_subclass = self.plot_cat_column_h(df_subclass, 'Subclass', 'venta_actual', 'Venta Actual por Subclase', figsize=(8, 2), frac_off_x=0.06, top=5, show=show)
+        fig_prod_type = self.plot_cat_column_h(df_prod_type, 'Prodtype', 'venta_actual', 'Venta Actual por Tipo de Producto', figsize=(8, 4), frac_off_x=0.06, hue='Subclass', top=10, show=show)
+        fig_product = self.plot_cat_column_h(df_producto, 'Producto', 'venta_actual', 'Venta Actual por Producto', figsize=(8, 8), frac_off_x=0.06, frac_off_y=0.005, hue='Prodtype', top=20, show=show)
 
         fig_kpis = self.plot_kpis(df_kpis, dict_kpis, show=False)
 
@@ -738,9 +844,9 @@ class Analisis:
             self.__set_foldername(foldername)
 
         if periodo == 'total':
-            df = self.df[self.df['mes'] != 'CAMPANA']
+            df = self.df[self.df['Mes'] != 'CAMPANA']
         elif periodo == 'campana':
-            df = self.df[self.df['mes'] == 'CAMPANA']
+            df = self.df[self.df['Mes'] == 'CAMPANA']
 
         df_dict, dict_kpis = self.__split_df(df)
         self.get_figs(df_dict, dict_kpis, show=show_figs)

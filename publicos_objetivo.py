@@ -1,5 +1,6 @@
 import pandas as pd
 from tqdm import tqdm
+from analisis_html import Analisis
 
 # Create a Class to handle the Monetizacion data that inherits from the Conn class
 class PublicosObjetivo():
@@ -48,6 +49,81 @@ class PublicosObjetivo():
             'Producto'
         ]
 
+    # Funcion para mapear las salidas de cada variable en list_agg
+    def __map_agg(self, df):
+        dict_map = {
+            'region': {
+                '10 REGIÓN METROPOLITANA': 'Metropolitana',
+                '20 REGIÓN ORIENTE': 'Oriente',
+                '30 REGIÓN SUR': 'Sur',
+                '40 REGIÓN PACÍFICO': 'Pacifico',
+                '45 REGIÓN BAJÍO': 'Bajio',
+                '48 REGIÓN NORESTE': 'Noreste',
+                '50 REGIÓN COMERCIO ELECTRÓNICO': 'Comercio Electronico',
+                '60 REGIÓN VENTAS CENTRAL': 'Ventas Central',
+                '70 REGIÓN BODEGAS': 'Bodegas'
+            },
+            'state': {
+                'Aguascalientes': 'Aguascalientes',
+                'Baja California': 'Baja California',
+                'Baja California Sur': 'Baja California Sur',
+                'Campeche': 'Campeche',
+                'Chiapas': 'Chiapas',
+                'Ciudad de México': 'Ciudad de Mexico',
+                'Distrito Federal': 'Ciudad de Mexico',
+                'Durango': 'Durango',
+                'Estado de México': 'Estado de Mexico',
+                'Guanajuato': 'Guanajuato',
+                'Guerrero': 'Guerrero',
+                'Hidalgo': 'Hidalgo',
+                'Jalisco': 'Jalisco',
+                'Michoacán': 'Michoacan',
+                'Morelos': 'Morelos',
+                'Nayarit': 'Nayarit',
+                'Nuevo León': 'Nuevo Leon',
+                'Oaxaca': 'Oaxaca',
+                'Puebla': 'Puebla',
+                'Querétaro': 'Queretaro',
+                'Quintana Roo': 'Quintana Roo',
+                'San Luis Potosí': 'San Luis Potosi',
+                'Sinaloa': 'Sinaloa',
+                'Tabasco': 'Tabasco',
+                'Tamaulipas': 'Tamaulipas',
+                'Tlaxcala': 'Tlaxcala',
+                'Veracruz': 'Veracruz',
+                'Yucatán': 'Yucatan',
+                'Zacatecas': 'Zacatecas'
+            },
+            'formato_tienda': {
+                '01 SELECTO': 'Selecto',
+                '02 AB': 'AB',
+                '03 CD': 'CD',
+                '04 WEB': 'Web',
+                '05 SUPERCITO': 'Supercito',
+            },
+            'tipo_familia': {
+                'FAMILIA_BEBES': '1 Bebes',
+                'FAMILIA_NINOS': '2 Ninos',
+                'FAMILIA_JOVENES': '3 Jovenes',
+                'JOVEN/VIVO_SOLO': '4 Joven/Vive Solo',
+                'PAREJA_MADURA': '5 Pareja Madura',
+                'NO SEGMENTADO': '6 No Segmentado',
+            },
+            'nse': {
+                'Alto': '1 Alto',
+                'Bajo': '3 Bajo',
+                'Medio': '2 Medio',
+                'NO SEGMENTADO': '4 No Segmentado',
+            }
+        }
+
+        df_copy = df.copy()
+        
+        for col in df_copy.columns:
+            if col in dict_map:
+                df_copy[col] = df_copy[col].map(dict_map[col], na_action='ignore')
+        return df_copy
+
     def get_agg_analisis(self):
         return self.list_agg
 
@@ -60,6 +136,12 @@ class PublicosObjetivo():
         self.termino = termino
         self.__get_fechas_campana()
     
+    def get_bc_options_familia(self, conn):
+        return sorted(Analisis._Analisis__map_agg(conn.select('SELECT DISTINCT TIPO_FAMILIA FROM CHEDRAUI.V_CUSTOMER_CONTACT ORDER BY 1'))['tipo_familia'].tolist())
+
+    def get_bc_options_nse(self, conn):
+        return sorted(Analisis._Analisis__map_agg(conn.select('SELECT DISTINCT NSE FROM CHEDRAUI.V_CUSTOMER_CONTACT ORDER BY 1'))['nse'].tolist())
+
     def set_po_filtros_variables(self, venta_antes, venta_camp, cond_antes, cond_camp, online):
         self.venta_antes = venta_antes
         self.venta_camp = venta_camp
@@ -833,7 +915,7 @@ class PublicosObjetivo():
 
         # Unir las combinaciones existentes con las nuevas
         combinaciones_totales = [sorted(comb) for comb in lis_agg] + [sorted(comb) for comb in self.lis_agg_existentes_bc]
-        print(combinaciones_totales)
+        
         # Ordenar de mayor a menor número de elementos para que los más específicos estén arriba
         combinaciones_totales.sort(key=len, reverse=True)
 
@@ -897,12 +979,16 @@ class PublicosObjetivo():
                 ,CASE WHEN SUM(SALE_NET_VAL) BETWEEN '{self.dict_bc_analisis_var['condicion_4']}' AND '{self.dict_bc_analisis_var['condicion_5']}' THEN 1 ELSE 0 END AS IND_CONDICION_5
                 ,CASE WHEN SUM(SALE_NET_VAL) > '{self.dict_bc_analisis_var['condicion_5']}' THEN 1 ELSE 0 END AS IND_CONDICION_6
                 
-            FROM FCT_SALE_LINE
+            FROM FCT_SALE_LINE A
             INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
             LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER) F USING(INVOICE_NO)
-            WHERE INVOICE_DATE BETWEEN {self.dict_bc_analisis_var['date_dash']} OR INVOICE_DATE BETWEEN {self.dict_bc_analisis_var['date_dash_aa']}
+            {'LEFT JOIN CHEDRAUI.V_CUSTOMER_CONTACT ON CUSTOMER_CODE_TY = CUSTOMER_CODE' if self.dict_bc_analisis_var['nse'] or self.dict_bc_analisis_var['familia'] else ''}
+            WHERE (INVOICE_DATE BETWEEN {self.dict_bc_analisis_var['date_dash']} OR INVOICE_DATE BETWEEN {self.dict_bc_analisis_var['date_dash_aa']})
             AND BUSINESS_TYPE = 'R'
             AND SALE_NET_VAL > 0
+            {'AND A.STORE_CODE IN ({})'.format(self.dict_bc_analisis_var['tiendas']) if self.dict_bc_analisis_var['tiendas'] else ''}
+            {'AND NSE IN ({})'.format(self.dict_bc_analisis_var['nse']) if self.dict_bc_analisis_var['nse'] else ''}
+            {'AND TIPO_FAMILIA IN ({})'.format(self.dict_bc_analisis_var['familia']) if self.dict_bc_analisis_var['familia'] else ''}
             --   AND UI_FLG = 0
             GROUP BY 1,2,3,4,5,6,7,8--,9,10,11,12
             {f'HAVING IND_ELEGIBLE = 1' if self.dict_bc_analisis_var['elegible'] else ''}
@@ -929,12 +1015,13 @@ class PublicosObjetivo():
                 ,CASE WHEN SUM(SALE_NET_VAL) BETWEEN '{self.dict_bc_analisis_var['condicion_4']}' AND '{self.dict_bc_analisis_var['condicion_5']}' THEN 1 ELSE 0 END AS IND_CONDICION_5
                 ,CASE WHEN SUM(SALE_NET_VAL) > '{self.dict_bc_analisis_var['condicion_5']}' THEN 1 ELSE 0 END AS IND_CONDICION_6
                 
-            FROM FCT_SALE_LINE_NM
+            FROM FCT_SALE_LINE_NM A
             INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
             LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER_NM) F USING(INVOICE_NO)
-            WHERE INVOICE_DATE BETWEEN {self.dict_bc_analisis_var['date_dash']} OR INVOICE_DATE BETWEEN {self.dict_bc_analisis_var['date_dash_aa']}
+            WHERE (INVOICE_DATE BETWEEN {self.dict_bc_analisis_var['date_dash']} OR INVOICE_DATE BETWEEN {self.dict_bc_analisis_var['date_dash_aa']})
             AND BUSINESS_TYPE = 'R'
             AND SALE_NET_VAL > 0
+            {'AND A.STORE_CODE IN ({})'.format(self.dict_bc_analisis_var['tiendas']) if self.dict_bc_analisis_var['tiendas'] else ''}
             --   AND UI_FLG = 0
             GROUP BY 1,2,3,4,5,6,7,8--,9,10,11,12
             {f'HAVING IND_ELEGIBLE = 1' if self.dict_bc_analisis_var['elegible'] else ''}
@@ -2191,8 +2278,7 @@ class PublicosObjetivo():
         '''
         return [query_bc, query_analisis_bc]
 
-    def set_bc_variables(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible):
-        from dateutil.relativedelta import relativedelta
+    def set_bc_variables(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, familia, nse, tiendas):
 
         inicio_aa = (pd.to_datetime(inicio_analisis) - pd.DateOffset(months=12)).strftime('%Y-%m-%d')
         fin_aa = (pd.to_datetime(fin_analisis) - pd.DateOffset(months=12)).strftime('%Y-%m-%d')
@@ -2216,6 +2302,10 @@ class PublicosObjetivo():
         self.dict_bc_analisis_var['condicion_3'] = 150
         self.dict_bc_analisis_var['condicion_4'] = 200
         self.dict_bc_analisis_var['condicion_5'] = 300
+
+        self.dict_bc_analisis_var['familia'] = familia
+        self.dict_bc_analisis_var['nse'] = nse
+        self.dict_bc_analisis_var['tiendas'] = tiendas
         
     def validate_agg(self, lis_agg):
         valid_agg = self.list_agg

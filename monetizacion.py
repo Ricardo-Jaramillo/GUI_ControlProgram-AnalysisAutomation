@@ -55,10 +55,16 @@ class Monetizacion(Conn, Productos):
         # Create Radiografía Corta tables
         self.rad.create_tables_rad_corta(self, override)
 
-    def generar_analisis_bc(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, lis_agg):
-        self.po.set_bc_variables(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible)
+    def generar_analisis_bc(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, familia, nse, tiendas, lis_agg):
+        self.po.set_bc_variables(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, familia, nse, tiendas)
         # Create BusinessCase tables
         self.po.create_table_analisis_bc(self, lis_agg)
+
+    def get_bc_options_familia(self):
+        return self.po.get_bc_options_familia(self)
+
+    def get_bc_options_nse(self):
+        return self.po.get_bc_options_nse(self)
 
     def guardar_reporte_analisis_bc(self, df, file_path):
         # Extraer la ruta completa del folder y el nombre del archivo

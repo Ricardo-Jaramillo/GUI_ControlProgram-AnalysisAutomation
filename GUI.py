@@ -88,6 +88,12 @@ class App:
         self.create_main_layout()
         self.create_menu()
         self.root.resizable(0, 0)
+        self.__set_bc_options()
+
+    def __set_bc_options(self):
+        self.bc_options_familia = ''
+        self.bc_options_nse = ''
+        self.bc_options_tiendas = ''
 
     def show_loading_window(self):
         self.loading_window.show()
@@ -788,7 +794,7 @@ class App:
 
         return True
 
-    def select_analisis_agg(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible):
+    def select_analisis_agg(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, familia, nse, tiendas):
         # Botón para confirmar la selección
         def confirmar_seleccion():
             # obtener los agrupados seleccionados
@@ -802,7 +808,7 @@ class App:
             op = messagebox.askyesno("Advertencia", f"¿Está seguro que desea ejecutar el Analisis?")
             if op:
                 # Actualizar los resultados de la campaña
-                self.mon.generar_analisis_bc(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, lis_tablas_seleccionadas)
+                self.mon.generar_analisis_bc(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, familia, nse, tiendas, lis_tablas_seleccionadas)
                 
                 # Mensaje de éxito
                 messagebox.showinfo("Información", "Analisis generado exitosamente.")
@@ -870,6 +876,10 @@ class App:
         nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible = entry_nombre_bc.get(), entry_inicio_campana.get(), entry_fin_campana.get(), entry_inicio_analisis.get(), entry_fin_analisis.get(), entry_condicion.get(), entry_elegible.get()
 
         if self.validate_entries_bc(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion):
+            familia = self.add_quotes(self.bc_options_familia.replace(', ', ','))
+            nse = self.add_quotes(self.bc_options_nse.replace(', ', ','))
+            tiendas = self.add_quotes(self.bc_options_tiendas.replace(', ', ','))
+            
             # Preguntar si ya existe la tabla PRODUCTOS
             if not self.mon.validate_if_table_exists('#PRODUCTOS'):
                 messagebox.showwarning("Advertencia", "Por favor ingrese productos antes de generar el Analisis.")
@@ -888,9 +898,9 @@ class App:
             # Extraer datos para el BC
             if override or override is None:
                 if res:
-                    self.select_analisis_agg(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible)
+                    self.select_analisis_agg(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, familia, nse, tiendas)
                 else:
-                    self.mon.generar_analisis_bc(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, lis_agg=None)
+                    self.mon.generar_analisis_bc(nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion, elegible, familia, nse, tiendas, lis_agg=None)
                     # Mensaje de éxito
                     messagebox.showinfo("Información", "Analisis generado exitosamente.")
             else:
@@ -911,62 +921,71 @@ class App:
 
         # Línea horizontal
         separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
-        separator.grid(row=1, column=0, columnspan=4, pady=5, sticky="we")
+        separator.grid(row=1, column=0, columnspan=4, pady=2, sticky="we")
 
         # Línea vertical
         separator = tk.Frame(frame, width=2, bd=1, relief="sunken")
-        separator.grid(row=1, column=2, rowspan=9, pady=5, padx=10, sticky="ns")
+        separator.grid(row=1, column=2, rowspan=10, pady=2, padx=5, sticky="ns")
 
         # Ingresar fecha de inicio y fecha termino de campaña
-        tk.Label(frame, text="Datos para Analisis", font=("Arial", 10, "bold")).grid(row=2, column=0, columnspan=2, pady=10)
+        tk.Label(frame, text="Datos para Analisis", font=("Arial", 10, "bold")).grid(row=2, column=0, columnspan=2, pady=2)
         # Ingresar Nombre del Analisis
-        tk.Label(frame, text="Nombre Analisis:").grid(row=3, column=0, pady=10, sticky='e')
+        tk.Label(frame, text="Nombre Analisis:").grid(row=3, column=0, pady=2, sticky='e')
         entry_nombre_bc = tk.Entry(frame, width=25)
-        entry_nombre_bc.grid(row=3, column=1, pady=5)
+        entry_nombre_bc.grid(row=3, column=1, pady=2)
         # Fechas
-        tk.Label(frame, text="Inicio de Campaña:").grid(row=4, column=0, pady=5, sticky='e')
-        tk.Label(frame, text="Fin de Campaña:").grid(row=5, column=0, pady=5, sticky='e')
+        tk.Label(frame, text="Inicio de Campaña:").grid(row=4, column=0, pady=2, sticky='e')
+        tk.Label(frame, text="Fin de Campaña:").grid(row=5, column=0, pady=2, sticky='e')
         entry_inicio_campana = DateEntry(frame, date_pattern='yyyy-mm-dd')
         entry_fin_campana = DateEntry(frame, date_pattern='yyyy-mm-dd')
-        entry_inicio_campana.grid(row=4, column=1, pady=5)
-        entry_fin_campana.grid(row=5, column=1, pady=5)
+        entry_inicio_campana.grid(row=4, column=1, pady=2)
+        entry_fin_campana.grid(row=5, column=1, pady=2)
 
         # Ingresar fecha del inicio del análisis
-        tk.Label(frame, text="Inicio del Análisis:").grid(row=6, column=0, pady=10, sticky='e')
+        tk.Label(frame, text="Inicio del Análisis:").grid(row=6, column=0, pady=2, sticky='e')
         entry_inicio_analisis = DateEntry(frame, date_pattern='yyyy-mm-dd')
-        entry_inicio_analisis.grid(row=6, column=1, pady=5)
+        entry_inicio_analisis.grid(row=6, column=1, pady=2)
         
         # Ingresar fecha del fin del análisis
-        tk.Label(frame, text="Fin del Análisis:").grid(row=7, column=0, pady=10, sticky='e')
+        tk.Label(frame, text="Fin del Análisis:").grid(row=7, column=0, pady=5, sticky='e')
         entry_fin_analisis = DateEntry(frame, date_pattern='yyyy-mm-dd')
-        entry_fin_analisis.grid(row=7, column=1, pady=5)
+        entry_fin_analisis.grid(row=7, column=1, pady=2)
 
         # Ingresar Condición de Compra
-        tk.Label(frame, text="Condición de Compra:").grid(row=8, column=0, pady=10)
+        tk.Label(frame, text="Condición de Compra:").grid(row=8, column=0, pady=2)
         entry_condicion = tk.Entry(frame, width=15)
-        entry_condicion.grid(row=8, column=1, pady=5)
+        entry_condicion.grid(row=8, column=1, pady=2)
+
+        # Línea horizontal
+        separator = tk.Frame(frame, height=2, bd=1, relief="sunken")
+        separator.grid(row=9, column=0, columnspan=3, pady=2, padx=5, sticky="we")
 
         # Botón para generar el análisis
-        tk.Button(frame, width=14, text="Generar Analisis", command=lambda: self.submit_datos_bc(entry_nombre_bc, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion, var_solo_elegible)).grid(row=2, column=3, pady=5)
+        tk.Button(frame, width=14, text="Generar Analisis", command=lambda: self.submit_datos_bc(entry_nombre_bc, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion, var_solo_elegible)).grid(row=10, column=0, pady=2)
 
         # Botón para ver los resultados del Analisis
-        tk.Button(frame, width=14, text="Ver Analisis", command=self.show_analisis_bc).grid(row=4, column=3, pady=5)
+        tk.Button(frame, width=14, text="Guardar Analisis", command=self.show_analisis_bc).grid(row=10, column=1, pady=2)
 
         # Botón para generar el BC
         # tk.Button(frame, width=14, text="Generar BC", command=lambda: self.submit_datos_bc('bc', entry_nombre_bc, entry_inicio_campana, entry_fin_campana, entry_inicio_analisis, entry_fin_analisis, entry_condicion, var_solo_elegible)).grid(row=5, column=3, pady=5)
 
         # Boton para ver análisis de BC
-        tk.Button(frame, width=14, text="Ver BC", command=self.show_bc).grid(row=5, column=3, pady=5)
+        tk.Button(frame, width=14, text="Calcular BC", command=self.show_bc).grid(row=8, column=3, pady=2)
+
+        # Bot
+        tk.Button(frame, width=14, text="Regresar al Menú", command=self.show_menu).grid(row=10, column=3, pady=2)
+
+        # Filtros
+        tk.Label(frame, text="Filtros", font=("Arial", 10, "bold")).grid(row=2, column=3, pady=2)
 
         # Variable para solo cumple condición de compra
         var_solo_elegible = tk.IntVar()
-        tk.Checkbutton(frame, text="Solo Elegible?", variable=var_solo_elegible).grid(row=7, column=3, pady=5)
+        tk.Checkbutton(frame, text="Solo Elegible?", variable=var_solo_elegible).grid(row=3, column=3, pady=2)
 
-        # Bot
-        tk.Button(frame, width=14, text="Regresar al Menú", command=self.show_menu).grid(row=8, column=3, pady=5)
-
-        # Mostrar los datos del BusinessCase con df_bc:
-        # df_bc = self.mon.get_bc_data()
+        # Filtros de entrada para tiendas, NSE y Familia
+        tk.Button(frame, text="Tiendas", command=self.select_bc_tiendas, width=10).grid(row=4, column=3, pady=2)
+        tk.Button(frame, text="NSE", command=self.select_bc_nse, width=10).grid(row=5, column=3, pady=2)
+        tk.Button(frame, text="Familia", command=self.select_bc_familia, width=10).grid(row=6, column=3, pady=2)
 
     # Validar los campos para el BusinessCase
     def validate_entries_rad_corta(self, nombre, inicio_campana, fin_campana, inicio_analisis, fin_analisis, condicion):
@@ -1809,6 +1828,87 @@ class App:
         
         tk.Button(frame, text="Regresar al Menú", command=self.show_menu).grid(row=10, column=0, columnspan=2, pady=5)
 
-# root = tk.Tk()
-# app = App(root)
-# root.mainloop()
+    def select_bc_familia(self):
+        # Opciones
+        options = self.mon.get_bc_options_familia()
+
+        # Crear el dropdown personalizado
+        multi_select = MultiSelectDropdown(self.root, options)
+        self.root.wait_window(multi_select.top)
+
+        # Concatenar las opciones seleccionadas separando por comas
+        self.bc_options_familia = ', '.join(multi_select.selected_items)
+
+    def select_bc_nse(self):
+        # Opciones
+        options = self.mon.get_bc_options_nse()
+
+        # Crear el dropdown personalizado
+        multi_select = MultiSelectDropdown(self.root, options)
+        self.root.wait_window(multi_select.top)
+        
+        # Concatenar las opciones seleccionadas separando por comas
+        self.bc_options_nse = ', '.join(multi_select.selected_items)
+
+    def select_bc_tiendas(self):
+        top = tk.Toplevel(self.root)
+        # Definir el tamaño de la ventana a 800x600
+        top.geometry("250x150")
+        top.title("Selección de Tiendas")
+        top.resizable(0, 0)
+
+        # Crear un Frame para los botones
+        frame = tk.Frame(top)
+        frame.pack(fill='both', expand=True)
+
+        # Titulo "Filtro tiendas"
+        tk.Label(frame, text="Filtro Tiendas", font=("Arial", 12, "bold")).grid(row=0, column=0, columnspan=2, pady=10)
+        tk.Label(frame, text="codigos de 4 dígitos separadas por coma").grid(row=1, column=0, columnspan=2, pady=5)
+
+        # Label y Entry para filtrar tiendas
+        tk.Label(frame, text="Tiendas:").grid(row=2, column=0, pady=10, padx=10, sticky='w')
+        entry_tiendas = tk.Entry(frame, width=25)
+        entry_tiendas.grid(row=2, column=1, pady=10, padx=10, sticky='e')
+
+        # Botón para confirmar la selección
+        def confirmar_seleccion():
+            # Validar entry_tiendas son solo numeros de 4 digitos separados por coma
+            tiendas = entry_tiendas.get().strip()
+            if not all([x.strip().isdigit() and len(x.strip()) == 4 for x in tiendas.split(',')]):
+                messagebox.showwarning("Advertencia", "Por favor ingrese tiendas en formato correcto.")
+            else:
+                self.bc_options_tiendas = tiendas
+                top.destroy()
+
+        # Botón para confirmar la selección
+        tk.Button(frame, text="Confirmar", command=confirmar_seleccion).grid(row=3, column=0, columnspan=2, pady=10)
+
+class MultiSelectDropdown:
+    def __init__(self, root, options):
+        self.root = root
+        self.options = options
+        self.selected_items = []
+
+        # Seleccionar opciones
+        """Abre una ventana emergente con opciones de selección múltiple."""
+        self.top = tk.Toplevel(self.root)
+        self.top.title("Seleccionar opciones")
+        self.top.geometry("150x200")
+
+        # Listbox con selección múltiple
+        self.listbox = tk.Listbox(self.top, selectmode=tk.EXTENDED, height=len(self.options))
+        for option in self.options:
+            self.listbox.insert(tk.END, option)
+        self.listbox.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+
+        # Botón para confirmar selección
+        confirm_button = ttk.Button(self.top, text="Aplicar", command=self.apply_selection)
+        confirm_button.pack(pady=5)
+
+    def apply_selection(self):
+        """Guarda y muestra la selección del usuario."""
+        selected_indices = self.listbox.curselection()
+        self.selected_items = [self.options[i] for i in selected_indices]
+        self.top.destroy()  # Cierra la ventana emergente
+        
+
