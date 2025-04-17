@@ -63,7 +63,7 @@ class Productos():
             INNER JOIN CHEDRAUI.MON_CRM_SKU_RAZONSOCIAL B ON A.PRODUCT_CODE = B.PRODUCT_CODE
             {f'AND A.PRODUCT_CODE::BIGINT IN ({self.skus})' if self.skus else ''}
             {f'AND B.MARCA IN ({self.marcas})' if self.marcas else ''}
-            {f'AND B.PROVEEDOR = ({self.proveedores})' if self.proveedores else ''}
+            {f'AND B.PROVEEDOR IN ({self.proveedores})' if self.proveedores else ''}
             {f'AND A.CLASS_DESC IN ({self.clases})' if self.clases else ''}
             {f'AND A.SUBCLASS_DESC IN ({self.subclases})' if self.subclases else ''}
             {f'AND A.PROD_TYPE_DESC IN ({self.prod_type_desc})' if self.prod_type_desc else ''}
@@ -179,6 +179,6 @@ class Productos():
             INNER JOIN CHEDRAUI.MON_CRM_SKU_RAZONSOCIAL B ON A.PRODUCT_CODE = B.PRODUCT_CODE
             {f'AND A.PRODUCT_CODE::BIGINT IN ({skus})' if skus else ''}
             {f'AND B.MARCA IN ({marcas})' if marcas else ''}
-            {f'AND B.PROVEEDOR = ({proveedores})' if proveedores else ''}
+            {f'AND B.PROVEEDOR IN ({proveedores})' if proveedores else ''}
         '''
         return self.select(query)
