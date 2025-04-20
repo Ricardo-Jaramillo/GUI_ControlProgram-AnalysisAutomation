@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 # Ignora el archivo credentials.py en este archivo .ignore
-credentials.py
+credentials.*
 
 # Ignora los archivos que comienzan con test_
 test_*.*
