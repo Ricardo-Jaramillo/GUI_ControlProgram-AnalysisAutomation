@@ -2,6 +2,9 @@ import pandas as pd
 from tqdm import tqdm
 from datetime import datetime, timedelta, date
 import pandas as pd
+from util.functions.connection import Conn
+
+schema = Conn().get_schema()
 
 # Create a Class to handle the Radiografia data
 class Campana():
@@ -49,7 +52,7 @@ class Campana():
         
     def set_campana_variables(self, conn, nombre_campana):
         # Obtener el codigo de la campaña y obtener los queries para actualizar la campaña
-        codigo_campana = conn.select(f"SELECT CODIGO_CAMPANA FROM CHEDRAUI.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}'").iloc[0,0]
+        codigo_campana = conn.select(f"SELECT CODIGO_CAMPANA FROM {schema}.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}'").iloc[0,0]
         
         # Calcular las variables necesarias para actualizar la campaña
         df_desc, _, _, _, _, _ = self.get_campana_info(conn, nombre_campana)
@@ -180,15 +183,15 @@ class Campana():
                                     }
 
     def get_campana_info(self, conn, nombre):
-        codigo_campana = conn.select(f"SELECT CODIGO_CAMPANA FROM CHEDRAUI.MON_CAMP_DESC WHERE NOMBRE = '{nombre}'").iloc[0,0]  
+        codigo_campana = conn.select(f"SELECT CODIGO_CAMPANA FROM {schema}.MON_CAMP_DESC WHERE NOMBRE = '{nombre}'").iloc[0,0]  
         lis_df = []
         lis_queries = [
-            f"SELECT * FROM CHEDRAUI.MON_CAMP_DESC WHERE CODIGO_CAMPANA = '{codigo_campana}'"
-            ,f"SELECT * FROM CHEDRAUI.MON_CAMP_LIST WHERE CODIGO_CAMPANA = '{codigo_campana}'"
-            ,f"SELECT * FROM CHEDRAUI.MON_CAMP_COUPON WHERE CODIGO_CAMPANA = '{codigo_campana}'"
-            ,f"SELECT * FROM CHEDRAUI.MON_CAMP_OFFER_CODE WHERE CODIGO_CAMPANA = '{codigo_campana}'"
-            ,f"SELECT DISTINCT CODIGO_CAMPANA, REGION, STATE, FORMATO_TIENDA, STORE_DESCRIPTION AS TIENDA, STORE_KEY, STORE_CODE FROM CHEDRAUI.MON_CAMP_STORE INNER JOIN CHEDRAUI.V_STORE USING(STORE_CODE) WHERE CODIGO_CAMPANA = '{codigo_campana}' ORDER BY 1,2,3,4"
-            ,f"SELECT DISTINCT CODIGO_CAMPANA, PROVEEDOR, MARCA, CLASS_CODE, CLASS_DESC, SUBCLASS_CODE, SUBCLASS_DESC, PROD_TYPE_DESC, PRODUCT_DESCRIPTION, PRODUCT_CODE FROM CHEDRAUI.MON_CAMP_PRODUCT INNER JOIN CHEDRAUI.MON_CRM_SKU_RAZONSOCIAL USING(PRODUCT_CODE) LEFT JOIN DIM_PRODUCT USING(PRODUCT_CODE) WHERE CODIGO_CAMPANA = '{codigo_campana}' ORDER BY 1,2,3,4,5,6,7,8"
+            f"SELECT * FROM {schema}.MON_CAMP_DESC WHERE CODIGO_CAMPANA = '{codigo_campana}'"
+            ,f"SELECT * FROM {schema}.MON_CAMP_LIST WHERE CODIGO_CAMPANA = '{codigo_campana}'"
+            ,f"SELECT * FROM {schema}.MON_CAMP_COUPON WHERE CODIGO_CAMPANA = '{codigo_campana}'"
+            ,f"SELECT * FROM {schema}.MON_CAMP_OFFER_CODE WHERE CODIGO_CAMPANA = '{codigo_campana}'"
+            ,f"SELECT DISTINCT CODIGO_CAMPANA, REGION, STATE, FORMATO_TIENDA, STORE_DESCRIPTION AS TIENDA, STORE_KEY, STORE_CODE FROM {schema}.MON_CAMP_STORE INNER JOIN {schema}.V_STORE USING(STORE_CODE) WHERE CODIGO_CAMPANA = '{codigo_campana}' ORDER BY 1,2,3,4"
+            ,f"SELECT DISTINCT CODIGO_CAMPANA, PROVEEDOR, MARCA, CLASS_CODE, CLASS_DESC, SUBCLASS_CODE, SUBCLASS_DESC, PROD_TYPE_DESC, PRODUCT_DESCRIPTION, PRODUCT_CODE FROM {schema}.MON_CAMP_PRODUCT INNER JOIN {schema}.MON_CRM_SKU_RAZONSOCIAL USING(PRODUCT_CODE) LEFT JOIN DIM_PRODUCT USING(PRODUCT_CODE) WHERE CODIGO_CAMPANA = '{codigo_campana}' ORDER BY 1,2,3,4,5,6,7,8"
         ]
 
         for query in lis_queries:
@@ -204,7 +207,7 @@ class Campana():
             # Validar si se inserta la información de la campaña. Esto es para evitar borrar la información y fallar en la inserción
             conn.insert(table_name, df)
             # Si se inserta exitosamente, borrar la información de la campaña si ya existe y repetir la inserción
-            conn.execute(f"DELETE CHEDRAUI.{table_name} WHERE CODIGO_CAMPANA = (SELECT DISTINCT CODIGO_CAMPANA FROM CHEDRAUI.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}')")
+            conn.execute(f"DELETE {schema}.{table_name} WHERE CODIGO_CAMPANA = (SELECT DISTINCT CODIGO_CAMPANA FROM {schema}.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}')")
             conn.insert(table_name, df)
         except Exception as e:
             print('Error al insertar la información de la campaña')
@@ -212,14 +215,14 @@ class Campana():
         return error
 
     def eliminar_info_campana(self, conn, nombre_campana):
-        codigo_campana = conn.select(f"SELECT CODIGO_CAMPANA FROM CHEDRAUI.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}'").iloc[0,0]  
+        codigo_campana = conn.select(f"SELECT CODIGO_CAMPANA FROM {schema}.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}'").iloc[0,0]  
         lis_queries = [
-            f"DELETE CHEDRAUI.MON_CAMP_DESC WHERE CODIGO_CAMPANA = '{codigo_campana}'"
-            ,f"DELETE CHEDRAUI.MON_CAMP_LIST WHERE CODIGO_CAMPANA = '{codigo_campana}'"
-            ,f"DELETE CHEDRAUI.MON_CAMP_COUPON WHERE CODIGO_CAMPANA = '{codigo_campana}'"
-            ,f"DELETE CHEDRAUI.MON_CAMP_OFFER_CODE WHERE CODIGO_CAMPANA = '{codigo_campana}'"
-            ,f"DELETE CHEDRAUI.MON_CAMP_STORE WHERE CODIGO_CAMPANA = '{codigo_campana}'"
-            ,f"DELETE CHEDRAUI.MON_CAMP_PRODUCT WHERE CODIGO_CAMPANA = '{codigo_campana}'"
+            f"DELETE {schema}.MON_CAMP_DESC WHERE CODIGO_CAMPANA = '{codigo_campana}'"
+            ,f"DELETE {schema}.MON_CAMP_LIST WHERE CODIGO_CAMPANA = '{codigo_campana}'"
+            ,f"DELETE {schema}.MON_CAMP_COUPON WHERE CODIGO_CAMPANA = '{codigo_campana}'"
+            ,f"DELETE {schema}.MON_CAMP_OFFER_CODE WHERE CODIGO_CAMPANA = '{codigo_campana}'"
+            ,f"DELETE {schema}.MON_CAMP_STORE WHERE CODIGO_CAMPANA = '{codigo_campana}'"
+            ,f"DELETE {schema}.MON_CAMP_PRODUCT WHERE CODIGO_CAMPANA = '{codigo_campana}'"
         ]
 
         for query in lis_queries:
@@ -230,7 +233,7 @@ class Campana():
 
     def get_campaign_products(self, conn, nombre_campana):
         # Obtener los productos de la campaña
-        query = f"SELECT PRODUCT_CODE FROM CHEDRAUI.MON_CAMP_PRODUCT WHERE CODIGO_CAMPANA = (SELECT CODIGO_CAMPANA FROM CHEDRAUI.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}')"
+        query = f"SELECT PRODUCT_CODE FROM {schema}.MON_CAMP_PRODUCT WHERE CODIGO_CAMPANA = (SELECT CODIGO_CAMPANA FROM {schema}.MON_CAMP_DESC WHERE NOMBRE = '{nombre_campana}')"
         # Generar lista de productos separadas por coma si hay productos en la campaña
         lis_products = conn.select(query)
         products = ','.join([str(x) for x in lis_products.product_code]) if not lis_products.empty else None
@@ -295,7 +298,7 @@ class Campana():
                     ,SALE_TOT_DISC_QTY
                     ,SALE_TOT_DISC_VAL
                 FROM FCT_SALE_LINE_DISCOUNT A
-                INNER JOIN CHEDRAUI.MON_CAMP_OFFER_CODE B ON A.OFFER_CODE = B.OFFER_CODE AND CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
+                INNER JOIN {schema}.MON_CAMP_OFFER_CODE B ON A.OFFER_CODE = B.OFFER_CODE AND CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
                 WHERE A.INVOICE_DATE BETWEEN {self.campana_variables['date_dash']}
                 AND SALE_TOT_DISC_VAL > 0
                 )
@@ -413,10 +416,10 @@ class Campana():
                 ,CASE WHEN IND_ELEGIBLE = 1 AND IND_REGISTRO = 1 THEN 1 ELSE 0 END IND_REGISTRO_ELEGIBLE
                 FROM FCT_SALE_LINE A
                 INNER JOIN #PRODUCTOS B USING(PRODUCT_CODE)
-                INNER JOIN CHEDRAUI.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
-                LEFT JOIN (SELECT DISTINCT INVOICE_NO, 1::INT AS IND_REGISTRO FROM CHEDRAUI.MON_CAMP_REGISTERS WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}') C USING(INVOICE_NO)
+                INNER JOIN {schema}.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
+                LEFT JOIN (SELECT DISTINCT INVOICE_NO, 1::INT AS IND_REGISTRO FROM {schema}.MON_CAMP_REGISTERS WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}') C USING(INVOICE_NO)
                 LEFT JOIN (SELECT DISTINCT INVOICE_NO, 1::INT AS IND_ONLINE FROM FCT_SALE_HEADER WHERE CHANNEL_TYPE IN ('WEB','APP','CC HY')) USING(INVOICE_NO)
-                LEFT JOIN (SELECT DISTINCT EMISSION_INVOICE_NO INVOICE_NO, 1::INT IND_CUP FROM FCT_OFFER_COUPON A INNER JOIN CHEDRAUI.MON_CAMP_COUPON B ON B.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}' AND A.OFFER_CODE = B.COUPON_ID) USING(INVOICE_NO)
+                LEFT JOIN (SELECT DISTINCT EMISSION_INVOICE_NO INVOICE_NO, 1::INT IND_CUP FROM FCT_OFFER_COUPON A INNER JOIN {schema}.MON_CAMP_COUPON B ON B.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}' AND A.OFFER_CODE = B.COUPON_ID) USING(INVOICE_NO)
                 WHERE (
                     INVOICE_DATE BETWEEN {self.campana_variables['date_dash']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_precampana']}
@@ -444,10 +447,10 @@ class Campana():
                 ,CASE WHEN IND_ELEGIBLE = 1 AND IND_REGISTRO = 1 THEN 1 ELSE 0 END IND_REGISTRO_ELEGIBLE
                 FROM FCT_SALE_LINE_NM A
                 INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
-                INNER JOIN CHEDRAUI.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
-                LEFT JOIN (SELECT DISTINCT INVOICE_NO, 1::INT AS IND_REGISTRO FROM CHEDRAUI.MON_CAMP_REGISTERS WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}') C USING(INVOICE_NO)
+                INNER JOIN {schema}.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
+                LEFT JOIN (SELECT DISTINCT INVOICE_NO, 1::INT AS IND_REGISTRO FROM {schema}.MON_CAMP_REGISTERS WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}') C USING(INVOICE_NO)
                 LEFT JOIN (SELECT DISTINCT INVOICE_NO, 1::INT AS IND_ONLINE FROM FCT_SALE_HEADER WHERE CHANNEL_TYPE IN ('WEB','APP','CC HY')) USING(INVOICE_NO)
-                LEFT JOIN (SELECT DISTINCT EMISSION_INVOICE_NO INVOICE_NO, 1::INT IND_CUP FROM FCT_OFFER_COUPON A INNER JOIN CHEDRAUI.MON_CAMP_COUPON B ON B.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}' AND A.OFFER_CODE = B.COUPON_ID) USING(INVOICE_NO)
+                LEFT JOIN (SELECT DISTINCT EMISSION_INVOICE_NO INVOICE_NO, 1::INT IND_CUP FROM FCT_OFFER_COUPON A INNER JOIN {schema}.MON_CAMP_COUPON B ON B.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}' AND A.OFFER_CODE = B.COUPON_ID) USING(INVOICE_NO)
                 WHERE (
                     INVOICE_DATE BETWEEN {self.campana_variables['date_dash']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_precampana']}
@@ -482,7 +485,7 @@ class Campana():
                 ,ARC_DATE
                 ,CONCAT(RIGHT(EXTRACT(YEAR FROM ARC_DATE), 2), CONCAT('-W', TO_CHAR(EXTRACT(WEEK FROM ARC_DATE), 'FM00'))) "WEEK"
             FROM MAP_CUST_LIST
-            INNER JOIN (SELECT DISTINCT LIST_ID, 'GT' GRUPO FROM CHEDRAUI.MON_CAMP_LIST WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}' UNION SELECT DISTINCT LIST_ID_GC, 'GC' GRUPO FROM CHEDRAUI.MON_CAMP_LIST WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}') USING(LIST_ID)
+            INNER JOIN (SELECT DISTINCT LIST_ID, 'GT' GRUPO FROM {schema}.MON_CAMP_LIST WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}' UNION SELECT DISTINCT LIST_ID_GC, 'GC' GRUPO FROM {schema}.MON_CAMP_LIST WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}') USING(LIST_ID)
             )
             SELECT
                 GRUPO
@@ -514,7 +517,7 @@ class Campana():
                 ,'CUPON' CANAL
                 ,A.CUSTOMER_CODE_TY CUSTOMER_CODE
             FROM FCT_OFFER_COUPON A
-            INNER JOIN CHEDRAUI.MON_CAMP_COUPON C ON A.OFFER_CODE = C.COUPON_ID
+            INNER JOIN {schema}.MON_CAMP_COUPON C ON A.OFFER_CODE = C.COUPON_ID
             --   AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash']}
             AND CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
             );
@@ -712,7 +715,7 @@ class Campana():
                 
             FROM FCT_SALE_LINE A
             INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
-            INNER JOIN CHEDRAUI.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
+            INNER JOIN {schema}.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
             WHERE (
                 INVOICE_DATE BETWEEN {self.campana_variables['date_dash']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_3']}
@@ -784,8 +787,8 @@ class Campana():
         '''
 
         query_venta = f'''
-            DROP TABLE IF EXISTS CHEDRAUI.MON_VTA;
-            CREATE TABLE CHEDRAUI.MON_VTA AS (
+            DROP TABLE IF EXISTS {schema}.MON_VTA;
+            CREATE TABLE {schema}.MON_VTA AS (
             SELECT
                 1::INT AS IND_MC
                 ,A.PRODUCT_CODE
@@ -891,8 +894,8 @@ class Campana():
             INNER JOIN #INDICADORES_TX E USING(INVOICE_NO, IND_MARCA, CUSTOMER_CODE_TY, PROVEEDOR, MARCA, INVOICE_DATE)
             LEFT JOIN #INDICADORES_CLIENTES G USING(CUSTOMER_CODE_TY, IND_MARCA, PROVEEDOR)--, MARCA
             LEFT JOIN #VENTA_REDENCION I USING(INVOICE_NO, PRODUCT_CODE, LINE_NO)
-            LEFT JOIN CHEDRAUI.V_CUSTOMER_CONTACT AS B ON A.CUSTOMER_CODE_TY = B.CUSTOMER_CODE-- AND B.CONTACT_INFO IS NOT NULL
-            LEFT JOIN CHEDRAUI.V_STORE C ON A.STORE_KEY = C.STORE_KEY AND A.STORE_CODE = C.STORE_CODE
+            LEFT JOIN {schema}.V_CUSTOMER_CONTACT AS B ON A.CUSTOMER_CODE_TY = B.CUSTOMER_CODE-- AND B.CONTACT_INFO IS NOT NULL
+            LEFT JOIN {schema}.V_STORE C ON A.STORE_KEY = C.STORE_KEY AND A.STORE_CODE = C.STORE_CODE
             WHERE A.SALE_NET_VAL > 0
             AND A.BUSINESS_TYPE = 'R'
             GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65
@@ -1004,8 +1007,8 @@ class Campana():
             INNER JOIN #INDICADORES_TX E USING(INVOICE_NO, IND_MARCA, PROVEEDOR, MARCA, INVOICE_DATE)
             --   LEFT JOIN #INDICADORES_CLIENTES G ON A.CUSTOMER_CODE = G.CUSTOMER_CODE AND D.IND_MARCA = G.IND_MARCA AND D.PROVEEDOR = G.PROVEEDOR
             LEFT JOIN #VENTA_REDENCION I ON A.INVOICE_NO = I.INVOICE_NO AND A.PRODUCT_CODE = I.PRODUCT_CODE
-            --   LEFT JOIN CHEDRAUI.V_CUSTOMER_CONTACT AS B ON A.CUSTOMER_CODE_TY = B.CUSTOMER_CODE-- AND B.CONTACT_INFO IS NOT NULL
-            LEFT JOIN CHEDRAUI.V_STORE C ON A.STORE_KEY = C.STORE_KEY AND A.STORE_CODE = C.STORE_CODE
+            --   LEFT JOIN {schema}.V_CUSTOMER_CONTACT AS B ON A.CUSTOMER_CODE_TY = B.CUSTOMER_CODE-- AND B.CONTACT_INFO IS NOT NULL
+            LEFT JOIN {schema}.V_STORE C ON A.STORE_KEY = C.STORE_KEY AND A.STORE_CODE = C.STORE_CODE
             WHERE A.SALE_NET_VAL > 0
             AND A.BUSINESS_TYPE = 'R'
             GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65
@@ -1025,7 +1028,7 @@ class Campana():
                 INVOICE_DATE
                 ,PERIODO
                 ,CONCAT(RIGHT(EXTRACT(YEAR FROM INVOICE_DATE), 2), CONCAT('-W', TO_CHAR(EXTRACT(WEEK FROM INVOICE_DATE), 'FM00'))) "WEEK"
-                FROM CHEDRAUI.MON_VTA
+                FROM {schema}.MON_VTA
                 WHERE PERIODO IN ('CAMPANA', 'ANO_ANTERIOR', 'MES_ANTERIOR')
                 ORDER BY INVOICE_DATE
             )
@@ -1379,7 +1382,7 @@ class Campana():
                     
                     {query_res_agg}
 
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 WHERE PERIODO IN ('CAMPANA', 'ANO_ANTERIOR', 'MES_ANTERIOR')
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
             );
@@ -1412,7 +1415,7 @@ class Campana():
                     
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
             );
 
@@ -1444,7 +1447,7 @@ class Campana():
                     
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
             );
 
@@ -1476,7 +1479,7 @@ class Campana():
                     
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
             );
 
@@ -1508,7 +1511,7 @@ class Campana():
                     
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
             );
 
@@ -1540,7 +1543,7 @@ class Campana():
                     
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 LEFT JOIN #DIAS B USING(INVOICE_DATE)
                 LEFT JOIN #DIAS C ON B.DAY_NUMBER = C.DAY_NUMBER AND C.PERIODO = 'CAMPANA'
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
@@ -1574,7 +1577,7 @@ class Campana():
                     
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 LEFT JOIN #DIAS B USING(INVOICE_DATE)
                 LEFT JOIN #DIAS C ON B.DAY_NUMBER = C.DAY_NUMBER AND C.PERIODO = 'CAMPANA'
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
@@ -1608,7 +1611,7 @@ class Campana():
                     
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
             );
 
@@ -1640,7 +1643,7 @@ class Campana():
                     
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
             );
 
@@ -1672,7 +1675,7 @@ class Campana():
                     
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
             );
 
@@ -1693,7 +1696,7 @@ class Campana():
                     ,SUBCLASS_DESC
                     ,SUM(VENTA) VENTA
                 ,ROW_NUMBER() OVER (PARTITION BY PROVEEDOR ORDER BY SUM(VENTA) DESC) ROW_N
-                FROM CHEDRAUI.MON_VTA
+                FROM {schema}.MON_VTA
                 WHERE PERIODO = 'CAMPANA'
                 AND IND_MARCA = 1
                 AND IND_MC = 1
@@ -1726,7 +1729,7 @@ class Campana():
                     
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 INNER JOIN (SELECT * FROM __SUBCLASS_TOP5) USING(SUBCLASS_DESC, PROVEEDOR)
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
             );
@@ -1748,7 +1751,7 @@ class Campana():
                     ,PRODUCT_CODE
                     ,SUM(VENTA) VENTA
                 ,ROW_NUMBER() OVER (PARTITION BY PROVEEDOR ORDER BY SUM(VENTA) DESC) ROW_N
-                FROM CHEDRAUI.MON_VTA
+                FROM {schema}.MON_VTA
                 WHERE PERIODO = 'CAMPANA'
                 AND IND_MARCA = 1
                 AND IND_MC = 1
@@ -1781,7 +1784,7 @@ class Campana():
                     
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 INNER JOIN (SELECT DISTINCT PRODUCT_CODE FROM __PRODUCTO_TOP10) USING(PRODUCT_CODE)
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
             );
@@ -1813,7 +1816,7 @@ class Campana():
 
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 LEFT JOIN #DIAS B USING(INVOICE_DATE)
                 LEFT JOIN #DIAS C ON B.DAY_NUMBER = C.DAY_NUMBER AND C.PERIODO = 'CAMPANA'
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
@@ -1848,7 +1851,7 @@ class Campana():
 
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 LEFT JOIN #DIAS B USING(INVOICE_DATE)
                 LEFT JOIN #DIAS C ON B.DAY_NUMBER = C.DAY_NUMBER AND C.PERIODO = 'CAMPANA'
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
@@ -1883,7 +1886,7 @@ class Campana():
 
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 LEFT JOIN #DIAS B USING(INVOICE_DATE)
                 LEFT JOIN #DIAS C ON B.DAY_NUMBER = C.DAY_NUMBER AND C.PERIODO = 'CAMPANA'
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
@@ -1907,7 +1910,7 @@ class Campana():
                     ,PRODUCT_CODE
                     ,SUM(VENTA) VENTA
                 ,ROW_NUMBER() OVER (PARTITION BY PROVEEDOR ORDER BY SUM(VENTA) DESC) ROW_N
-                FROM CHEDRAUI.MON_VTA
+                FROM {schema}.MON_VTA
                 WHERE PERIODO = 'CAMPANA'
                 AND IND_MARCA = 1
                 AND IND_MC = 1
@@ -1940,7 +1943,7 @@ class Campana():
 
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 INNER JOIN (SELECT DISTINCT PRODUCT_CODE FROM __PRODUCTO_TOP10) USING(PRODUCT_CODE)
                 LEFT JOIN #DIAS B USING(INVOICE_DATE)
                 LEFT JOIN #DIAS C ON B.DAY_NUMBER = C.DAY_NUMBER AND C.PERIODO = 'CAMPANA'
@@ -1976,7 +1979,7 @@ class Campana():
 
                     {query_res_agg}
                         
-                FROM CHEDRAUI.MON_VTA A
+                FROM {schema}.MON_VTA A
                 LEFT JOIN #DIAS B USING(INVOICE_DATE)
                 LEFT JOIN #DIAS C ON B.DAY_NUMBER = C.DAY_NUMBER AND C.PERIODO = 'CAMPANA'
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
@@ -2047,10 +2050,10 @@ class Campana():
         
         query_res_insert = f'''
             --INSERTAR RESULTADOS
-            DELETE CHEDRAUI.MON_CAMP_RESULTS WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
-            INSERT INTO CHEDRAUI.MON_CAMP_RESULTS SELECT * FROM #CAMP_RESULTS;
+            DELETE {schema}.MON_CAMP_RESULTS WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
+            INSERT INTO {schema}.MON_CAMP_RESULTS SELECT * FROM #CAMP_RESULTS;
 
-            --SELECT * FROM CHEDRAUI.MON_CAMP_RESULTS WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
+            --SELECT * FROM {schema}.MON_CAMP_RESULTS WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
         '''
 
         return [query_dias_semana, query_res_global, query_res_proveedor, query_res_region, query_res_formato, query_res_tienda, query_res_tienda_semanal, query_res_tienda_semanal_total, query_res_tipo_familia, query_res_nse, query_res_clase, query_res_subclase, query_res_producto, query_res_venta_diaria, query_res_venta_semanal, query_res_venta_semanal_total, query_res_venta_semanal_producto, query_res_venta_semanal_total_producto, query_res, query_res_insert]
@@ -2079,7 +2082,7 @@ class Campana():
                 ,COUNT(DISTINCT INVOICE_NO) TX
                 FROM FCT_SALE_LINE A
                 INNER JOIN #PRODUCTOS B USING(PRODUCT_CODE)
-                INNER JOIN CHEDRAUI.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
+                INNER JOIN {schema}.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
                 LEFT JOIN (SELECT DISTINCT INVOICE_NO, 1::INT AS IND_ONLINE FROM FCT_SALE_HEADER WHERE CHANNEL_TYPE IN ('WEB','APP','CC HY')) USING(INVOICE_NO)
                 WHERE SALE_NET_VAL > 0
                 AND BUSINESS_TYPE = 'R'
@@ -2114,7 +2117,7 @@ class Campana():
                 ,COUNT(DISTINCT INVOICE_NO) TX
                 FROM FCT_SALE_LINE_NM A
                 INNER JOIN #PRODUCTOS B USING(PRODUCT_CODE)
-                INNER JOIN CHEDRAUI.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
+                INNER JOIN {schema}.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
                 LEFT JOIN (SELECT DISTINCT INVOICE_NO, 1::INT AS IND_ONLINE FROM FCT_SALE_HEADER WHERE CHANNEL_TYPE IN ('WEB','APP','CC HY')) USING(INVOICE_NO)
                 WHERE SALE_NET_VAL > 0
                 AND BUSINESS_TYPE = 'R'
@@ -2257,8 +2260,8 @@ class Campana():
         '''
 
         query_insert = f'''
-            DELETE CHEDRAUI.MON_CAMP_ROI WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
-            INSERT INTO CHEDRAUI.MON_CAMP_ROI SELECT * FROM #DATOS_ROI;
+            DELETE {schema}.MON_CAMP_ROI WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
+            INSERT INTO {schema}.MON_CAMP_ROI SELECT * FROM #DATOS_ROI;
             '''
 
         return [query_venta, query_venta_periodos, query_datos_roi, query_insert]
@@ -2276,7 +2279,7 @@ class Campana():
                 ,ARC_DATE
                 ,CONCAT(RIGHT(EXTRACT(YEAR FROM ARC_DATE), 2), CONCAT('-W', TO_CHAR(EXTRACT(WEEK FROM ARC_DATE), 'FM00'))) "WEEK"
             FROM MAP_CUST_LIST
-            INNER JOIN (SELECT DISTINCT LIST_ID, 'GT' GRUPO FROM CHEDRAUI.MON_CAMP_LIST WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}' UNION SELECT DISTINCT LIST_ID_GC, 'GC' GRUPO FROM CHEDRAUI.MON_CAMP_LIST WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}') USING(LIST_ID)
+            INNER JOIN (SELECT DISTINCT LIST_ID, 'GT' GRUPO FROM {schema}.MON_CAMP_LIST WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}' UNION SELECT DISTINCT LIST_ID_GC, 'GC' GRUPO FROM {schema}.MON_CAMP_LIST WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}') USING(LIST_ID)
             )
             SELECT
                 GRUPO
@@ -2308,7 +2311,7 @@ class Campana():
                 ,'CUPON' CANAL
                 ,A.CUSTOMER_CODE_TY CUSTOMER_CODE
             FROM FCT_OFFER_COUPON A
-            INNER JOIN CHEDRAUI.MON_CAMP_COUPON C ON A.OFFER_CODE = C.COUPON_ID
+            INNER JOIN {schema}.MON_CAMP_COUPON C ON A.OFFER_CODE = C.COUPON_ID
             --   AND INVOICE_DATE BETWEEN {self.campana_variables['date_dash']}
             AND CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
             );
@@ -2405,7 +2408,7 @@ class Campana():
                 ,SUM(CASE WHEN PROMOCIONES_APLICADAS > 0 THEN VENTA ELSE 0 END) VENTA_PROMOCIONADA
                 ,SUM(PROMOCIONES_APLICADAS) PROMOCIONES_APLICADAS
                 ,SUM(COSTO_PROMOCIONADO) COSTO_PROMOCIONADO
-                FROM CHEDRAUI.MON_VTA
+                FROM {schema}.MON_VTA
                 WHERE IND_MARCA = 1
                 AND PERIODO = 'CAMPANA'
                 AND IND_MC = 1
@@ -2609,8 +2612,8 @@ class Campana():
             '''
         
         query_insert = f'''
-            DELETE CHEDRAUI.MON_CAMP_CONTACT_FUNNEL WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
-            INSERT INTO CHEDRAUI.MON_CAMP_CONTACT_FUNNEL SELECT * FROM #FUNNEL_SEMANAL ORDER BY 1,2,3,4;
+            DELETE {schema}.MON_CAMP_CONTACT_FUNNEL WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
+            INSERT INTO {schema}.MON_CAMP_CONTACT_FUNNEL SELECT * FROM #FUNNEL_SEMANAL ORDER BY 1,2,3,4;
             '''
         
         return [query_base_clientes, query_venta_cliente_semanal, query_funnel_semanal, query_insert]
@@ -2631,7 +2634,7 @@ class Campana():
                 WHEN PERIODO_ANALISIS IN ('POST_CAMPANA', 'POST_CAMPANA_A') THEN 'POST_CAMPANA'
                 END PERIODO
                 ,CONCAT(RIGHT(EXTRACT(YEAR FROM INVOICE_DATE), 2), CONCAT('-W', TO_CHAR(EXTRACT(WEEK FROM INVOICE_DATE), 'FM00'))) "WEEK"
-            FROM CHEDRAUI.MON_VTA
+            FROM {schema}.MON_VTA
             WHERE PERIODO_ANALISIS IN ('CAMPANA', 'CAMPANA_A', 'PRE_CAMPANA', 'PRE_CAMPANA_A', 'POST_CAMPANA', 'POST_CAMPANA_A')
             ORDER BY INVOICE_DATE
             )
@@ -2662,7 +2665,7 @@ class Campana():
                 ,COUNT(DISTINCT CASE WHEN A.PERIODO_ANALISIS IN ('PRE_CAMPANA', 'CAMPANA', 'POST_CAMPANA') THEN INVOICE_NO END) CAT_TX
                 ,SUM(CASE WHEN A.PERIODO_ANALISIS IN ('PRE_CAMPANA_A', 'CAMPANA_A', 'POST_CAMPANA_A') THEN VENTA END) CAT_VENTA_A
                 ,COUNT(DISTINCT CASE WHEN A.PERIODO_ANALISIS IN ('PRE_CAMPANA_A', 'CAMPANA_A', 'POST_CAMPANA_A') THEN INVOICE_NO END) CAT_TX_A
-            FROM CHEDRAUI.MON_VTA A
+            FROM {schema}.MON_VTA A
                 LEFT JOIN #DIAS B USING(INVOICE_DATE)
                 LEFT JOIN (SELECT * FROM #DIAS WHERE PERIODO_ANALISIS IN ('CAMPANA', 'PRE_CAMPANA', 'POST_CAMPANA')) C ON B.DAY_NUMBER = C.DAY_NUMBER AND C.PERIODO_ANALISIS = B.PERIODO
             WHERE A.PERIODO_ANALISIS IN ('PRE_CAMPANA', 'CAMPANA', 'POST_CAMPANA', 'PRE_CAMPANA_A', 'CAMPANA_A', 'POST_CAMPANA_A')
@@ -2690,7 +2693,7 @@ class Campana():
                 ,COUNT(DISTINCT CASE WHEN A.PERIODO_ANALISIS IN ('PRE_CAMPANA', 'CAMPANA', 'POST_CAMPANA') THEN INVOICE_NO END) ELEGIBLE_CAT_TX
                 ,SUM(CASE WHEN A.PERIODO_ANALISIS IN ('PRE_CAMPANA_A', 'CAMPANA_A', 'POST_CAMPANA_A') THEN VENTA END) ELEGIBLE_CAT_VENTA_A
                 ,COUNT(DISTINCT CASE WHEN A.PERIODO_ANALISIS IN ('PRE_CAMPANA_A', 'CAMPANA_A', 'POST_CAMPANA_A') THEN INVOICE_NO END) ELEGIBLE_CAT_TX_A
-            FROM CHEDRAUI.MON_VTA A
+            FROM {schema}.MON_VTA A
                 LEFT JOIN #DIAS B USING(INVOICE_DATE)
                 LEFT JOIN (SELECT * FROM #DIAS WHERE PERIODO_ANALISIS IN ('CAMPANA', 'PRE_CAMPANA', 'POST_CAMPANA')) C ON B.DAY_NUMBER = C.DAY_NUMBER AND C.PERIODO_ANALISIS = B.PERIODO
             WHERE A.PERIODO_ANALISIS IN ('PRE_CAMPANA', 'CAMPANA', 'POST_CAMPANA', 'PRE_CAMPANA_A', 'CAMPANA_A', 'POST_CAMPANA_A')
@@ -2735,8 +2738,8 @@ class Campana():
             '''
         
         query_insert = f'''
-            DELETE CHEDRAUI.MON_CAMP_TENDENCY WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
-            INSERT INTO CHEDRAUI.MON_CAMP_TENDENCY SELECT * FROM #TENDENCIA;
+            DELETE {schema}.MON_CAMP_TENDENCY WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
+            INSERT INTO {schema}.MON_CAMP_TENDENCY SELECT * FROM #TENDENCIA;
         '''
 
         return [query_dias, query_venta_diaria, query_venta_diaria_elegible, query_tendencia, query_insert]
@@ -2755,7 +2758,7 @@ class Campana():
                 ,CASE WHEN SUM(SALE_NET_VAL) >= '{self.campana_variables['condicion_compra']}' THEN 1 ELSE 0 END AS IND_ELEGIBLE
             FROM FCT_SALE_LINE A
             INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
-            INNER JOIN CHEDRAUI.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
+            INNER JOIN {schema}.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
             LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER) F USING(INVOICE_NO)
             WHERE (INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']})
@@ -2774,7 +2777,7 @@ class Campana():
                 ,CASE WHEN SUM(SALE_NET_VAL) >= '{self.campana_variables['condicion_compra']}' THEN 1 ELSE 0 END AS IND_ELEGIBLE
             FROM FCT_SALE_LINE_NM A
             INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
-            INNER JOIN CHEDRAUI.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
+            INNER JOIN {schema}.MON_CAMP_STORE J ON A.STORE_CODE = J.STORE_CODE AND J.CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}'
             LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER_NM) F USING(INVOICE_NO)
             WHERE (INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo']}
                 OR INVOICE_DATE BETWEEN {self.campana_variables['date_dash_evo_ano_anterior']})
@@ -2928,8 +2931,8 @@ class Campana():
             '''
         
         query_insert = f'''
-            DELETE CHEDRAUI.MON_CAMP_EVOLUTION_SALES WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
-            INSERT INTO CHEDRAUI.MON_CAMP_EVOLUTION_SALES SELECT * FROM #VENTA_MENSUAL;
+            DELETE {schema}.MON_CAMP_EVOLUTION_SALES WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
+            INSERT INTO {schema}.MON_CAMP_EVOLUTION_SALES SELECT * FROM #VENTA_MENSUAL;
         '''
 
         return [query_meses, query_venta_mensual, query_insert]
@@ -4166,8 +4169,8 @@ class Campana():
             '''
         
         query_insert = f'''
-            DELETE CHEDRAUI.MON_CAMP_EVOLUTION_SEGMENTS WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
-            INSERT INTO CHEDRAUI.MON_CAMP_EVOLUTION_SEGMENTS SELECT * FROM #SEGMENTOS;
+            DELETE {schema}.MON_CAMP_EVOLUTION_SEGMENTS WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
+            INSERT INTO {schema}.MON_CAMP_EVOLUTION_SEGMENTS SELECT * FROM #SEGMENTOS;
         '''
 
         return [query_meses, query_indicadores, query_segmentos, query_insert]
@@ -6352,7 +6355,7 @@ class Campana():
             '''
         
         query_insert = f'''
-            DELETE CHEDRAUI.MON_CAMP_EVOLUTION_RETENTION WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
-            INSERT INTO CHEDRAUI.MON_CAMP_EVOLUTION_RETENTION SELECT * FROM #SEGMENTOS_RETENCION;
+            DELETE {schema}.MON_CAMP_EVOLUTION_RETENTION WHERE CODIGO_CAMPANA = '{self.campana_variables['codigo_campana']}';
+            INSERT INTO {schema}.MON_CAMP_EVOLUTION_RETENTION SELECT * FROM #SEGMENTOS_RETENCION;
         '''
         return [query_meses, query_indicadores, query_segmentos_retencion, query_insert]

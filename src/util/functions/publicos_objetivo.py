@@ -1,6 +1,10 @@
 import pandas as pd
 from tqdm import tqdm
-from analisis_html import Analisis
+from util.functions.analisis_html import Analisis
+from util.constants.bc import lis_agg_existentes_bc, lis_agg, dict_map
+from util.functions.connection import Conn
+
+schema = Conn().get_schema()
 
 # Create a Class to handle the Monetizacion data that inherits from the Conn class
 class PublicosObjetivo():
@@ -18,104 +22,14 @@ class PublicosObjetivo():
         self.__set_list_agg_existentes_bc()
 
     def __set_list_agg_existentes_bc(self):
-        self.lis_agg_existentes_bc = [
-            ['Mes'],
-            ['Region', 'Estado'],
-            ['Formato'],
-            ['Region', 'Estado', 'Formato', 'Tienda'],
-            ['NSE'],
-            ['Familia'],
-            ['Class'],
-            ['Class', 'Subclass'],
-            ['Class', 'Subclass', 'ProdType'],
-            ['Class', 'Subclass', 'ProdType', 'Producto']
-        ]
+        self.lis_agg_existentes_bc = lis_agg_existentes_bc
     
     def __set_analisis_agg(self):
-        self.list_agg = [
-            'Mes',
-
-            'Region',
-            'Estado',
-            'Formato',
-            'Tienda',
-
-            'Familia',
-            'NSE',
-
-            'Class',
-            'Subclass',
-            'ProdType',
-            'Producto'
-        ]
+        self.list_agg = lis_agg
 
     # Funcion para mapear las salidas de cada variable en list_agg
     def __map_agg(self, df):
-        dict_map = {
-            'region': {
-                '10 REGIÓN METROPOLITANA': 'Metropolitana',
-                '20 REGIÓN ORIENTE': 'Oriente',
-                '30 REGIÓN SUR': 'Sur',
-                '40 REGIÓN PACÍFICO': 'Pacifico',
-                '45 REGIÓN BAJÍO': 'Bajio',
-                '48 REGIÓN NORESTE': 'Noreste',
-                '50 REGIÓN COMERCIO ELECTRÓNICO': 'Comercio Electronico',
-                '60 REGIÓN VENTAS CENTRAL': 'Ventas Central',
-                '70 REGIÓN BODEGAS': 'Bodegas'
-            },
-            'state': {
-                'Aguascalientes': 'Aguascalientes',
-                'Baja California': 'Baja California',
-                'Baja California Sur': 'Baja California Sur',
-                'Campeche': 'Campeche',
-                'Chiapas': 'Chiapas',
-                'Ciudad de México': 'Ciudad de Mexico',
-                'Distrito Federal': 'Ciudad de Mexico',
-                'Durango': 'Durango',
-                'Estado de México': 'Estado de Mexico',
-                'Guanajuato': 'Guanajuato',
-                'Guerrero': 'Guerrero',
-                'Hidalgo': 'Hidalgo',
-                'Jalisco': 'Jalisco',
-                'Michoacán': 'Michoacan',
-                'Morelos': 'Morelos',
-                'Nayarit': 'Nayarit',
-                'Nuevo León': 'Nuevo Leon',
-                'Oaxaca': 'Oaxaca',
-                'Puebla': 'Puebla',
-                'Querétaro': 'Queretaro',
-                'Quintana Roo': 'Quintana Roo',
-                'San Luis Potosí': 'San Luis Potosi',
-                'Sinaloa': 'Sinaloa',
-                'Tabasco': 'Tabasco',
-                'Tamaulipas': 'Tamaulipas',
-                'Tlaxcala': 'Tlaxcala',
-                'Veracruz': 'Veracruz',
-                'Yucatán': 'Yucatan',
-                'Zacatecas': 'Zacatecas'
-            },
-            'formato_tienda': {
-                '01 SELECTO': 'Selecto',
-                '02 AB': 'AB',
-                '03 CD': 'CD',
-                '04 WEB': 'Web',
-                '05 SUPERCITO': 'Supercito',
-            },
-            'tipo_familia': {
-                'FAMILIA_BEBES': '1 Bebes',
-                'FAMILIA_NINOS': '2 Ninos',
-                'FAMILIA_JOVENES': '3 Jovenes',
-                'JOVEN/VIVO_SOLO': '4 Joven/Vive Solo',
-                'PAREJA_MADURA': '5 Pareja Madura',
-                'NO SEGMENTADO': '6 No Segmentado',
-            },
-            'nse': {
-                'Alto': '1 Alto',
-                'Bajo': '3 Bajo',
-                'Medio': '2 Medio',
-                'NO SEGMENTADO': '4 No Segmentado',
-            }
-        }
+        dict_map = dict_map
 
         df_copy = df.copy()
         
@@ -137,10 +51,10 @@ class PublicosObjetivo():
         self.__get_fechas_campana()
     
     def get_bc_options_familia(self, conn):
-        return sorted(Analisis._Analisis__map_agg(conn.select('SELECT DISTINCT TIPO_FAMILIA FROM CHEDRAUI.V_CUSTOMER_CONTACT ORDER BY 1'))['tipo_familia'].tolist())
+        return sorted(Analisis._Analisis__map_agg(conn.select(f'SELECT DISTINCT TIPO_FAMILIA FROM {schema}.V_CUSTOMER_CONTACT ORDER BY 1'))['tipo_familia'].tolist())
 
     def get_bc_options_nse(self, conn):
-        return sorted(Analisis._Analisis__map_agg(conn.select('SELECT DISTINCT NSE FROM CHEDRAUI.V_CUSTOMER_CONTACT ORDER BY 1'))['nse'].tolist())
+        return sorted(Analisis._Analisis__map_agg(conn.select(f'SELECT DISTINCT NSE FROM {schema}.V_CUSTOMER_CONTACT ORDER BY 1'))['nse'].tolist())
 
     def set_po_filtros_variables(self, venta_antes, venta_camp, cond_antes, cond_camp, online):
         self.venta_antes = venta_antes
@@ -200,12 +114,12 @@ class PublicosObjetivo():
 
         FROM FCT_SALE_LINE A
         {f'INNER JOIN DIM_STORE B ON A.STORE_KEY = B.STORE_KEY AND A.STORE_CODE = B.STORE_CODE AND A.STORE_CODE IN ({self.tiendas})' if self.tiendas else ''}
-        INNER JOIN CHEDRAUI.MON_ACT C USING(CUSTOMER_CODE_TY)
+        INNER JOIN {schema}.MON_ACT C USING(CUSTOMER_CODE_TY)
         INNER JOIN #PRODUCTOS D USING(PRODUCT_CODE)
         LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER) E USING(INVOICE_NO)
-        LEFT JOIN CHEDRAUI.V_CUSTOMER_CONTACT F ON A.CUSTOMER_CODE_TY = F.CUSTOMER_CODE
+        LEFT JOIN {schema}.V_CUSTOMER_CONTACT F ON A.CUSTOMER_CODE_TY = F.CUSTOMER_CODE
         WHERE LEFT(A.INVOICE_DATE, 7) BETWEEN '{self.dict_fechas['ini_12']}' AND '{self.dict_fechas['fin']}'
-        AND CUSTOMER_CODE_TY NOT IN (SELECT DISTINCT CUSTOMER_CODE FROM MAP_CUST_LIST WHERE LIST_ID IN (SELECT LIST_ID FROM CHEDRAUI.MON_LISTAS_NEGRAS WHERE STATUS = 'ACTIVO'))
+        AND CUSTOMER_CODE_TY NOT IN (SELECT DISTINCT CUSTOMER_CODE FROM MAP_CUST_LIST WHERE LIST_ID IN (SELECT LIST_ID FROM {schema}.MON_LISTAS_NEGRAS WHERE STATUS = 'ACTIVO'))
         {f'AND CUSTOMER_CODE_TY NOT IN (SELECT DISTINCT CUSTOMER_CODE FROM MAP_CUST_LIST WHERE LIST_ID IN ({self.excluir}))' if self.excluir else ''}
         AND CONTACT_INFO IS NOT NULL
         AND VALID_CONTACT_INFO <> '04 INVALID CONTACT'
@@ -982,7 +896,7 @@ class PublicosObjetivo():
             FROM FCT_SALE_LINE A
             INNER JOIN #PRODUCTOS USING(PRODUCT_CODE)
             LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER) F USING(INVOICE_NO)
-            {'LEFT JOIN CHEDRAUI.V_CUSTOMER_CONTACT ON CUSTOMER_CODE_TY = CUSTOMER_CODE' if self.dict_bc_analisis_var['nse'] or self.dict_bc_analisis_var['familia'] else ''}
+            {f'LEFT JOIN {schema}.V_CUSTOMER_CONTACT ON CUSTOMER_CODE_TY = CUSTOMER_CODE' if self.dict_bc_analisis_var['nse'] or self.dict_bc_analisis_var['familia'] else ''}
             WHERE (INVOICE_DATE BETWEEN {self.dict_bc_analisis_var['date_dash']} OR INVOICE_DATE BETWEEN {self.dict_bc_analisis_var['date_dash_aa']})
             AND BUSINESS_TYPE = 'R'
             AND SALE_NET_VAL > 0
@@ -1159,8 +1073,8 @@ class PublicosObjetivo():
             FROM #VENTA
             INNER JOIN #TX_CONDICION USING(INVOICE_NO)
             INNER JOIN #PRODUCTOS USING(PRODUCT_CODE, PROVEEDOR, MARCA, IND_MARCA)
-            LEFT JOIN CHEDRAUI.V_STORE USING(STORE_CODE, STORE_KEY)
-            LEFT JOIN CHEDRAUI.V_CUSTOMER_CONTACT ON CUSTOMER_CODE_TY = CUSTOMER_CODE
+            LEFT JOIN {schema}.V_STORE USING(STORE_CODE, STORE_KEY)
+            LEFT JOIN {schema}.V_CUSTOMER_CONTACT ON CUSTOMER_CODE_TY = CUSTOMER_CODE
             --   LEFT JOIN DIM_PRODUCT USING(PRODUCT_CODE)
             --   GROUP BY ROLLUP(1,2,3,4,5,6,7,8)
             WHERE IND_MC = 1
@@ -1283,8 +1197,8 @@ class PublicosObjetivo():
             FROM #VENTA
             INNER JOIN #TX_CONDICION USING(INVOICE_NO)
             INNER JOIN #PRODUCTOS USING(PRODUCT_CODE, PROVEEDOR, MARCA, IND_MARCA)
-            LEFT JOIN CHEDRAUI.V_STORE USING(STORE_CODE, STORE_KEY)
-            LEFT JOIN CHEDRAUI.V_CUSTOMER_CONTACT ON CUSTOMER_CODE_TY = CUSTOMER_CODE
+            LEFT JOIN {schema}.V_STORE USING(STORE_CODE, STORE_KEY)
+            LEFT JOIN {schema}.V_CUSTOMER_CONTACT ON CUSTOMER_CODE_TY = CUSTOMER_CODE
             --   LEFT JOIN DIM_PRODUCT USING(PRODUCT_CODE)
             --   GROUP BY ROLLUP(1,2,3,4,5,6,7,8)
             WHERE IND_MC = 1

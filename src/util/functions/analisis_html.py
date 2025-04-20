@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 from pandas.plotting import table
 import pandas as pd
 import seaborn as sns
-from connection import Conn
+from util.functions.connection import Conn
+from util.functions.path import get_dir_path, get_file_path, get_neighbor_path, append_path, functions_str, data_str, json_mexico_str, bc_images_str
 import geopandas as gpd
 from fuzzywuzzy import process
 from matplotlib.ticker import FuncFormatter
@@ -14,12 +15,17 @@ import os
 class Analisis:
     def __init__(self, df=None):
         self.df = df
-        self.__set_foldername('Analisis BC')
+        self.__set_foldername()
         self.__set_df_mexico()
         self.__set_theme()
     
-    def __set_foldername(self, foldername):
+    def __set_foldername(self):
+        foldername = get_dir_path(bc_images_str, get_neighbor_path(__file__, functions_str, data_str))
+        append_path(foldername)
+
+        print(f'Folder name: {foldername}')
         self.foldername = Path(foldername)
+        print(f'Folder name after Path(): {self.foldername}')
 
     # Función para mapear los nombres de las columnas
     def __map_col_agg(self, df):
@@ -143,7 +149,13 @@ class Analisis:
         self.df = df
 
     def __set_df_mexico(self):
-        self.df_mexico = gpd.read_file('Analisis BC/mexicoHigh.json')
+
+        path = get_file_path(
+            json_mexico_str,
+            dir_path=get_neighbor_path(__file__, functions_str, data_str)
+        )
+
+        self.df_mexico = gpd.read_file(path)
 
     def __split_df(self, df, columns=['MES', 'FORMATO', 'ESTADO', 'TIENDA', 'FAMILIA', 'NSE', 'CLASS', 'SUBCLASS', 'PROD_TYPE', 'PRODUCTO', 'TOTAL']):
         
@@ -733,13 +745,16 @@ class Analisis:
         print('Guardando las figuras.')
 
         # Validar que existe la carpeta 'folder_name', si no existe, crearla. Después validar que dentro exista la carpeta 'images', si no existe, crearla.
-        if not os.path.exists(self.foldername):
-            os.makedirs(self.foldername)
-        if not os.path.exists(f'{self.foldername}/images'):
-            os.makedirs(f'{self.foldername}/images')
+        # if not os.path.exists(self.foldername):
+        #     os.makedirs(self.foldername)
+        # if not os.path.exists(f'{self.foldername}/images'):
+        #     os.makedirs(f'{self.foldername}/images')
 
         for row in df_fig.index:
-            df_fig.loc[row, 'fig'].savefig(f'{self.foldername}/images/{row}.svg', bbox_inches='tight', dpi=300)
+            print(f'{self.foldername}/{row}.svg')
+            df_fig.loc[row, 'fig'].savefig(f'{self.foldername}/{row}.svg', bbox_inches='tight', dpi=300)
+
+        print(df_fig)
 
     def validate_fig(self, image_base_path, fig_dict):
         for key, filename in fig_dict.items():
@@ -841,7 +856,7 @@ class Analisis:
     def save_html(self, periodo='total', show_figs=False, foldername=None, filename='Analisis_BC'):
 
         if foldername:
-            self.__set_foldername(foldername)
+            append_path(foldername)
 
         if periodo == 'total':
             df = self.df[self.df['Mes'] != 'CAMPANA']

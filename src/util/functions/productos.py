@@ -1,6 +1,9 @@
 from datetime import datetime
 from pandas.tseries.offsets import MonthEnd
 import pandas as pd
+from util.functions.connection import Conn
+
+schema = Conn().get_schema()
 
 # Create a Class to handle the Monetizacion data that inherits from the Conn class
 class Productos():
@@ -60,7 +63,7 @@ class Productos():
                 ,B.MARCA
                 ,B.PROVEEDOR
             FROM DIM_PRODUCT A
-            INNER JOIN CHEDRAUI.MON_CRM_SKU_RAZONSOCIAL B ON A.PRODUCT_CODE = B.PRODUCT_CODE
+            INNER JOIN {schema}.MON_CRM_SKU_RAZONSOCIAL B ON A.PRODUCT_CODE = B.PRODUCT_CODE
             {f'AND A.PRODUCT_CODE::BIGINT IN ({self.skus})' if self.skus else ''}
             {f'AND B.MARCA IN ({self.marcas})' if self.marcas else ''}
             {f'AND B.PROVEEDOR IN ({self.proveedores})' if self.proveedores else ''}
@@ -93,7 +96,7 @@ class Productos():
             ,B.MARCA
             ,B.PROVEEDOR
             FROM DIM_PRODUCT A
-            INNER JOIN CHEDRAUI.MON_CRM_SKU_RAZONSOCIAL B ON A.PRODUCT_CODE = B.PRODUCT_CODE
+            INNER JOIN {schema}.MON_CRM_SKU_RAZONSOCIAL B ON A.PRODUCT_CODE = B.PRODUCT_CODE
             {f'AND A.PRODUCT_CODE::BIGINT IN ({self.skus})' if self.skus else ''}
             {f'AND B.MARCA IN ({self.marcas})' if self.marcas else ''}
             {f'AND B.PROVEEDOR = ({self.proveedores})' if self.proveedores else ''}
@@ -176,7 +179,7 @@ class Productos():
                 ,SUBCLASS_DESC
                 ,PROD_TYPE_DESC
             FROM DIM_PRODUCT A
-            INNER JOIN CHEDRAUI.MON_CRM_SKU_RAZONSOCIAL B ON A.PRODUCT_CODE = B.PRODUCT_CODE
+            INNER JOIN {schema}.MON_CRM_SKU_RAZONSOCIAL B ON A.PRODUCT_CODE = B.PRODUCT_CODE
             {f'AND A.PRODUCT_CODE::BIGINT IN ({skus})' if skus else ''}
             {f'AND B.MARCA IN ({marcas})' if marcas else ''}
             {f'AND B.PROVEEDOR IN ({proveedores})' if proveedores else ''}

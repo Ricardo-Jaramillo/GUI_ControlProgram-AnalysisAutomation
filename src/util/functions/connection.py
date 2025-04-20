@@ -1,7 +1,21 @@
-from credentials import dic_credentials
 import pandas as pd
 import psycopg2
+import yaml
 from psycopg2.extras import execute_values
+from util.functions.path import (
+    get_file_path,
+    get_neighbor_path
+)
+from util.functions.path import (
+    credentials_str,
+    functions_str,
+    config_str
+)
+
+path = get_file_path(
+            credentials_str,
+            dir_path=get_neighbor_path(__file__, functions_str, config_str)
+        )
 
 # Create a Class Connection
 class Conn:
@@ -13,18 +27,29 @@ class Conn:
     def __str__(self):
         return self.name
 
+    def get_schema(self):
+        '''
+        Get schema from yaml file
+        '''
+        with open(path, 'r') as file:
+            credentials = yaml.safe_load(file)
+        return credentials['sql']['schema']
+
     def connect_db(self):
         '''
         Call this method to connect to AWS RDS database using the psycopg2 module.
         Returns an object with the stablished connection
         '''
-        try:
+        try:            
+            with open(path, 'r') as file:
+                credentials = yaml.safe_load(file)
+
             conn = psycopg2.connect(
-                host=dic_credentials['host'],
-                database=dic_credentials['database'],
-                port=dic_credentials['port'],
-                user=dic_credentials['user'],
-                password=dic_credentials['password']
+                host=credentials['credentials']['host'],
+                database=credentials['credentials']['database'],
+                port=credentials['credentials']['port'],
+                user=credentials['credentials']['user'],
+                password=credentials['credentials']['password']
             )
             conn.autocommit = True
             self.conn = conn
@@ -41,18 +66,22 @@ class Conn:
         print('Successfull execution')
 
     def insert(self, table_name, df):
-       '''
-         Insert a DataFrame into a table in the database
+        '''
+        Insert a DataFrame into a table in the database
             Parameters:
             table_name (str): The name of the table to insert the data
             df (DataFrame): The DataFrame to insert into the table
-       '''
-       query = f'INSERT INTO CHEDRAUI.{table_name} VALUES %s'
-       data = list(df.itertuples(index=False, name=None))
+        '''
+        with open(path, 'r') as file:
+            credentials = yaml.safe_load(file)
+        schema = self.get_schema()
+
+        query = f'INSERT INTO {schema}.{table_name} VALUES %s'
+        data = list(df.itertuples(index=False, name=None))
        
-       print('Inserting data...')
-       execute_values(self.cursor, query, data)
-       print(f'Successfull insert: {len(data)} rows')
+        print('Inserting data...')
+        execute_values(self.cursor, query, data)
+        print(f'Successfull insert: {len(data)} rows')
 
     def select(self, query):
         print('Selecting data...')

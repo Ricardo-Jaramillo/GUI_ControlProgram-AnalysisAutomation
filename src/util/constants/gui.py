@@ -1,0 +1,1 @@
+title_gui_str = 'Cognodata Monetización - Data Science'

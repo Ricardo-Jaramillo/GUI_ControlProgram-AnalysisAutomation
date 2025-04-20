@@ -1,10 +1,12 @@
-from connection import Conn
-from productos import Productos
-from publicos_objetivo import PublicosObjetivo
-from radiografia import Radiografia
-from campana import Campana
-from analisis_html import Analisis
+from util.functions.connection import Conn
+from util.functions.productos import Productos
+from util.functions.publicos_objetivo import PublicosObjetivo
+from util.functions.radiografia import Radiografia
+from util.functions.campana import Campana
+from util.functions.analisis_html import Analisis
 from pathlib import Path
+
+schema = Conn().get_schema()
 
 # Create a Class to handle the Monetizacion data that inherits from the Conn class
 class Monetizacion(Conn, Productos):
@@ -23,10 +25,10 @@ class Monetizacion(Conn, Productos):
             SELECT DISTINCT
                 MARCA
                 ,PROVEEDOR
-            FROM CHEDRAUI.MON_CRM_SKU_RAZONSOCIAL
+            FROM {schema}.MON_CRM_SKU_RAZONSOCIAL
         '''
         df = self.select(query)
-
+        print('Obteniendo marcas y proveedores...')
         # Reemplaza nulos por 'Sin Marca' y 'Sin Proveedor'
         df['marca'] = df['marca'].fillna('SIN MARCA')
         df['proveedor'] = df['proveedor'].fillna('SIN PROVEEDOR')
@@ -34,7 +36,7 @@ class Monetizacion(Conn, Productos):
         return sorted(list(df.marca.unique())), sorted(list(df.proveedor.unique()))
     
     def get_campanas(self):
-        query = "SELECT * FROM CHEDRAUI.MON_CAMP_DESC ORDER BY NOMBRE"
+        query = f"SELECT * FROM {schema}.MON_CAMP_DESC ORDER BY NOMBRE"
         return self.select(query)
 
     def generar_productos(self, skus, marcas, proveedores, clases, subclases, prod_type_desc, override):

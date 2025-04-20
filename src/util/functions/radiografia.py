@@ -1,6 +1,9 @@
 import pandas as pd
 from tqdm import tqdm
 from datetime import datetime, timedelta
+from util.functions.connection import Conn
+
+schema = Conn().get_schema()
 
 # Create a Class to handle the Radiografia data
 class Radiografia():
@@ -103,7 +106,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC
                 ,SUM(UNIDADES) UNIDADES_MARCA_MC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             AND IND_MC = 1
@@ -127,7 +130,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC
                 ,SUM(UNIDADES) UNIDADES_MARCA_NMC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             AND IND_MC = 0
@@ -151,7 +154,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA
                 ,SUM(UNIDADES) UNIDADES_MARCA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -185,7 +188,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -212,7 +215,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC
                 ,SUM(UNIDADES) UNIDADES_CAT_MC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             AND IND_MC = 1
@@ -236,7 +239,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC
                 ,SUM(UNIDADES) UNIDADES_CAT_NMC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             AND IND_MC = 0
@@ -260,7 +263,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT
                 ,SUM(UNIDADES) UNIDADES_CAT
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -294,7 +297,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -378,7 +381,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_MC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             AND IND_MC = 1
@@ -402,7 +405,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_NMC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             AND IND_MC = 0
@@ -426,7 +429,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -460,7 +463,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE_AA
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -487,7 +490,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_MC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             AND IND_MC = 1
@@ -511,7 +514,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_NMC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             AND IND_MC = 0
@@ -535,7 +538,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -569,7 +572,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE_AA
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -652,8 +655,8 @@ class Radiografia():
             DROP TABLE IF EXISTS #MON_RAD_AA_TOTAL;
 
             --GUARDAR TOTAL EN DB----------------------------------------------------------
-            DELETE CHEDRAUI.MON_RAD_CAT WHERE ID_RADIOGRAFIA = '{id}' AND CLASS_DESC = 'TOTAL' AND SUBCLASS_DESC = 'TOTAL' AND PROD_TYPE_DESC = 'TOTAL';
-            INSERT INTO CHEDRAUI.MON_RAD_CAT SELECT * FROM #MON_RAD_CAT_TOTAL;        
+            DELETE {schema}.MON_RAD_CAT WHERE ID_RADIOGRAFIA = '{id}' AND CLASS_DESC = 'TOTAL' AND SUBCLASS_DESC = 'TOTAL' AND PROD_TYPE_DESC = 'TOTAL';
+            INSERT INTO {schema}.MON_RAD_CAT SELECT * FROM #MON_RAD_CAT_TOTAL;        
         '''
 
         query_actual_marca_mc_class = f'''
@@ -673,7 +676,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC
                 ,SUM(UNIDADES) UNIDADES_MARCA_MC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             AND IND_MC = 1
@@ -697,7 +700,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC
                 ,SUM(UNIDADES) UNIDADES_MARCA_NMC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             AND IND_MC = 0
@@ -721,7 +724,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA
                 ,SUM(UNIDADES) UNIDADES_MARCA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -755,7 +758,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -782,7 +785,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC
                 ,SUM(UNIDADES) UNIDADES_CAT_MC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             AND IND_MC = 1
@@ -806,7 +809,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC
                 ,SUM(UNIDADES) UNIDADES_CAT_NMC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             AND IND_MC = 0
@@ -830,7 +833,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT
                 ,SUM(UNIDADES) UNIDADES_CAT
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -864,7 +867,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -948,7 +951,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_MC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             AND IND_MC = 1
@@ -972,7 +975,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_NMC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             AND IND_MC = 0
@@ -996,7 +999,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1030,7 +1033,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE_AA
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1057,7 +1060,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_MC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             AND IND_MC = 1
@@ -1081,7 +1084,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_NMC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             AND IND_MC = 0
@@ -1105,7 +1108,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1139,7 +1142,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE_AA
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1222,8 +1225,8 @@ class Radiografia():
             DROP TABLE IF EXISTS #MON_RAD_AA_CLASS;
 
             --GUARDAR TOTAL EN DB----------------------------------------------------------
-            DELETE CHEDRAUI.MON_RAD_CAT WHERE ID_RADIOGRAFIA = '{id}' AND CLASS_DESC <> 'TOTAL' AND SUBCLASS_DESC = 'TOTAL' AND PROD_TYPE_DESC = 'TOTAL';
-            INSERT INTO CHEDRAUI.MON_RAD_CAT SELECT * FROM #MON_RAD_CAT_CLASS;
+            DELETE {schema}.MON_RAD_CAT WHERE ID_RADIOGRAFIA = '{id}' AND CLASS_DESC <> 'TOTAL' AND SUBCLASS_DESC = 'TOTAL' AND PROD_TYPE_DESC = 'TOTAL';
+            INSERT INTO {schema}.MON_RAD_CAT SELECT * FROM #MON_RAD_CAT_CLASS;
         '''
 
         query_actual_marca_mc_subclass = f'''
@@ -1243,7 +1246,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC
                 ,SUM(UNIDADES) UNIDADES_MARCA_MC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             AND IND_MC = 1
@@ -1267,7 +1270,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC
                 ,SUM(UNIDADES) UNIDADES_MARCA_NMC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             AND IND_MC = 0
@@ -1291,7 +1294,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA
                 ,SUM(UNIDADES) UNIDADES_MARCA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1325,7 +1328,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1352,7 +1355,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC
                 ,SUM(UNIDADES) UNIDADES_CAT_MC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             AND IND_MC = 1
@@ -1376,7 +1379,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC
                 ,SUM(UNIDADES) UNIDADES_CAT_NMC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             AND IND_MC = 0
@@ -1400,7 +1403,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT
                 ,SUM(UNIDADES) UNIDADES_CAT
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1434,7 +1437,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1518,7 +1521,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_MC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             AND IND_MC = 1
@@ -1542,7 +1545,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_NMC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             AND IND_MC = 0
@@ -1566,7 +1569,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1600,7 +1603,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE_AA
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1627,7 +1630,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_MC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             AND IND_MC = 1
@@ -1651,7 +1654,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_NMC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             AND IND_MC = 0
@@ -1675,7 +1678,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1709,7 +1712,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE_AA
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1792,8 +1795,8 @@ class Radiografia():
             DROP TABLE IF EXISTS #MON_RAD_AA_SUBCLASS;
 
             --GUARDAR SUBCLASS EN DB----------------------------------------------------------
-            DELETE CHEDRAUI.MON_RAD_CAT WHERE ID_RADIOGRAFIA = '{id}' AND CLASS_DESC <> 'TOTAL' AND SUBCLASS_DESC <> 'TOTAL' AND PROD_TYPE_DESC = 'TOTAL';
-            INSERT INTO CHEDRAUI.MON_RAD_CAT SELECT * FROM #MON_RAD_CAT_SUBCLASS;
+            DELETE {schema}.MON_RAD_CAT WHERE ID_RADIOGRAFIA = '{id}' AND CLASS_DESC <> 'TOTAL' AND SUBCLASS_DESC <> 'TOTAL' AND PROD_TYPE_DESC = 'TOTAL';
+            INSERT INTO {schema}.MON_RAD_CAT SELECT * FROM #MON_RAD_CAT_SUBCLASS;
         '''
 
         query_actual_marca_mc_prodtype = f'''
@@ -1813,7 +1816,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC
                 ,SUM(UNIDADES) UNIDADES_MARCA_MC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             AND IND_MC = 1
@@ -1837,7 +1840,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC
                 ,SUM(UNIDADES) UNIDADES_MARCA_NMC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             AND IND_MC = 0
@@ -1861,7 +1864,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA
                 ,SUM(UNIDADES) UNIDADES_MARCA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1895,7 +1898,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -1922,7 +1925,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC
                 ,SUM(UNIDADES) UNIDADES_CAT_MC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             AND IND_MC = 1
@@ -1946,7 +1949,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC
                 ,SUM(UNIDADES) UNIDADES_CAT_NMC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             AND IND_MC = 0
@@ -1970,7 +1973,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT
                 ,SUM(UNIDADES) UNIDADES_CAT
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2004,7 +2007,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2088,7 +2091,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_MC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             AND IND_MC = 1
@@ -2112,7 +2115,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_NMC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             AND IND_MC = 0
@@ -2136,7 +2139,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2170,7 +2173,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE_AA
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2197,7 +2200,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_MC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             AND IND_MC = 1
@@ -2221,7 +2224,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_NMC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             AND IND_MC = 0
@@ -2245,7 +2248,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2279,7 +2282,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE_AA
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2362,8 +2365,8 @@ class Radiografia():
             DROP TABLE IF EXISTS #MON_RAD_AA_PRODTYPE;
 
             --GUARDAR PRODTYPE EN DB----------------------------------------------------------
-            DELETE CHEDRAUI.MON_RAD_CAT WHERE ID_RADIOGRAFIA = '{id}' AND CLASS_DESC <> 'TOTAL' AND SUBCLASS_DESC <> 'TOTAL' AND PROD_TYPE_DESC <> 'TOTAL';
-            INSERT INTO CHEDRAUI.MON_RAD_CAT SELECT * FROM #MON_RAD_CAT_PRODTYPE;
+            DELETE {schema}.MON_RAD_CAT WHERE ID_RADIOGRAFIA = '{id}' AND CLASS_DESC <> 'TOTAL' AND SUBCLASS_DESC <> 'TOTAL' AND PROD_TYPE_DESC <> 'TOTAL';
+            INSERT INTO {schema}.MON_RAD_CAT SELECT * FROM #MON_RAD_CAT_PRODTYPE;
         '''
 
         lis_query_actual_total = [query_actual_marca_mc_total, query_actual_marca_nmc_total, query_actual_marca_total_total, query_actual_marca_online_total, query_actual_cat_mc_total, query_actual_cat_nmc_total, query_actual_cat_total_total, query_actual_cat_online_total, query_actual_total]
@@ -2400,7 +2403,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC
                 ,SUM(UNIDADES) UNIDADES_MARCA_MC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             AND IND_MC = 1
@@ -2422,7 +2425,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC
                 ,SUM(UNIDADES) UNIDADES_MARCA_NMC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             AND IND_MC = 0
@@ -2444,7 +2447,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA
                 ,SUM(UNIDADES) UNIDADES_MARCA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2476,7 +2479,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2501,7 +2504,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC
                 ,SUM(UNIDADES) UNIDADES_CAT_MC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             AND IND_MC = 1
@@ -2523,7 +2526,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC
                 ,SUM(UNIDADES) UNIDADES_CAT_NMC
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             AND IND_MC = 0
@@ -2545,7 +2548,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT
                 ,SUM(UNIDADES) UNIDADES_CAT
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2577,7 +2580,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ACTUAL'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2660,7 +2663,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_MC_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_MC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             AND IND_MC = 1
@@ -2682,7 +2685,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_NMC_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_NMC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             AND IND_MC = 0
@@ -2704,7 +2707,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_MARCA_AA
                 ,SUM(UNIDADES) UNIDADES_MARCA_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2736,7 +2739,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_MARCA_NMC_ONLINE_AA
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_MARCA_NMC_ONLINE_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2761,7 +2764,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_MC_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_MC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             AND IND_MC = 1
@@ -2783,7 +2786,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_NMC_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_NMC_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             AND IND_MC = 0
@@ -2805,7 +2808,7 @@ class Radiografia():
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT_AA
                 ,SUM(UNIDADES) UNIDADES_CAT_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2837,7 +2840,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MC = 0 THEN INVOICE_NO END) TX_CAT_NMC_ONLINE_AA
                 ,SUM(CASE WHEN IND_MC = 0 THEN UNIDADES END) UNIDADES_CAT_NMC_ONLINE_AA
 
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE PERIODO = 'ANO_ANTERIOR'
             --   AND IND_MARCA = 1
             --   AND IND_MC = 0
@@ -2974,7 +2977,7 @@ class Radiografia():
                 ,VENTA_CAT_ONLINE_AA
                 ,VENTA_CAT_MC_ONLINE_AA
                 ,VENTA_CAT_NMC_ONLINE_AA
-            FROM CHEDRAUI.MON_RAD_CAT
+            FROM {schema}.MON_RAD_CAT
             WHERE ID_RADIOGRAFIA = '{id}'
             AND CLASS_DESC = 'TOTAL'
             AND SUBCLASS_DESC = 'TOTAL'
@@ -2987,8 +2990,8 @@ class Radiografia():
             DROP TABLE IF EXISTS #MON_RAD_AA_TOTAL;
 
             --GUARDAR TOTAL EN DB----------------------------------------------------------
-            DELETE CHEDRAUI.MON_RAD_MARCA WHERE ID_RADIOGRAFIA = '{id}';
-            INSERT INTO CHEDRAUI.MON_RAD_MARCA SELECT * FROM #MON_RAD_CAT_TOTAL;
+            DELETE {schema}.MON_RAD_MARCA WHERE ID_RADIOGRAFIA = '{id}';
+            INSERT INTO {schema}.MON_RAD_MARCA SELECT * FROM #MON_RAD_CAT_TOTAL;
         '''
 
         lis_query_actual = [query_actual_marca_mc_total, query_actual_marca_nmc_total, query_actual_marca_total_total, query_actual_marca_online_total, query_actual_cat_mc_total, query_actual_cat_nmc_total, query_actual_cat_total_total, query_actual_cat_online_total, query_actual_total]
@@ -3011,14 +3014,14 @@ class Radiografia():
             INSERT INTO #MON_RAD_DESC VALUES
             ('{id}' ,'{nombre}', '{proveedores}', '{self.dict_fechas['fecha_ini']}', '{self.dict_fechas['fecha_fin']}');
 
-            DELETE CHEDRAUI.MON_RAD_DESC WHERE ID_RADIOGRAFIA = '{id}';
-            INSERT INTO CHEDRAUI.MON_RAD_DESC SELECT * FROM #MON_RAD_DESC;
+            DELETE {schema}.MON_RAD_DESC WHERE ID_RADIOGRAFIA = '{id}';
+            INSERT INTO {schema}.MON_RAD_DESC SELECT * FROM #MON_RAD_DESC;
         """
 
         query_vta = f"""
             -- 1. TABLA DE VENTAS
-            DROP TABLE IF EXISTS CHEDRAUI.VTA;
-            CREATE TABLE CHEDRAUI.VTA AS (
+            DROP TABLE IF EXISTS {schema}.VTA;
+            CREATE TABLE {schema}.VTA AS (
             SELECT
                 1::INT AS IND_MC
                 ,LEFT(A.INVOICE_DATE, 7) MES
@@ -3064,9 +3067,9 @@ class Radiografia():
 
             FROM FCT_SALE_LINE A
             INNER JOIN #PRODUCTOS B USING(PRODUCT_CODE)
-            LEFT JOIN CHEDRAUI.V_CUSTOMER_CONTACT AS C ON A.CUSTOMER_CODE_TY = C.CUSTOMER_CODE AND C.CONTACT_INFO IS NOT NULL
-            LEFT JOIN CHEDRAUI.V_STORE D ON A.STORE_CODE = D.STORE_CODE AND A.STORE_KEY = D.STORE_KEY -- STORE OF THE CURRENT SALE
-            --   LEFT JOIN CHEDRAUI.V_STORE E ON C.STORE_CODE = E.STORE_CODE AND C.STORE_KEY = E.STORE_KEY -- FAVORITE STORE OF CUSTOMER
+            LEFT JOIN {schema}.V_CUSTOMER_CONTACT AS C ON A.CUSTOMER_CODE_TY = C.CUSTOMER_CODE AND C.CONTACT_INFO IS NOT NULL
+            LEFT JOIN {schema}.V_STORE D ON A.STORE_CODE = D.STORE_CODE AND A.STORE_KEY = D.STORE_KEY -- STORE OF THE CURRENT SALE
+            --   LEFT JOIN {schema}.V_STORE E ON C.STORE_CODE = E.STORE_CODE AND C.STORE_KEY = E.STORE_KEY -- FAVORITE STORE OF CUSTOMER
             LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER) F USING(INVOICE_NO)
             WHERE (A.SALE_NET_VAL > 0 AND A.BUSINESS_TYPE = 'R')
             AND INVOICE_DATE BETWEEN '{self.dict_fechas['fecha_ini_a']}' AND '{self.dict_fechas['fecha_fin']}'
@@ -3121,7 +3124,7 @@ class Radiografia():
 
             FROM FCT_SALE_LINE_NM A
             INNER JOIN #PRODUCTOS B USING(PRODUCT_CODE)
-            LEFT JOIN CHEDRAUI.V_STORE D ON A.STORE_CODE = D.STORE_CODE AND A.STORE_KEY = D.STORE_KEY -- STORE OF THE CURRENT SALE
+            LEFT JOIN {schema}.V_STORE D ON A.STORE_CODE = D.STORE_CODE AND A.STORE_KEY = D.STORE_KEY -- STORE OF THE CURRENT SALE
             LEFT JOIN (SELECT DISTINCT INVOICE_NO, CASE WHEN CHANNEL_TYPE IN ('WEB','APP','CC HY') THEN 1 ELSE 0 END IND_ONLINE FROM FCT_SALE_HEADER_NM) F USING(INVOICE_NO)
             WHERE (A.SALE_NET_VAL > 0 AND A.BUSINESS_TYPE = 'R')
             AND INVOICE_DATE BETWEEN '{self.dict_fechas['fecha_ini_a']}' AND '{self.dict_fechas['fecha_fin']}'
@@ -3155,8 +3158,8 @@ class Radiografia():
                 ,PROVEEDOR
             FROM #PRODUCTOS
             );
-            DELETE CHEDRAUI.MON_RAD_PRODUCTOS WHERE ID_RADIOGRAFIA ='{id}';
-            INSERT INTO CHEDRAUI.MON_RAD_PRODUCTOS SELECT * FROM #MON_RAD_PRODUCTOS;
+            DELETE {schema}.MON_RAD_PRODUCTOS WHERE ID_RADIOGRAFIA ='{id}';
+            INSERT INTO {schema}.MON_RAD_PRODUCTOS SELECT * FROM #MON_RAD_PRODUCTOS;
         """
         return [query_rad_productos]
 
@@ -3203,14 +3206,14 @@ class Radiografia():
                 ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_ONLINE_AA
                 ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=1 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_MC_ONLINE_AA
                 ,SUM(CASE WHEN PERIODO = 'ANO_ANTERIOR' AND IND_MC=0 AND IND_ONLINE=1 THEN VENTA END) VENTA_MARCA_NMC_ONLINE_AA
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE IND_MARCA = 1
             GROUP BY 1,2,3,4,5,6,7
             HAVING VENTA_MARCA > 0
             );
 
-            DELETE  CHEDRAUI.MON_RAD_PRODUCTO WHERE ID_RADIOGRAFIA='{id}';
-            INSERT INTO CHEDRAUI.MON_RAD_PRODUCTO SELECT * FROM #MON_RAD_PRODUCTO ;
+            DELETE  {schema}.MON_RAD_PRODUCTO WHERE ID_RADIOGRAFIA='{id}';
+            INSERT INTO {schema}.MON_RAD_PRODUCTO SELECT * FROM #MON_RAD_PRODUCTO ;
         """
         return [query_rad_datos_producto]
 
@@ -3231,7 +3234,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MARCA = 0 THEN INVOICE_NO END) TX_COMPETENCIA
                 ,SUM(CASE WHEN IND_MARCA = 1 THEN VENTA END) VENTA_MARCA
                 ,SUM(CASE WHEN IND_MARCA = 0 THEN VENTA END) VENTA_COMPETENCIA
-                FROM CHEDRAUI.VTA
+                FROM {schema}.VTA
                 WHERE IND_MC = 1
                 AND PERIODO = 'ACTUAL'
                 GROUP BY 1,2,3
@@ -3245,7 +3248,7 @@ class Radiografia():
                 ,COUNT(DISTINCT CASE WHEN IND_MARCA = 0 THEN INVOICE_NO END) TX_COMPETENCIA
                 ,SUM(CASE WHEN IND_MARCA = 1 THEN VENTA END) VENTA_MARCA
                 ,SUM(CASE WHEN IND_MARCA = 0 THEN VENTA END) VENTA_COMPETENCIA
-                FROM CHEDRAUI.VTA
+                FROM {schema}.VTA
                 WHERE IND_MC = 1
                 AND PERIODO = 'ACTUAL'
                 GROUP BY 1,2,3
@@ -3259,7 +3262,7 @@ class Radiografia():
                 ,0::INT TX_COMPETENCIA
                 ,SUM(VENTA) VENTA_MARCA
                 ,0::INT VENTA_COMPETENCIA
-                FROM CHEDRAUI.VTA
+                FROM {schema}.VTA
                 WHERE IND_MC = 1
                 AND PERIODO = 'ACTUAL'
                 GROUP BY 1,2,3
@@ -3356,7 +3359,7 @@ class Radiografia():
                 ,SUM(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_d1']}' AND '{self.dict_fechas['fecha_fin_d2']}' AND IND_MARCA = 1 THEN VENTA ELSE 0 END) AS VENTA_DORMIDOS
                 ,SUM(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_p1']}' AND '{self.dict_fechas['fecha_fin_p2']}' AND IND_MARCA = 1 THEN VENTA ELSE 0 END) AS VENTA_PERDIDOS
                 
-                FROM CHEDRAUI.VTA
+                FROM {schema}.VTA
                 WHERE MES BETWEEN '{self.dict_fechas['fecha_ini_p1']}' AND '{self.dict_fechas['fecha_fin_p2']}'
                 AND IND_MC = 1
                 GROUP BY 1,2
@@ -3377,7 +3380,7 @@ class Radiografia():
                 ,SUM(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_d1']}' AND '{self.dict_fechas['fecha_fin_d2']}' AND IND_MARCA = 1 THEN VENTA ELSE 0 END) AS VENTA_DORMIDOS
                 ,SUM(CASE WHEN MES BETWEEN '{self.dict_fechas['fecha_ini_p1']}' AND '{self.dict_fechas['fecha_fin_p2']}' AND IND_MARCA = 1 THEN VENTA ELSE 0 END) AS VENTA_PERDIDOS
                 
-                FROM CHEDRAUI.VTA
+                FROM {schema}.VTA
                 WHERE MES BETWEEN '{self.dict_fechas['fecha_ini_p1']}' AND '{self.dict_fechas['fecha_fin_p2']}'
                 AND IND_MC = 1
                 GROUP BY 1,2
@@ -3439,8 +3442,8 @@ class Radiografia():
             ORDER BY 1,3 DESC
             );
 
-            DELETE CHEDRAUI.MON_RAD_FUNNEL_CLIENTES WHERE ID_RADIOGRAFIA = '{id}';
-            INSERT INTO CHEDRAUI.MON_RAD_FUNNEL_CLIENTES SELECT * FROM #MON_RAD_FUNNEL_CLIENTES;
+            DELETE {schema}.MON_RAD_FUNNEL_CLIENTES WHERE ID_RADIOGRAFIA = '{id}';
+            INSERT INTO {schema}.MON_RAD_FUNNEL_CLIENTES SELECT * FROM #MON_RAD_FUNNEL_CLIENTES;
         """
         return [query_rad_funnel_clientes]
 
@@ -3459,14 +3462,14 @@ class Radiografia():
                 ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES_CAT
                 ,SUM(VENTA) VENTA_CAT
                 ,COUNT(DISTINCT INVOICE_NO) TX_CAT
-            FROM CHEDRAUI.VTA 
+            FROM {schema}.VTA 
             WHERE IND_MC = 1
             AND PERIODO = 'ACTUAL'
             GROUP BY 1,2,3
             );
 
-            DELETE CHEDRAUI.MON_RAD_EVO WHERE ID_RADIOGRAFIA='{id}';
-            INSERT INTO CHEDRAUI.MON_RAD_EVO SELECT * FROM #MON_RAD_EVO;
+            DELETE {schema}.MON_RAD_EVO WHERE ID_RADIOGRAFIA='{id}';
+            INSERT INTO {schema}.MON_RAD_EVO SELECT * FROM #MON_RAD_EVO;
         """
         return [query_rad_evolucion]
 
@@ -3486,7 +3489,7 @@ class Radiografia():
                 ,'TOTAL' REGION
                 ,'TOTAL' FORMATO_TIENDA
                 ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE IND_MC = 1
             AND IND_MARCA = 1
             AND PERIODO = 'ACTUAL'
@@ -3503,7 +3506,7 @@ class Radiografia():
                 ,'TOTAL' REGION
                 ,'TOTAL' FORMATO_TIENDA
                 ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE IND_MC = 1
             AND IND_MARCA = 1
             AND PERIODO = 'ACTUAL'
@@ -3521,7 +3524,7 @@ class Radiografia():
                 ,REGION
                 ,'TOTAL' FORMATO_TIENDA
                 ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE IND_MC = 1
             AND IND_MARCA = 1
             AND PERIODO = 'ACTUAL'
@@ -3538,7 +3541,7 @@ class Radiografia():
                 ,REGION
                 ,'TOTAL' FORMATO_TIENDA
                 ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE IND_MC = 1
             AND IND_MARCA = 1
             AND PERIODO = 'ACTUAL'
@@ -3556,7 +3559,7 @@ class Radiografia():
                 ,'TOTAL' REGION
                 ,FORMATO_TIENDA
                 ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE IND_MC = 1
             AND IND_MARCA = 1
             AND PERIODO = 'ACTUAL'
@@ -3573,7 +3576,7 @@ class Radiografia():
                 ,'TOTAL' REGION
                 ,FORMATO_TIENDA
                 ,COUNT(DISTINCT CUSTOMER_CODE) CLIENTES
-            FROM CHEDRAUI.VTA
+            FROM {schema}.VTA
             WHERE IND_MC = 1
             AND IND_MARCA = 1
             AND PERIODO = 'ACTUAL'
@@ -3585,8 +3588,8 @@ class Radiografia():
             FROM __SEGMENTADO
             );
 
-            DELETE CHEDRAUI.MON_RAD_SEGMENTADO WHERE ID_RADIOGRAFIA = '{id}';
-            INSERT INTO CHEDRAUI.MON_RAD_SEGMENTADO SELECT * FROM #MON_RAD_SEGMENTADO UNION SELECT  '{id}' AS ID_RADIOGRAFIA, * FROM CHEDRAUI.MON_RAD_SEGMENTOS_CHEDRAUI;
+            DELETE {schema}.MON_RAD_SEGMENTADO WHERE ID_RADIOGRAFIA = '{id}';
+            INSERT INTO {schema}.MON_RAD_SEGMENTADO SELECT * FROM #MON_RAD_SEGMENTADO UNION SELECT  '{id}' AS ID_RADIOGRAFIA, * FROM {schema}.MON_RAD_SEGMENTOS_{schema};
         """
         return [query_rad_segmentado]
 
@@ -3707,8 +3710,8 @@ class Radiografia():
             FROM FCT_SALE_LINE A
             INNER JOIN #PRODUCTOS B USING(PRODUCT_CODE)
             INNER JOIN #TX C USING(INVOICE_NO, IND_MARCA, MARCA)
-            INNER JOIN CHEDRAUI.V_STORE USING(STORE_CODE, STORE_KEY)
-            LEFT JOIN CHEDRAUI.V_CUSTOMER_CONTACT D ON A.CUSTOMER_CODE_TY = D.CUSTOMER_CODE
+            INNER JOIN {schema}.V_STORE USING(STORE_CODE, STORE_KEY)
+            LEFT JOIN {schema}.V_CUSTOMER_CONTACT D ON A.CUSTOMER_CODE_TY = D.CUSTOMER_CODE
             WHERE LEFT(INVOICE_DATE, 7) BETWEEN '{self.dict_rad_corta_var['mes_ini_analisis_aa']}' AND '{self.dict_rad_corta_var['mes_fin_analisis']}'
             AND BUSINESS_TYPE = 'R'
             AND SALE_NET_VAL > 0
@@ -3758,8 +3761,8 @@ class Radiografia():
             FROM FCT_SALE_LINE_NM A
             INNER JOIN #PRODUCTOS B USING(PRODUCT_CODE)
             INNER JOIN #TX C USING(INVOICE_NO, IND_MARCA, MARCA)
-            INNER JOIN CHEDRAUI.V_STORE USING(STORE_CODE, STORE_KEY)
-            --     LEFT JOIN CHEDRAUI.V_CUSTOMER_CONTACT D ON A.CUSTOMER_CODE_TY = D.CUSTOMER_CODE
+            INNER JOIN {schema}.V_STORE USING(STORE_CODE, STORE_KEY)
+            --     LEFT JOIN {schema}.V_CUSTOMER_CONTACT D ON A.CUSTOMER_CODE_TY = D.CUSTOMER_CODE
             WHERE LEFT(INVOICE_DATE, 7) BETWEEN '{self.dict_rad_corta_var['mes_ini_analisis_aa']}' AND '{self.dict_rad_corta_var['mes_fin_analisis']}'
             AND BUSINESS_TYPE = 'R'
             AND SALE_NET_VAL > 0
@@ -6987,10 +6990,10 @@ class Radiografia():
         '''
 
         query_insert_rad_corta = f'''
-            DELETE CHEDRAUI.MON_BC_ANALISIS
+            DELETE {schema}.MON_BC_ANALISIS
             WHERE NOMBRE_ANALISIS = '{self.dict_rad_corta_var['nombre']}';
 
-            INSERT INTO CHEDRAUI.MON_BC_ANALISIS
+            INSERT INTO {schema}.MON_BC_ANALISIS
             SELECT '{self.dict_rad_corta_var['nombre']}'::VARCHAR(100) AS NOMBRE_ANALISIS, * FROM #RAD_CORTA;
         '''
 
@@ -7051,10 +7054,10 @@ class Radiografia():
         '''
 
         query_insert_rad_desc = f'''
-            DELETE CHEDRAUI.MON_BC_NOMBRE
+            DELETE {schema}.MON_BC_NOMBRE
             WHERE NOMBRE_ANALISIS = '{self.dict_rad_corta_var['nombre']}';
 
-            INSERT INTO CHEDRAUI.MON_BC_NOMBRE
+            INSERT INTO {schema}.MON_BC_NOMBRE
             SELECT * FROM #RAD_DESC;
         '''
 
@@ -7073,7 +7076,7 @@ class Radiografia():
     def validate_if_rad_exists(self, conn, inicio, termino, nombre):
         # Preguntar si las tablas de radiografia ya existen con el id y nombre ingresado
         id_rad, _, _ = self.__get_id_rad(conn, inicio, termino, nombre)
-        df_res = conn.select(query=f"SELECT 1 AS RESULT FROM CHEDRAUI.MON_RAD_DESC WHERE UPPER(ID_RADIOGRAFIA) = '{id_rad}' LIMIT 1")
+        df_res = conn.select(query=f"SELECT 1 AS RESULT FROM {schema}.MON_RAD_DESC WHERE UPPER(ID_RADIOGRAFIA) = '{id_rad}' LIMIT 1")
         return not df_res.empty
 
     def __get_id_rad(self, conn, inicio, termino, nombre):
@@ -7151,7 +7154,7 @@ class Radiografia():
             SELECT DISTINCT
                 PROVEEDOR
                 ,NOMBRE
-            FROM CHEDRAUI.MON_RAD_DESC
+            FROM {schema}.MON_RAD_DESC
         """
         dic = conn.select(query).groupby('proveedor')['nombre'].apply(list).to_dict()
         keys = list(dic.keys())

@@ -1,90 +1,32 @@
 # Importar librerías necesarias
 from tkinter import ttk, filedialog, messagebox
-import tkinter as tk
-from tkcalendar import DateEntry
-import pandas as pd
-from PIL import Image
-from PIL import ImageTk
-# Import Libraries
-from publicos_objetivo import *
-import warnings
-from monetizacion import Monetizacion
-from pandastable import Table, TableModel
 from tkinter.simpledialog import askstring
+from tkcalendar import DateEntry
 from datetime import datetime
-import threading
-import time
+from pandastable import Table
+from PIL import ImageTk
+from PIL import Image
+import tkinter as tk
+import pandas as pd
+from util.functions.path import get_file_path, get_neighbor_path, icon_cogno_str, functions_str, data_str, logo_cogno_str
+from util.constants.gui import title_gui_str
+from util.functions.publicos_objetivo import *
+from util.functions.monetizacion import Monetizacion
 
+import warnings
 # Ignore SQLAlchemy warnings
 warnings.filterwarnings('ignore')
 
 
-class LoadingWindow:
-    def __init__(self, root):
-        self.root = root
-        self.window = None
-
-    def show(self):
-        # Crear una nueva ventana de carga
-        self.window = tk.Toplevel(self.root)
-        self.window.title("Cargando...")
-        self.window.geometry("300x200")
-        self.window.resizable(False, False)
-
-        label_cargando = tk.Label(self.window, text="Procesando...", font=("Arial", 12))
-        label_cargando.pack(pady=5)
-
-        label_tiempo = tk.Label(self.window, text="Tiempo: 0 s", font=("Arial", 10))
-        label_tiempo.pack(pady=5)
-
-        frames = self.load_gif("images/cargando.gif", size=(75, 75))
-
-        label_imagen = tk.Label(self.window)
-        label_imagen.pack(pady=10)
-        self.animate_gif(label_imagen, frames, 0)
-
-        self.start_time = time.time()
-        self.update_window(label_tiempo)
-
-    def load_gif(self, gif_path, size):
-        gif = Image.open(gif_path)
-        frames = []
-        try:
-            while True:
-                frame = gif.copy().resize(size)
-                frames.append(ImageTk.PhotoImage(frame))
-                gif.seek(len(frames))
-        except EOFError:
-            pass
-        return frames
-
-    def animate_gif(self, label_imagen, frames, current_frame):
-        frame = frames[current_frame]
-        label_imagen.configure(image=frame)
-        next_frame = (current_frame + 1) % len(frames)
-        self.window.after(100, self.animate_gif, label_imagen, frames, next_frame)
-
-    def update_window(self, label_tiempo):
-        elapsed_time = time.time() - self.start_time
-        label_tiempo.config(text=f"Tiempo: {int(elapsed_time)} s")
-        self.window.after(1000, self.update_window, label_tiempo)
-
-    def close(self):
-        if self.window is not None:
-            self.window.destroy()
-            self.window = None
-
-
 class App:
     def __init__(self, root):
-        self.loading_window = LoadingWindow(root)
         self.mon = Monetizacion()
         self.clases = ''
         self.subclases = ''
         self.prod_types = ''
         self.root = root
-        self.root.title("Cognodata Monetización - Data Science")
-        self.set_icon(".\images\icono_cogno_resized.png")
+        self.root.title(title_gui_str)
+        self.set_icon()
         self.create_main_layout()
         self.create_menu()
         self.root.resizable(0, 0)
@@ -95,12 +37,6 @@ class App:
         self.bc_options_nse = ''
         self.bc_options_tiendas = ''
 
-    def show_loading_window(self):
-        self.loading_window.show()
-
-    def close_loading_window(self):
-        self.loading_window.close()
-
     # Query para obtener los datos entre comillas simples y separados por coma
     @staticmethod
     def add_quotes(text):
@@ -110,9 +46,15 @@ class App:
             lis.append(item)
         return (',').join(lis) if text else ''
 
-    def set_icon(self, icon_path):
+    def set_icon(self):
+
+        path = get_file_path(
+            icon_cogno_str,
+            dir_path=get_neighbor_path(__file__, functions_str, data_str)
+        )
+
         # Cargar imagen
-        img = Image.open(icon_path)
+        img = Image.open(path)
         img = img.resize((32, 32))  # Redimensionar la imagen si es necesario
         self.icon = ImageTk.PhotoImage(img)  # Guardar referencia a la imagen
         self.root.iconphoto(False, self.icon)  # Establecer el ícono
@@ -137,7 +79,12 @@ class App:
         self.image_label = tk.Label(self.content_frame)
         self.image_label.pack(expand=True)
         
-        self.display_image(".\images\logo_cogno.png")
+        path = get_file_path(
+            logo_cogno_str,
+            dir_path=get_neighbor_path(__file__, functions_str, data_str)
+        )
+
+        self.display_image(path)  # Display the placeholder image
 
     def end_program(self):
         # super().close()
@@ -168,7 +115,12 @@ class App:
         self.clear_content_frame()
         self.menu_frame.pack(side=tk.LEFT, fill=tk.Y, padx=20, pady=20)
         self.image_label.pack(expand=True)  # Ensure the image label is packed again
-        self.display_image(".\images\logo_cogno.png")  # Display the placeholder image again
+        self.display_image(
+                get_file_path(
+                    logo_cogno_str,
+                    dir_path=get_neighbor_path(__file__, functions_str, data_str)
+            )
+        )  # Display the placeholder image again
 
     def clear_content_frame(self):
         for widget in self.content_frame.winfo_children():
@@ -222,9 +174,7 @@ class App:
             else:
                 override = None
                 
-            self.show_loading_window()
             self.mon.generar_productos(skus=skus, marcas=marcas, proveedores=proveedores, clases=self.clases, subclases=self.subclases, prod_type_desc=self.prod_types, override=override)
-            self.close_loading_window()
             # self.show_dataframe(self.mon.get_productos_agg(), "Productos")
 
     def filtrar_productos(self, ventana, df):
