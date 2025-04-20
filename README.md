@@ -1,37 +1,66 @@
-# Documentación - Programa de Monetización
-Este proyecto pretende automatizar tareas repetitivas del área de Monetización, tales como la generación de públicos objetivo, generación de radiografías, generación de listas de comunicación y resultados de campañas, extracción de datos relevantes de una marca o productos, entre otros.
+# DataScience Públicos Objetivos
 
-Utiliza una Interfáz Gráfica para acceder a los datos de una manera más sencilla y eficiente al estandarizar el proceso de cada una de las tareas.
+## Explicación General y Objetivo
 
-La interfaz conecta las entradas del usuario a la base de datos, internamente se realizan los queryes y modificaciones necesarias para regresar la información de interés al usuario.
+El proyecto **DataScience Públicos Objetivos** tiene como objetivo principal analizar y procesar datos relacionados con campañas de monetización, segmentación de públicos y análisis de datos geográficos y demográficos. Este sistema permite gestionar campañas, realizar análisis de datos, y generar reportes visuales e interactivos para la toma de decisiones estratégicas.
 
-## Se han agregado las funciones:
-* 1. Definición de productos, marcas o proveedor de interés.
-* 2. Generación de Públicos Objetivo y Tasa Natural.
-* 3. Generación de Business Case para estimación de Retorno de Inversión para marcas. *(Pendiente)*
-* 4. Generación de listas de envío para comunicación de campañas.
-* 5. Generación de Radiografías según los productos, marcas o proveedor seleccionado.
-* 6. Generación de Resultados de Campañas. *(Pendiente)*
-* 7. Generación de un Reporte de análisis general de la marca, con datos relevantes y útiles para el equipo. *(Pendiente)*
+El proyecto está diseñado para ser modular y escalable, integrando herramientas de análisis de datos, procesamiento de información en formatos como HTML y JSON, y una interfaz gráfica de usuario (GUI) para facilitar la interacción con los usuarios.
 
-## Consideraciones y faltantes
-* Agregar opción para ver y filtrar por clase, subclase y tipo de producto de los productos seleccionados. (Listo)
-* Agregar la opción para sobreescribir los datos generados. (Listo)
-* Agregar barra de desplazamiento al visualizar tablas de datos. (Listo)
-* Guardar datos de los publicos objetivos para estimar costos. (Listo)
-* Agregar Business Case (*Pendiente*)
-* Agregar Listas de envío (Listo)
-* Agregar Radiografía (Listo)
-* Plantear el análisis en DS (*Pendiente)
-* Ajustar codigo para guardar productos y listas de envío por campañas
-* Guardar lista de grrupo control cuando se especifique la opción en la generación de listas
-* Agregar toda la lógica de carga y actualización de datos de campañas
-* Agregar ventana de carga/progreso
-* Agregar indicador compra online para facilitar orden y selección
+## Contenido y Módulos
 
-* Ajustar temporalidad en resultados
-* Ajustar periodo/fechas en la selección de POs
-* Tasa natural y de recompra mensual
-* Recompra por tiendas
-* Ordenar por tienda
-* *Comparativas de crecimientos. Ej. 2022 a 2023 y 2023 a 2024
+### 1. **main_gui.py**
+   - Archivo principal que ejecuta la interfaz gráfica de usuario (GUI). Permite a los usuarios interactuar con las funcionalidades del proyecto, como la gestión de campañas, visualización de resultados y configuración de filtros.
+
+### 2. **util/**
+   - **config/**
+     - `credentials.yaml`: Almacena credenciales necesarias para conexiones externas (por ejemplo, bases de datos o APIs).
+   - **constants/**
+     - `bc.py`: Define constantes y mapeos utilizados en el análisis, como regiones, estados, formatos de tienda, y segmentaciones (NSE, familias, etc.).
+     - `gui.py`: Contiene configuraciones específicas para la interfaz gráfica.
+   - **data/**
+     - Contiene recursos estáticos como imágenes (icono_cogno.png, logo_cogno.png) y archivos JSON (México.json, mexicoHigh.json) utilizados para visualizaciones geográficas.
+   - **functions/**
+     - `analisis_html.py`: Procesa y analiza archivos HTML para extraer información relevante.
+     - `campana.py`: Gestiona la lógica relacionada con las campañas de monetización.
+     - `connection.py`: Maneja las conexiones a bases de datos o APIs externas.
+     - `GUI.py`: Implementa la lógica de la interfaz gráfica, incluyendo la creación de ventanas, menús y componentes interactivos.
+     - `monetizacion.py`: Contiene funciones relacionadas con el análisis y generación de resultados de monetización.
+     - `path.py`: Gestiona rutas de archivos y directorios.
+     - `productos.py`: Procesa información relacionada con productos y categorías.
+### 3. **pages/**
+   - Contiene páginas adicionales que pueden ser cargadas en la GUI, como reportes o configuraciones específicas.
+
+### 4. **sql_queries/**
+   - Almacena consultas SQL utilizadas para extraer y procesar datos desde bases de datos.
+
+## Estructura
+
+La estructura del proyecto es modular, organizada por carpetas y archivos que representan diferentes funcionalidades y componentes del sistema. A continuación se describe la organización principal:
+
+- **`main_gui.py`**: Controla la interfaz gráfica de usuario.
+- **`util/`**: Contiene recursos y funciones auxiliares como configuraciones, constantes, y funciones de análisis.
+- **`pages/`**: Páginas adicionales cargadas en la GUI.
+- **`sql_queries/`**: Contiene las consultas SQL necesarias para interactuar con bases de datos.
+
+## Funcionamiento
+
+Aquí puedes agregar imágenes y descripciones de cómo funciona cada parte del sistema. Algunos ejemplos incluyen:
+
+- **Interfaz Gráfica de Usuario (GUI)**: Imagen que muestra cómo se visualiza la GUI y cómo interactúa el usuario con las diferentes funciones.
+- **Análisis de Datos**: Imagen de los reportes generados, gráficos y visualizaciones.
+- **Gestión de Campañas**: Imagen de cómo se gestionan las campañas y los datos asociados.
+
+## Resultado del Proyecto y Conclusiones
+
+El proyecto proporciona una herramienta integral para la gestión de campañas de monetización y análisis de datos geográficos, demográficos y de productos. Se han logrado los siguientes resultados:
+
+- **Automatización de procesos**: Reducción de tareas manuales mediante la automatización de la generación de reportes y análisis.
+- **Mejor toma de decisiones**: Los usuarios ahora pueden visualizar de manera clara y accesible los resultados de sus campañas y los datos relacionados con el mercado.
+- **Modularidad y escalabilidad**: El sistema está diseñado de manera que puede adaptarse fácilmente a nuevas necesidades o integrarse con otros sistemas.
+
+## Contacto
+
+Para cualquier duda o sugerencia, por favor contacta a:
+
+**Ricardo Jaramillo**  
+Email: [ricardo.jaramillo@example.com](mailto:ricardo.jaramillo@example.com)
