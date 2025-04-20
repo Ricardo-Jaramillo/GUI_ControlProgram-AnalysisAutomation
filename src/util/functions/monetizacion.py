@@ -75,7 +75,7 @@ class Monetizacion(Conn, Productos):
         filename = file_path.split('/')[-1]
         
         self.analisis.set_df(df)
-        self.analisis.save_html(foldername=foldername, filename=filename, show_figs=False)
+        self.analisis.save_html(nombre=self.po.dict_bc_analisis_var['nombre'], foldername=foldername, filename=filename, show_figs=False)
         # self.analisis.return_html()
 
     def obtener_analisis_bc(self):

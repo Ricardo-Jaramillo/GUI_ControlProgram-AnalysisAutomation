@@ -4,7 +4,7 @@
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Analisis BC</title>
+            <title>Elite</title>
             <style>
                 body {
                     background-color: white;
@@ -22,8 +22,23 @@
                 .container img {
                     width: 100%;
                     height: auto;
+                }                
+                .title { 
+                    grid-column: span 12; 
+                    grid-row: 1; 
+                    font-size: 2rem; 
+                    font-weight: bold; 
+                    text-align: center; 
+                    margin-bottom: 20px; 
                 }
-                .title { grid-column: span 12; grid-row: 1; }
+                .page-title {
+                    grid-column: span 12;
+                    font-family: 'Arial Black', Gadget, sans-serif;
+                    font-size: 60pt;
+                    font-weight: bold;
+                    text-align: center;
+                    margin: 20px 0 10px 0;
+                }
                 .fig_mes { grid-column: span 12; grid-row: 2; }
                 .fig_estados { grid-column: span 5; grid-row: 3; }
                 .fig_top_tiendas { grid-column: span 5; grid-row: 3; }
@@ -41,22 +56,23 @@
             </style>
         </head>
         <body>
+            <div class="page-title"\>Elite</div>
             <div class="container">
-                <div class="title"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_kpis.svg" alt="KPIs"></div>
-                <div class="fig_mes"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_mes.svg" alt="Mes"></div>
-                <div class="fig_estados"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_estados.svg" alt="Estados"></div>
-                <div class="fig_top_tiendas"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_top_tiendas.svg" alt="Top Tiendas"></div>
-                <div class="fig_table_estados"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_table_estados.svg" alt="Tabla Estados"></div>
-                <div class="fig_formato"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_formato.svg" alt="Formato"></div>
-                <div class="fig_nse"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_nse.svg" alt="NSE"></div>
-                <div class="fig_familia"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_familia.svg" alt="Familia"></div>
-                <div class="fig_formato_pie"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_formato_pie.svg" alt="Formato Pie"></div>
-                <div class="fig_nse_pie"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_nse_pie.svg" alt="NSE Pie"></div>
-                <div class="fig_familia_pie"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_familia_pie.svg" alt="Familia Pie"></div>
-                <div class="fig_class"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_class.svg" alt="Clase"></div>
-                <div class="fig_subclass"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_subclass.svg" alt="Subclase"></div>
-                <div class="fig_prod_type"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_prod_type.svg" alt="Tipo de Producto"></div>
-                <div class="fig_product"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\images\fig_product.svg" alt="Producto"></div>
+                <div class="title"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_kpis.svg" alt="KPIs"></div>
+                <div class="fig_mes"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_mes.svg" alt="Mes"></div>
+                <div class="fig_estados"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_estados.svg" alt="Estados"></div>
+                <div class="fig_top_tiendas"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_top_tiendas.svg" alt="Top Tiendas"></div>
+                <div class="fig_table_estados"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_table_estados.svg" alt="Tabla Estados"></div>
+                <div class="fig_formato"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_formato.svg" alt="Formato"></div>
+                <div class="fig_nse"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_nse.svg" alt="NSE"></div>
+                <div class="fig_familia"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_familia.svg" alt="Familia"></div>
+                <div class="fig_formato_pie"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_formato_pie.svg" alt="Formato Pie"></div>
+                <div class="fig_nse_pie"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_nse_pie.svg" alt="NSE Pie"></div>
+                <div class="fig_familia_pie"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_familia_pie.svg" alt="Familia Pie"></div>
+                <div class="fig_class"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_class.svg" alt="Clase"></div>
+                <div class="fig_subclass"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_subclass.svg" alt="Subclase"></div>
+                <div class="fig_prod_type"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_prod_type.svg" alt="Tipo de Producto"></div>
+                <div class="fig_product"><img src="c:\Users\ricardo.jaramillo\Documents\Python\DataScience_PublicosObjetivos\src\util\data\BC images\fig_product.svg" alt="Producto"></div>
             </div>
         </body>
         </html>

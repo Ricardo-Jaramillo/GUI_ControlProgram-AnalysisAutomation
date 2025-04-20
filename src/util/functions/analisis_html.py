@@ -23,9 +23,7 @@ class Analisis:
         foldername = get_dir_path(bc_images_str, get_neighbor_path(__file__, functions_str, data_str))
         append_path(foldername)
 
-        print(f'Folder name: {foldername}')
         self.foldername = Path(foldername)
-        print(f'Folder name after Path(): {self.foldername}')
 
     # Función para mapear los nombres de las columnas
     def __map_col_agg(self, df):
@@ -182,10 +180,10 @@ class Analisis:
         df_dict = {}
         
         # Dataframe de KPIs
-        print(columns)
+        # print(columns)
         if 'TOTAL' in columns:
-            print('TOTAL en columns')
-            print(df[df['tabla'] == 'TOTAL'][kpi_columns].reset_index(drop=True).T) #CONTINUAR
+            # print('TOTAL en columns')
+            # print(df[df['tabla'] == 'TOTAL'][kpi_columns].reset_index(drop=True).T) #CONTINUAR
             df_kpis = df[df['tabla'] == 'TOTAL'][kpi_columns].reset_index(drop=True).T
             df_kpis.rename(columns={0: 'valor'}, inplace=True)
             df_kpis = df_kpis[df_kpis['valor'].notnull() & pd.to_numeric(df_kpis['valor'], errors='coerce').notnull()]
@@ -594,6 +592,25 @@ class Analisis:
     # Muestra en una figura el valor de venta_actual
     def plot_value(self, df, row, title, column='valor', figsize=(6, 4), show=False):
         fig, ax = plt.subplots(figsize=figsize)
+
+        # Renombrar la columna si es necesario
+        dict_rename = {
+            '%clientes_condicion_1': '%Clientes 0-$50',
+            '%clientes_condicion_2': '%Clientes $50-$100',
+            '%clientes_condicion_3': '%Clientes $100-$150',
+            '%clientes_condicion_4': '%Clientes $150-$200',
+            '%clientes_condicion_5': '%Clientes $200-$300',
+            '%clientes_condicion_6': '%Clientes $300+',
+            'tx_medio_condicion_1': 'Tx Medio 0-$50',
+            'tx_medio_condicion_2': 'Tx Medio $50-$100',
+            'tx_medio_condicion_3': 'Tx Medio $100-$150',
+            'tx_medio_condicion_4': 'Tx Medio $150-$200',
+            'tx_medio_condicion_5': 'Tx Medio $200-$300',
+            'tx_medio_condicion_6': 'Tx Medio $300+'
+        }
+
+        if title in dict_rename:
+            title = dict_rename[title]
         
         # Obtener el valor de la columna
         value = df.loc[row, column]
@@ -751,10 +768,10 @@ class Analisis:
         #     os.makedirs(f'{self.foldername}/images')
 
         for row in df_fig.index:
-            print(f'{self.foldername}/{row}.svg')
+            # print(f'{self.foldername}/{row}.svg')
             df_fig.loc[row, 'fig'].savefig(f'{self.foldername}/{row}.svg', bbox_inches='tight', dpi=300)
 
-        print(df_fig)
+        # print(df_fig)
 
     def validate_fig(self, image_base_path, fig_dict):
         for key, filename in fig_dict.items():
@@ -762,9 +779,9 @@ class Analisis:
             if not image_path.exists():
                 print(f"Error: La imagen {image_path} no existe.")
 
-    def __html_content(self):
+    def __html_content(self, nombre='Analisis de marca'):
         # Define the base path for images
-        image_base_path = self.foldername / 'images'
+        image_base_path = self.foldername
         
         # Diccionario con los nombres de las imágenes
         fig_dict = {
@@ -793,7 +810,7 @@ class Analisis:
         <head>
             <meta charset=\"UTF-8\">
             <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
-            <title>Analisis BC</title>
+            <title>{nombre}</title>
             <style>
                 body {{
                     background-color: white;
@@ -811,8 +828,23 @@ class Analisis:
                 .container img {{
                     width: 100%;
                     height: auto;
+                }}                
+                .title {{ 
+                    grid-column: span 12; 
+                    grid-row: 1; 
+                    font-size: 2rem; 
+                    font-weight: bold; 
+                    text-align: center; 
+                    margin-bottom: 20px; 
                 }}
-                .title {{ grid-column: span 12; grid-row: 1; }}
+                .page-title {{
+                    grid-column: span 12;
+                    font-family: 'Arial Black', Gadget, sans-serif;
+                    font-size: 24pt;
+                    font-weight: bold;
+                    text-align: center;
+                    margin: 20px 0 10px 0;
+                }}
                 .fig_mes {{ grid-column: span 12; grid-row: 2; }}
                 .fig_estados {{ grid-column: span 5; grid-row: 3; }}
                 .fig_top_tiendas {{ grid-column: span 5; grid-row: 3; }}
@@ -830,6 +862,7 @@ class Analisis:
             </style>
         </head>
         <body>
+            <div class=\"page-title"\>{nombre}</div>
             <div class=\"container\">
                 <div class=\"title\"><img src=\"{image_base_path / fig_dict['fig_kpis']}\" alt=\"KPIs\"></div>
                 <div class=\"fig_mes\"><img src=\"{image_base_path / fig_dict['fig_mes']}\" alt=\"Mes\"></div>
@@ -853,10 +886,12 @@ class Analisis:
         
         return html_content
 
-    def save_html(self, periodo='total', show_figs=False, foldername=None, filename='Analisis_BC'):
-
+    def save_html(self, nombre, periodo='total', show_figs=False, foldername=None, filename='Analisis_BC'):
+        
         if foldername:
             append_path(foldername)
+        else:
+            foldername = self.foldername
 
         if periodo == 'total':
             df = self.df[self.df['Mes'] != 'CAMPANA']
@@ -869,9 +904,10 @@ class Analisis:
         # Save to a file
         if 'html' not in filename:
             filename += '.html'
-        self.html_analisis = Path(f'{self.foldername}/{filename}')
         
-        self.html_analisis.write_text(self.__html_content(), encoding='utf-8')
+        # Save the HTML file both in the current folder and the specified folder
+        for html in [Path(f'{foldername}/{filename}'), Path(f'{self.foldername}/{filename}')]:
+            html.write_text(self.__html_content(nombre), encoding='utf-8')
 
         print('Reporte de Analisis generado.')
 
