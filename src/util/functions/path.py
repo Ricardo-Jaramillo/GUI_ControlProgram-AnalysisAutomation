@@ -5,8 +5,8 @@ import json
 import numpy as np
 
 json_mexico_str = "mexicoHigh.json"
-icon_cogno_str = "icono_cogno.png"
-logo_cogno_str = "logo_cogno.png"
+icon_str = "icono.png"
+logo_str = "logo.png"
 credentials_str = "credentials.yaml"
 
 util_str = "util"

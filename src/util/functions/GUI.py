@@ -8,7 +8,7 @@ from PIL import ImageTk
 from PIL import Image
 import tkinter as tk
 import pandas as pd
-from util.functions.path import get_file_path, get_neighbor_path, icon_cogno_str, functions_str, data_str, logo_cogno_str
+from util.functions.path import get_file_path, get_neighbor_path, icon_str, functions_str, data_str, logo_str
 from util.constants.gui import title_gui_str
 from util.functions.publicos_objetivo import *
 from util.functions.monetizacion import Monetizacion
@@ -49,7 +49,7 @@ class App:
     def set_icon(self):
 
         path = get_file_path(
-            icon_cogno_str,
+            icon_str,
             dir_path=get_neighbor_path(__file__, functions_str, data_str)
         )
 
@@ -80,7 +80,7 @@ class App:
         self.image_label.pack(expand=True)
         
         path = get_file_path(
-            logo_cogno_str,
+            logo_str,
             dir_path=get_neighbor_path(__file__, functions_str, data_str)
         )
 
@@ -117,7 +117,7 @@ class App:
         self.image_label.pack(expand=True)  # Ensure the image label is packed again
         self.display_image(
                 get_file_path(
-                    logo_cogno_str,
+                    logo_str,
                     dir_path=get_neighbor_path(__file__, functions_str, data_str)
             )
         )  # Display the placeholder image again
