@@ -1,0 +1,1 @@
+title_gui_str = 'Syntra.ai - Evolve with data'
