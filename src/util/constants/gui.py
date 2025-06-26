@@ -1,1 +1,1 @@
-title_gui_str = 'Syntra.ai - Evolve with data'
+title_gui_str = 'Cognodata - Monetizacion'

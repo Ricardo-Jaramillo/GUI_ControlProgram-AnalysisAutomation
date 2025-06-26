@@ -10,7 +10,6 @@ import tkinter as tk
 import pandas as pd
 from util.functions.path import get_file_path, get_neighbor_path, icon_str, functions_str, data_str, logo_str
 from util.constants.gui import title_gui_str
-from util.functions.publicos_objetivo import *
 from util.functions.monetizacion import Monetizacion
 
 import warnings
